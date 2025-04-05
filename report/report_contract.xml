@@ -57,6 +57,9 @@
                     <strong>Jednotková cena</strong>
                   </th>
                   <th class="text-right">
+                    <strong>Zľava</strong>
+                  </th>
+                  <th class="text-right">
                     <strong>Spolu</strong>
                   </th>
                   <!--<th class="text-right">
@@ -78,6 +81,9 @@
                       </td>
                       <td class="text-right">
                         <span t-field="l.price_unit" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: o.currency_id}"></span>
+                      </td>
+                      <td class="text-right" t-if="l.commitment_discount">
+                        <span t-field="l.commitment_discount" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: o.currency_id}"></span>
                       </td>
                       <td class="text-right">
                         <span t-field="l.price_subtotal" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: o.currency_id}"></span>
@@ -172,9 +178,9 @@
           <p>Doba viazanosti do: <span t-field="o.x_datum_viazanost"></span></p>
         </div>
         <div>
-        <p>Všetky ceny sú uvedené bez DPH.</p>
+        <p>Všetky ceny vyššie sú uvedené bez DPH.</p>
         </div>
-        <div style="margin-bottom:0px;">
+        <div style="page-break-before: always; margin-bottom:0px;">
           <!-- <div class="row mt-4" id="note" t-if="o.note">
                         <div>
                             <strong>Poznámky: </strong>

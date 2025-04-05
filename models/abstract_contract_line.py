@@ -269,13 +269,19 @@ class ContractAbstractContractLine(models.AbstractModel):
 
     @api.depends('commitment')
     def _compute_commitment_discount(self):
+        today = fields.Date.context_today(self)
         for line in self:
-            if line.commitment == '1_year':
-                line.commitment_discount = 2.0
-            elif line.commitment == '2_years':
-                line.commitment_discount = 4.0
-            else:
-                line.commitment_discount = 0.0
+            # Initialize discount to 0
+            line.commitment_discount = 0.0
+            
+            # Check if commitment date exists and is valid
+            if hasattr(line.contract_id, 'x_datum_viazanost') and line.contract_id.x_datum_viazanost:
+                if line.contract_id.x_datum_viazanost >= today:
+                    # Apply discount based on commitment
+                    if line.commitment == '1_year':
+                        line.commitment_discount = 2.0
+                    elif line.commitment == '2_years':
+                        line.commitment_discount = 4.0
 
     @api.constrains("discount")
     def _check_discount(self):
