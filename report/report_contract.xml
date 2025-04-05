@@ -1,125 +1,106 @@
-<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="report_contract_document">
-        <t t-call="web.external_layout">
-            <t t-set="o" t-value="o.with_context(lang=lang)" />
-	    <h2 t-if="o.x_contract_type == 'Prenájom'" class="text-center">Zmluva o nájme číslo <span t-field="o.code"/></h2>
-	    <h2 t-if="o.x_contract_type == 'Služby'" class="text-center">Zmluva o poskytovaní služieb číslo <span t-field="o.code"/></h2>
-            <t t-set="address">
-                <p id="partner_info">
-                    <strong t-if="o.x_contract_type == 'Prenájom'">Nájomca</strong>
-                    <strong t-if="o.x_contract_type == 'Služby'">Objednávateľ</strong>
-                </p>
-                <div
-                    t-field="o.partner_id"
-                    t-options='{"widget": "contact", "fields": ["address", "name", "phone", "mobile", "fax", "email"], "no_marker": true, "phone_icons": true}'
-                />
-                <p t-if="o.partner_id.vat">DIČ: <span t-field="o.partner_id.vat" /></p>
-            </t>
-	    <style>
-		    p {
-    margin-bottom: 2px !important;
-			    }</style>
-            <div class="page">
-		<div class="oe_structure" />
-                <div class="row" id="header_info">
-			<div class="col-12 d-flex align-items-center" t-if="o.code">
-			    <!--<strong>Responsible: </strong>
-			    <p t-field="o.user_id" /> -->
-			    <!-- <h2 class="me-2">Zmluva: </h2>
-			    <h3 t-field="o.code" /> -->
-		    </div>
-	    </div>
-	    <div style="font-size:10px;"><p>uzavretá podľa zákona č.269 ods.2 Obchodného zákonníka, zákona č. 513/1991 Zb. v znení neskorších predpisov medzi poskytovateľom: <br/>
-			    NOVEM IT s.r.o. <br/>
-			    Lichnerova 35<br/>
-			    903 01 Senec<br/>
-			    IČO: 50282859 <br/>
-			    IČ DPH: SK2120427078 <br/>
-Zápis v obch. reg. Mestského súdu Bratislava III, oddiel Sro,vl. č. 115271/B
-			    <span t-if="o.x_contract_type == 'Prenájom'"> („Prenajímateľ“) a  Nájomcom (ďalej len „Zmluva“). </span> <span t-if="o.x_contract_type == 'Služby'"> („Poskytovateľ“) a Objednávateľom (ďalej len „Zmluva“). </span> </p>
-	   </div>
-                <div id="invoice_info">
-                    <t t-set="total" t-value="0" />
-                    <div class="col-12">
-			    <div class="text-center">
-                        <p id="services_info">
-				<br/>
-                            <h2 t-if="x_contract_type == 'Prenájom'">Poskytnuté zariadenia do prenájmu</h2>
-			    <h2 t-if="x_contract_type == 'Služby'">Objednané služby</h2>
-		    </p>
-	    </div>
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>
-                                        <strong>Popis</strong>
-                                    </th>
-                                    <th class="text-right">
-                                        <strong>Množstvo</strong>
-                                    </th>
-                                    <th class="text-right">
-                                        <strong>Jednotková cena</strong>
-                                    </th>
-                                    <th class="text-right">
-                                        <strong>Spolu</strong>
-                                    </th>
-				    <!--<th class="text-right">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <!-- Main header first -->
+                        <h2 class="text-center" t-if="o.x_contract_type == 'Prenájom'">Zmluva o nájme číslo <span t-field="o.code"></span></h2>
+                        <h2 class="text-center" t-if="o.x_contract_type == 'Služby'">Zmluva o poskytovaní služieb číslo <span t-field="o.code"></span></h2>
+
+                        <div class="mt-3 text-center">
+                            <span>uzavretá podľa zákona č.269 ods.2 Obchodného zákonníka, zákona č. 513/1991 Zb. v znení neskorších predpisov medzi </span></div> 
+                        <!-- Partner info after the header -->
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <strong t-if="o.x_contract_type == 'Prenájom'">Nájomca</strong>
+                                <strong t-if="o.x_contract_type == 'Služby'">Objednávateľ</strong>
+                                <div t-field="o.partner_id" t-options="{&quot;widget&quot;: &quot;contact&quot;, &quot;fields&quot;: [&quot;address&quot;, &quot;name&quot;, &quot;phone&quot;, &quot;mobile&quot;, &quot;fax&quot;, &quot;email&quot;], &quot;no_marker&quot;: true, &quot;phone_icons&quot;: true}"></div>
+                                <!-- <p t-if="o.partner_id.vat">DIČ: <span t-field="o.partner_id.vat"></span></p> -->
+                            </div>
+                        </div>
+
+
+
+                        <div class="mt-3 text-right"><br/><strong t-if="o.x_contract_type == 'Prenájom'">Prenajímateľ</strong><strong t-if="o.x_contract_type == 'Služby'">Poskytovateľ</strong>
+
+                            <span><br/>NOVEM IT s.r.o. 
+                            <br></br> Lichnerova 35<br></br> 903 01 Senec<br></br> IČO: 50282859 <br></br> IČ DPH: SK2120427078 <br></br> Zápis v obch. reg. Mestského súdu Bratislava III, oddiel Sro,vl. č. 115271/B <!-- <span t-if="o.x_contract_type == 'Prenájom'">(„Prenajímateľ") a Nájomcom (ďalej len „Zmluva").</span> <span t-if="o.x_contract_type == 'Služby'">(„Poskytovateľ") a Objednávateľom (ďalej len „Zmluva").</span> <-->
+                            </span> </div>
+            
+            
+            <style>p { margin-bottom: 2px !important; }</style>
+            
+            <div class="oe_structure"></div>
+            
+<div id="invoice_info">
+          <t t-set="total" t-value="0"></t>
+          <div class="col-12">
+            <div class="text-center">
+              <p id="services_info">
+                <br></br>
+                <h2 t-if="o.x_contract_type == 'Prenájom'">Poskytnuté zariadenia do prenájmu</h2>
+                <h2 t-if="o.x_contract_type == 'Služby'">Objednané služby</h2>
+              </p>
+            </div>
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>
+                    <strong>Popis</strong>
+                  </th>
+                  <th class="text-right">
+                    <strong>Množstvo</strong>
+                  </th>
+                  <th class="text-right">
+                    <strong>Jednotková cena</strong>
+                  </th>
+                  <th class="text-right">
+                    <strong>Spolu</strong>
+                  </th>
+                  <!--<th class="text-right">
                                         <strong>Dátum vystavenia</strong>
 				    </th> -->
-                                </tr>
-                            </thead>
-                            <tbody class="text-right">
-                                <t t-set="current_subtotal" t-value="0" />
-                                <t t-foreach="o.contract_line_ids" t-as="l">
-                                    <t
-                                        t-set="current_subtotal"
-                                        t-value="current_subtotal + l.price_subtotal"
-                                    />
-                                    <tr
-                                        t-att-class="'bg-200 font-weight-bold o_line_section' if l.display_type == 'line_section' else 'font-italic o_line_note' if l.display_type == 'line_note' else ''"
-                                    >
-                                        <t t-if="not l.display_type">
-                                            <td>
-                                                <span t-field="l.name" />
-                                            </td>
-                                            <td class="text-right">
-                                                <span t-field="l.quantity" />
-                                            </td>
-                                            <td class="text-right">
-                                                <span
-                                                    t-field="l.price_unit"
-                                                    t-options='{"widget": "monetary", "display_currency": o.currency_id}'
-                                                />
-                                            </td>
-                                            <td class="text-right">
-                                                <span
-                                                    t-field="l.price_subtotal"
-                                                    t-options='{"widget": "monetary", "display_currency": o.currency_id}'
-                                                />
-                                            </td>
-					    <!-- <td class="text-right">
+                </tr>
+              </thead>
+              <tbody class="text-right">
+                <t t-set="current_subtotal" t-value="0"></t>
+                <t t-as="l" t-foreach="o.contract_line_ids">
+                  <t t-set="current_subtotal" t-value="current_subtotal + l.price_subtotal"></t>
+                  <tr t-att-class="'bg-200 font-weight-bold o_line_section' if l.display_type == 'line_section' else 'font-italic o_line_note' if l.display_type == 'line_note' else ''">
+                    <t t-if="not l.display_type">
+                      <td>
+                        <span t-field="l.name"></span>
+                      </td>
+                      <td class="text-right">
+                        <span t-field="l.quantity"></span>
+                      </td>
+                      <td class="text-right">
+                        <span t-field="l.price_unit" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: o.currency_id}"></span>
+                      </td>
+                      <td class="text-right">
+                        <span t-field="l.price_subtotal" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: o.currency_id}"></span>
+                      </td>
+                      <!-- <td class="text-right">
                                                 <span t-field="l.date_start" />
 					    </td> -->
-                                            <t
-                                                t-set="total"
-                                                t-value="total + l.price_subtotal"
-                                            />
-                                        </t>
-                                        <t t-if="l.display_type == 'line_section'">
-                                            <td colspan="99">
-                                                <span t-field="l.name" />
-                                            </td>
-                                            <t t-set="current_section" t-value="l" />
-                                            <t t-set="current_subtotal" t-value="0" />
-                                        </t>
-                                        <t t-if="l.display_type == 'line_note'">
-                                            <td colspan="99">
-                                                <span t-field="l.name" />
-                                            </td>
-                                        </t>
-                                    </tr>
-				    <!--    <t
+                      <t t-set="total" t-value="total + l.price_subtotal"></t>
+                    </t>
+                    <t t-if="l.display_type == 'line_section'">
+                      <td colspan="99">
+                        <span t-field="l.name"></span>
+                      </td>
+                      <t t-set="current_section" t-value="l"></t>
+                      <t t-set="current_subtotal" t-value="0"></t>
+                    </t>
+                    <t t-if="l.display_type == 'line_note'">
+                      <td colspan="99">
+                        <span t-field="l.name"></span>
+                      </td>
+                    </t>
+                  </tr>
+                  <!--    <t
                                         t-if="current_section and (l_last or o.contract_line_ids[l_index+1].display_type == 'line_section')"
                                     >
                                         <tr class="is-subtotal text-right">
@@ -132,77 +113,66 @@ Zápis v obch. reg. Mestského súdu Bratislava III, oddiel Sro,vl. č. 115271/B
                                             </td>
                                         </tr>
 				    </t> -->
-                                </t>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div id="modification_info" t-if="o.modification_ids">
-			<br/>
-                    <div class="col-12">
-                        <p id="modification_info_p">
-                            <strong>Zmeny</strong>
-                        </p>
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th name="th_date">Dátum</th>
-                                    <th
-                                        name="th_description"
-                                        class="text-right"
-                                    >Popis</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <t
-                                    t-foreach="o.modification_ids"
-                                    t-as="notification_id"
-                                >
-                                    <tr>
-                                        <td name="td_date">
-                                            <span t-field="notification_id.date" />
-                                        </td>
-                                        <td name="td_description" class="text-right">
-                                            <div
-                                                t-field="notification_id.description"
-                                            />
-                                        </td>
-                                    </tr>
-                                </t>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div id="total" class="row" name="total">
-                    <div class="col-auto ml-auto">
-			    <br/>
-                        <table class="table table-sm">
-                            <tr class="border-black o_subtotal o_total">
-                                <td style="font-size:20px;padding-right:20px;">
-                                    <strong t-if="o.x_contract_type == 'Prenájom'">Cena nájomného za mesiac</strong>
-                                    <strong t-if="o.x_contract_type == 'Služby'">Cena objednaný služieb za mesiac</strong>
-                                </td>
-                                <td style="vertical-align: middle;">
-                                    <span
-                                        t-esc="total"
-                                        t-options='{"widget": "monetary", "display_currency": o.currency_id}'
-                                    />
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-		<br/>
-		<div t-if="o.x_contract_type== 'Prenájom' and o.x_datum_prenajom" class="row">
-			<br/>
-			<p>Dátum odovzdania predmetu nájmu: <span t-field="o.x_datum_prenajom"/></p>
-		</div>
-		<div t-if="o.x_contract_type== 'Služby' and o.x_datum_viazanost" class="row">
-			<br/>
-			<p>Dátum ukončenia viazanosti: <span t-field="o.x_datum_viazanost"/></p>
-		</div>
-                <div style="margin-bottom:0px;">
-			<!-- <div class="row mt-4" id="note" t-if="o.note">
+                </t>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div id="modification_info" t-if="o.modification_ids">
+          <br></br>
+          <div class="col-12">
+            <p id="modification_info_p">
+                <strong>Zmeny</strong>
+            </p>
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th name="th_date">Dátum</th>
+                  <th class="text-right" name="th_description">Popis</th>
+                </tr>
+              </thead>
+              <tbody>
+                <t t-as="notification_id" t-foreach="o.modification_ids">
+                  <tr>
+                    <td name="td_date">
+                      <span t-field="notification_id.date"></span>
+                    </td>
+                    <td class="text-right" name="td_description">
+                      <div t-field="notification_id.description"></div>
+                    </td>
+                  </tr>
+                </t>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="row" id="total" name="total">
+          <div class="col-auto ml-auto">
+            <br></br>
+            <table class="table table-sm">
+              <tr class="border-black o_subtotal o_total">
+                <td style="font-size:20px;padding-right:20px;">
+                  <strong t-if="o.x_contract_type == 'Prenájom'">Cena nájomného za mesiac</strong>
+                  <strong t-if="o.x_contract_type == 'Služby'">Cena objednaný služieb za mesiac</strong>
+                </td>
+                <td style="vertical-align: middle;">
+                  <span t-esc="total" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: o.currency_id}"></span>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        <br></br>
+        <div class="row" t-if="o.x_contract_type== 'Prenájom' and o.x_datum_prenajom">
+          <br></br>
+          <p>Dátum odovzdania predmetu nájmu: <span t-field="o.x_datum_prenajom"></span></p>
+        </div>
+        <div class="row" t-if="o.x_datum_viazanost">
+          <br></br>
+          <p>Doba viazanosti do: <span t-field="o.x_datum_viazanost"></span></p>
+        </div>
+        <div style="margin-bottom:0px;">
+          <!-- <div class="row mt-4" id="note" t-if="o.note">
                         <div>
                             <strong>Poznámky: </strong>
                         </div>
@@ -210,254 +180,444 @@ Zápis v obch. reg. Mestského súdu Bratislava III, oddiel Sro,vl. č. 115271/B
                     <div class="row">
                         <p t-field="o.note" />
 			</div> -->
-		    <br/>
-		    <div class="text-center">
-			    <br/>
-		    <h2>Zmluvné Podmienky</h2>
-		    </div>
-		    <div class="text-center" style="background-color:#568DA9;width:100%;"> <h3 style="padding: 8px;color:white;">I. Úvodné ustanovenia</h3> </div>
-                <ul t-if="o.x_contract_type == 'Prenájom'" class="para" style="text-align: justify; text-justify: inter-word;font-size:10px;">
-			<li><p>Nájomca má záujem za účelom zabezpečenia výkonu svojich činností jednak prenajať si zodpovedajúce hardvérové a softvérové vybavenie a
-				jednak zabezpečiť bezporuchovú prevádzku, údržbu a servis tohto vybavenia.</p></li>
-		<li><p>Prenajímateľ je právnická osoba riadne založená a existujúca podľa právneho poriadku Slovenskej republiky, ktorá disponuje potrebnými
-skúsenosťami, personálnym a materiálno-technickým vybavením, prostredníctvom ktorého je schopná jednak zabezpečiť a prenajať Nájomcovi
-pre neho potrebné hardvérové a softvérové vybavenie, a jednak je schopná kvalitne a efektívne zabezpečovať prevádzku a údržbu
-			hardvérového aj softvérového vybavenia.</p></li>
-		<li><p>Vzhľadom na vyššie uvedené uzavreli zmluvné strany túto zmluvu, aby na jej základe zabezpečili realizáciu vyššie uvedených záujmov Nájomcu
-			a upravili vzájomné práva a povinnosti s tým súvisiace.</p></li>
-		</ul>
-		<ul t-if="o.x_contract_type == 'Služby'" class="para" style="text-align: justify;text-justify: inter-word;font-size:10px;">
-			<li><p>Poskytovateľ je právnická osoba riadne založená a existujúca podľa právneho poriadku Slovenskej republiky, ktorá disponuje potrebnými skúsenosťami,
-personálnym a materiálno-technickým vybavením, prostredníctvom ktorého je schopná kvalitne a afektívne poskytovať alebo zabezpečovať služby v rozsahu
-				predmetu svojho podnikania.</p></li>
-			<li><p>Objednávateľ má záujem o poskytovanie služieb od Poskytovateľa, preto zmluvné strany uzavreli túto zmluvu, aby na jej základe zabezpečili realizáciu záujmu
-				Objednávateľa a upravili vzájomné práva a povinnosti s tým súvisiace.</p></li>
-		</ul>
-		<div class="text-center" style="background-color:#568DA9;width:100%;"> 
-			<h3 style="padding: 8px;color:white;">II. Predmet zmluvy</h3>
-		</div>
-		 <ul t-if="o.x_contract_type == 'Prenájom'" class="para" style="text-align: justify; text-justify: inter-word; font-size:10px;">
-			<li><p>Touto zmluvou sa Prenajímateľ zaväzuje prenechať Nájomcovi do dočasného odplatného užívania (nájmu) hnuteľné veci, ktorých zoznam je
-uvedený v tejto zmluve v časti „Poskytnuté zariadenia do prenájmu“ (ďalej ako „predmet nájmu“ alebo ako „hardvérové a softvérové vybavenie“)
-a Nájomca sa zaväzuje platiť za to Prenajímateľovi dohodnuté nájomné a iné platby vo výške a za podmienok dojednaných v tejto zmluve.
-	</p></li>
-
-</ul>
-	<ul t-if="o.x_contract_type == 'Služby'" style="text-align: justify;
-  text-justify: inter-word;font-size:10px;" class="para">
-	<li><p>Touto zmluvou sa Poskytovateľ zaväzuje poskytovať pre Objednávateľa služby v rozsahu uvedenom v tejto zmluve v sekcii Objednané služby (ďalej len
-„Objednané služby“) a Objednávateľ sa zaväzuje zaplatiť za to Poskytovateľovi dohodnutú odmenu vo výške a spôsobom dojednaným ďalej v tejto zmluve.
-Ak sa v tejto zmluve používa pojem “Služby” v akomkoľvek gramatickom tvare a čísle, majú sa tým podľa povahy veci samej na mysli buď všetky služby
-		vymenované na prvej strane v sekcii objednané služby, alebo len niektoré z nich prípadne iba niektorá z nich.</p></li>
-</ul>
-		<div t-if="o.x_contract_type == 'Prenájom'" class="text-center" style="background-color:#568DA9;width:100%;"> 
-			<h3 style="padding: 8px;color:white;">III. Nájom</h3>
-		</div>
-		 <ul t-if="o.x_contract_type == 'Prenájom'" class="para" style="text-align: justify;text-justify:inter-word;font-size:10px;">
-		 <li><p>Prenajímateľ sa zaväzuje zabezpečiť predmet nájmu a prenechať ho do užívania Nájomcovi najneskôr do termínu uvedeného na prvej strane
-tejto zmluvy v časti „Dátum odovzdania predmetu nájmu“. </p></li>
-		<li><p>Predmet nájmu bude prenechaný do užívania Nájomcovi jeho nainštalovaním v priestoroch určených Nájomcom.</p>
-		</li>
-		<li><p>Prenajímateľ je povinný udržiavať predmet nájmu v stave spôsobilom na riadne užívanie na svoje náklady a nebezpečenstvo. Za udržiavanie
-			predmetu nájmu v stave spôsobilom na riadne užívanie sa považuje vykonávanie bežnej údržby, opráv a základného servisu predmetu nájmu.</p></li>
-		<li><p>Nájomca je povinný oznámiť Prenajímateľovi bez zbytočného odkladu potreby servisných zásahov a opráv, ktoré má vykonať Prenajímateľ. Pri
-porušení tejto povinnosti zodpovedá Nájomca za škodu tým spôsobenú a nemá nároky, ktoré by mu inak prislúchali pre nemožnosť alebo
-			obmedzenú možnosť užívať predmet nájmu pre vady, ktoré sa včas Prenajímateľovi neoznámili.</p></li>
-		<li><p>Nájomca je povinný znášať obmedzenie v užívaní predmetu nájmu v rozsahu potrebnom na vykonanie opráv a udržiavanie predmetu nájmu.</p></li>
-		<li><p>Nájomca je oprávnený užívať predmet nájmu primerane jeho povahe a určeniu. Prenajímateľ je oprávnený požadovať prístup k predmetu nájmu
-			za účelom kontroly, či ho Nájomca užíva riadnym spôsobom.</p></li>
-		<li><p>Nájomca nie je oprávnený dať predmet nájmu do podnájmu tretej osobe. Porušenie ustanovenia tohto bodu je podstatným porušením tejto
-			zmluvy.</p></li>
-		<li><p>Nájomca nie je oprávnený vykonávať na predmet nájmu akékoľvek zmeny, a to ani na jednotlivých veciach, ktoré sú súčasťou predmetu nájmu.
-			Porušenie ustanovenia tohto bodu je podstatným porušením tejto zmluvy.</p></li>
-		<li><p>Nájomca je povinný starať sa o to, aby na predmete nájmu nevznikla škoda.</p></li>
-		<li><p>Nájomca je povinný platiť Prenajímateľovi nájomné za predmet nájmu vo výške a za podmienok dojednaných v tejto zmluve.</p></li>
-		<li><p>Pri skončení platnosti tejto zmluvy je Nájomca povinný najneskôr v posledný deň platnosti tejto zmluvy predmet nájmu vrátiť Prenajímateľovi v
-stave primeranom obvyklému opotrebeniu. Ak Nájomca vráti predmet nájmu Prenajímateľovi neskôr, je povinný platiť nájomné až do vrátenia
-predmetu nájmu, pričom je zároveň povinný zaplatiť aj zmluvnú pokutu vo výške 0,05% zo sumy mesačného nájomného za každý, aj začatý deň
-			omeškania s vrátením predmetu nájmu.</p></li>
-		<li><p>V otázkach nájmu, ktoré nie sú výslovne upravené v tejto zmluve platí právna úprava podnikateľského nájmu hnuteľných vecí podľa § 721 a
-			súvisiacich Občianskeho zákonníka a ostatných všeobecne záväzných právnych predpisov Slovenskej republiky.</p></li>
-	 </ul>
-		<div t-if="o.x_contract_type == 'Služby'" class="text-center" style="background-color:#568DA9;width:100%;"> 
-			<h3 style="padding: 8px;color:white;">III. Poskytovanie Služieb a súčinnosť Objednávateľa</h3>
-		</div>
-		 <ul t-if="o.x_contract_type == 'Služby'" class="para" style="text-align: justify;text-justify:inter-word;font-size:10px;">
-		<li><p>Poskytovateľ sa zaväzuje poskytovať Objednávateľovi Objednané služby autonómne a samostatne ak to je vzhľadom na povahu veci možné a tiež na základe
-			monitoringu alebo hlásení Objednávateľa o vyskytnutých poruchách alebo problémových situáciách, ktoré majú byť riešené v rámci Služieb.</p></li>
-		<li><p>Poskytovateľ sa zaväzuje poskytovať Objednávateľovi Služby na svoje náklady a na svoje nebezpečenstvo spôsobom dohodnutým v ďalších ustanoveniach
-			tohto článku.</p></li>
-		<li><p>Zmluvné strany sa dohodli, že v závislosti od povahy hlásenia Objednávateľa môžu byť Služby poskytnuté nasledovnými formami:</p></li>
-		<ul style="font-size:10px;">
-			<div style="padding-left:20px;">
-		<li><p>výjazdom pracovnej skupiny Poskytovateľa/pracovníka Poskytovateľa na miesto poskytnutia Služieb</p></li>
-		<li><p>servisným zásahom na diaľku prostredníctvom vzdialeného prístupu (cestou siete internet)</p></li>
-		<li><p>telefonickou konzultáciou</p></li>
-	</div>
-	</ul>
-		<!--<ul style="font-size:10px;text-align: justify;text-justify:inter-word;"> -->
-	<li><p>Ak podľa sekcie Objednané služby majú byť Služby poskytované v určitých lehotách, tieto lehoty sa predlžujú o dobu trvania prekážky, ktorá nastala nezávisle
-od vôle Poskytovateľa a bráni mu v splnení jeho záväzku poskytnúť príslušnú Službu, ak nemožno rozumne predpokladať, že by Poskytovateľ túto prekážku
-alebo jej následky odvrátil alebo prekonal, a ďalej, že by v čase uzavretia tejto zmluvy túto prekážku predvídal. Po dobu trvania prekážky podľa predchádzajúcej
-		vety nie je Poskytovateľ v omeškaní so splnením záväzkov podľa tejto zmluvy.</p></li>
-	<li><p>Pri vykonávaní servisných zásahov (ak sú tieto predmetom Služieb) bude Poskytovateľ postupovať samostatne a zaväzuje sa obstarať všetky veci a zariadenia
-potrebné na riadne splnenie záväzkov z tejto zmluvy. Pri vykonávaní servisných zásahov sa Poskytovateľ zaväzuje postupovať s vynaložením všetkej odbornej
-		starostlivosti, ktorú od neho vzhľadom na okolnosti možno očakávať.</p></li>
-<li><p>Poskytovateľ sa zaväzuje:</p></li> <!--</ul> -->
-	<ul style="font-size:10px;padding-left: 20px;text-align: justify;text-justify:inter-word;">
-	<li><p>plniť záväzky z tejto zmluvy prostredníctvom osôb, ktoré majú príslušnú kvalifikáciu potrebnú na riadne plnenie záväzkov Poskytovateľa a zároveň sa zaväzuje
-		počas trvania tejto zmluvy udržiavať úroveň kvalifikácie týchto osôb na stále aktuálnej úrovni s ohľadom na stav poznania danej oblasti, v prípade, ak poskytovateľ použije na splnenie záväzku iné osoby, zodpovedá za správnosť a včasnosť ich plnenia tak, ako by ich realizoval sám zachovávať záväzok mlčanlivosti podľa tejto zmluvy </p></li>
-<li><p>na požiadanie potvrdiť Objednávateľovi prevzatie informácií, dokumentov, médií a pod.</p></li>
-<li><p>poskytovať Objednávateľovi súčinnosť potrebnú na dosiahnutie účelu tejto zmluvy</p></li>
-</ul>
-<div style="font-size:10px;text-align: justify;text-justify:inter-word;">
-	<li><p>
-		Objednávateľ sa zaväzuje poskytnúť Poskytovateľovi na účely riadneho plnenia jeho záväzkov podľa tejto zmluvy všetku potrebnú súčinnosť. Najmä sa Objednávateľ zaväzuje:</p></li>
+          <br></br>
+          <div class="text-center">
+            <br></br>
+            <h2>Zmluvné Podmienky</h2>
+          </div>
+          <div class="text-center" style="background-color:#568DA9;width:100%;">
+            <h3 style="padding: 8px;color:white;">I. Úvodné ustanovenia</h3>
+          </div>
+          <ul class="para" style="text-align: justify; text-justify: inter-word;font-size:10px;" t-if="o.x_contract_type == 'Prenájom'">
+            <li>
+              <p>Nájomca má záujem za účelom zabezpečenia výkonu svojich činností jednak prenajať si zodpovedajúce hardvérové a softvérové vybavenie a jednak zabezpečiť bezporuchovú prevádzku, údržbu a servis tohto vybavenia.</p>
+            </li>
+            <li>
+              <p>Prenajímateľ je právnická osoba riadne založená a existujúca podľa právneho poriadku Slovenskej republiky, ktorá disponuje potrebnými skúsenosťami, personálnym a materiálno-technickým vybavením, prostredníctvom ktorého je schopná jednak zabezpečiť a prenajať Nájomcovi pre neho potrebné hardvérové a softvérové vybavenie, a jednak je schopná kvalitne a efektívne zabezpečovať prevádzku a údržbu hardvérového aj softvérového vybavenia.</p>
+            </li>
+            <li>
+              <p>Vzhľadom na vyššie uvedené uzavreli zmluvné strany túto zmluvu, aby na jej základe zabezpečili realizáciu vyššie uvedených záujmov Nájomcu a upravili vzájomné práva a povinnosti s tým súvisiace.</p>
+            </li>
+          </ul>
+          <ul class="para" style="text-align: justify;text-justify: inter-word;font-size:10px;" t-if="o.x_contract_type == 'Služby'">
+            <li>
+              <p>Poskytovateľ je právnická osoba riadne založená a existujúca podľa právneho poriadku Slovenskej republiky, ktorá disponuje potrebnými skúsenosťami, personálnym a materiálno-technickým vybavením, prostredníctvom ktorého je schopná kvalitne a afektívne poskytovať alebo zabezpečovať služby v rozsahu predmetu svojho podnikania.</p>
+            </li>
+            <li>
+              <p>Objednávateľ má záujem o poskytovanie služieb od Poskytovateľa, preto zmluvné strany uzavreli túto zmluvu, aby na jej základe zabezpečili realizáciu záujmu Objednávateľa a upravili vzájomné práva a povinnosti s tým súvisiace.</p>
+            </li>
+          </ul>
+          <div class="text-center" style="background-color:#568DA9;width:100%;">
+            <h3 style="padding: 8px;color:white;">II. Predmet zmluvy</h3>
+          </div>
+          <ul class="para" style="text-align: justify; text-justify: inter-word; font-size:10px;" t-if="o.x_contract_type == 'Prenájom'">
+            <li>
+              <p>Touto zmluvou sa Prenajímateľ zaväzuje prenechať Nájomcovi do dočasného odplatného užívania (nájmu) hnuteľné veci, ktorých zoznam je uvedený v tejto zmluve v časti „Poskytnuté zariadenia do prenájmu“ (ďalej ako „predmet nájmu“ alebo ako „hardvérové a softvérové vybavenie“) a Nájomca sa zaväzuje platiť za to Prenajímateľovi dohodnuté nájomné a iné platby vo výške a za podmienok dojednaných v tejto zmluve.</p>
+            </li>
+          </ul>
+          <ul class="para" style="text-align: justify;   text-justify: inter-word;font-size:10px;" t-if="o.x_contract_type == 'Služby'">
+            <li>
+              <p>Touto zmluvou sa Poskytovateľ zaväzuje poskytovať pre Objednávateľa služby v rozsahu uvedenom v tejto zmluve v sekcii Objednané služby (ďalej len „Objednané služby“) a Objednávateľ sa zaväzuje zaplatiť za to Poskytovateľovi dohodnutú odmenu vo výške a spôsobom dojednaným ďalej v tejto zmluve. Ak sa v tejto zmluve používa pojem “Služby” v akomkoľvek gramatickom tvare a čísle, majú sa tým podľa povahy veci samej na mysli buď všetky služby vymenované na prvej strane v sekcii objednané služby, alebo len niektoré z nich prípadne iba niektorá z nich.</p>
+            </li>
+          </ul>
+          <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Prenájom'">
+            <h3 style="padding: 8px;color:white;">III. Nájom</h3>
+          </div>
+          <ul class="para" style="text-align: justify;text-justify:inter-word;font-size:10px;" t-if="o.x_contract_type == 'Prenájom'">
+            <li>
+              <p>Prenajímateľ sa zaväzuje zabezpečiť predmet nájmu a prenechať ho do užívania Nájomcovi najneskôr do termínu uvedeného na prvej strane tejto zmluvy v časti „Dátum odovzdania predmetu nájmu“.</p>
+            </li>
+            <li>
+              <p>Predmet nájmu bude prenechaný do užívania Nájomcovi jeho nainštalovaním v priestoroch určených Nájomcom.</p>
+            </li>
+            <li>
+              <p>Prenajímateľ je povinný udržiavať predmet nájmu v stave spôsobilom na riadne užívanie na svoje náklady a nebezpečenstvo. Za udržiavanie predmetu nájmu v stave spôsobilom na riadne užívanie sa považuje vykonávanie bežnej údržby, opráv a základného servisu predmetu nájmu.</p>
+            </li>
+            <li>
+              <p>Nájomca je povinný oznámiť Prenajímateľovi bez zbytočného odkladu potreby servisných zásahov a opráv, ktoré má vykonať Prenajímateľ. Pri porušení tejto povinnosti zodpovedá Nájomca za škodu tým spôsobenú a nemá nároky, ktoré by mu inak prislúchali pre nemožnosť alebo obmedzenú možnosť užívať predmet nájmu pre vady, ktoré sa včas Prenajímateľovi neoznámili.</p>
+            </li>
+            <li>
+              <p>Nájomca je povinný znášať obmedzenie v užívaní predmetu nájmu v rozsahu potrebnom na vykonanie opráv a udržiavanie predmetu nájmu.</p>
+            </li>
+            <li>
+              <p>Nájomca je oprávnený užívať predmet nájmu primerane jeho povahe a určeniu. Prenajímateľ je oprávnený požadovať prístup k predmetu nájmu za účelom kontroly, či ho Nájomca užíva riadnym spôsobom.</p>
+            </li>
+            <li>
+              <p>Nájomca nie je oprávnený dať predmet nájmu do podnájmu tretej osobe. Porušenie ustanovenia tohto bodu je podstatným porušením tejto zmluvy.</p>
+            </li>
+            <li>
+              <p>Nájomca nie je oprávnený vykonávať na predmet nájmu akékoľvek zmeny, a to ani na jednotlivých veciach, ktoré sú súčasťou predmetu nájmu. Porušenie ustanovenia tohto bodu je podstatným porušením tejto zmluvy.</p>
+            </li>
+            <li>
+              <p>Nájomca je povinný starať sa o to, aby na predmete nájmu nevznikla škoda.</p>
+            </li>
+            <li>
+              <p>Nájomca je povinný platiť Prenajímateľovi nájomné za predmet nájmu vo výške a za podmienok dojednaných v tejto zmluve.</p>
+            </li>
+            <li>
+              <p>Pri skončení platnosti tejto zmluvy je Nájomca povinný najneskôr v posledný deň platnosti tejto zmluvy predmet nájmu vrátiť Prenajímateľovi v stave primeranom obvyklému opotrebeniu. Ak Nájomca vráti predmet nájmu Prenajímateľovi neskôr, je povinný platiť nájomné až do vrátenia predmetu nájmu, pričom je zároveň povinný zaplatiť aj zmluvnú pokutu vo výške 0,05% zo sumy mesačného nájomného za každý, aj začatý deň omeškania s vrátením predmetu nájmu.</p>
+            </li>
+            <li>
+              <p>V otázkach nájmu, ktoré nie sú výslovne upravené v tejto zmluve platí právna úprava podnikateľského nájmu hnuteľných vecí podľa § 721 a súvisiacich Občianskeho zákonníka a ostatných všeobecne záväzných právnych predpisov Slovenskej republiky.</p>
+            </li>
+          </ul>
+          <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Služby'">
+            <h3 style="padding: 8px;color:white;">III. Poskytovanie Služieb a súčinnosť Objednávateľa</h3>
+          </div>
+          <ul class="para" style="text-align: justify;text-justify:inter-word;font-size:10px;" t-if="o.x_contract_type == 'Služby'">
+            <li>
+              <p>Poskytovateľ sa zaväzuje poskytovať Objednávateľovi Objednané služby autonómne a samostatne ak to je vzhľadom na povahu veci možné a tiež na základe monitoringu alebo hlásení Objednávateľa o vyskytnutých poruchách alebo problémových situáciách, ktoré majú byť riešené v rámci Služieb.</p>
+            </li>
+            <li>
+              <p>Poskytovateľ sa zaväzuje poskytovať Objednávateľovi Služby na svoje náklady a na svoje nebezpečenstvo spôsobom dohodnutým v ďalších ustanoveniach tohto článku.</p>
+            </li>
+            <li>
+              <p>Zmluvné strany sa dohodli, že v závislosti od povahy hlásenia Objednávateľa môžu byť Služby poskytnuté nasledovnými formami:</p>
+            </li>
+            <ul style="font-size:10px;">
+              <div style="padding-left:20px;">
+                <li>
+                  <p>výjazdom pracovnej skupiny Poskytovateľa/pracovníka Poskytovateľa na miesto poskytnutia Služieb</p>
+                </li>
+                <li>
+                  <p>servisným zásahom na diaľku prostredníctvom vzdialeného prístupu (cestou siete internet)</p>
+                </li>
+                <li>
+                  <p>telefonickou konzultáciou</p>
+                </li>
+              </div>
+            </ul>
+            <!--<ul style="font-size:10px;text-align: justify;text-justify:inter-word;"> -->
+            <li>
+              <p>Ak podľa sekcie Objednané služby majú byť Služby poskytované v určitých lehotách, tieto lehoty sa predlžujú o dobu trvania prekážky, ktorá nastala nezávisle od vôle Poskytovateľa a bráni mu v splnení jeho záväzku poskytnúť príslušnú Službu, ak nemožno rozumne predpokladať, že by Poskytovateľ túto prekážku alebo jej následky odvrátil alebo prekonal, a ďalej, že by v čase uzavretia tejto zmluvy túto prekážku predvídal. Po dobu trvania prekážky podľa predchádzajúcej vety nie je Poskytovateľ v omeškaní so splnením záväzkov podľa tejto zmluvy.</p>
+            </li>
+            <li>
+              <p>Pri vykonávaní servisných zásahov (ak sú tieto predmetom Služieb) bude Poskytovateľ postupovať samostatne a zaväzuje sa obstarať všetky veci a zariadenia potrebné na riadne splnenie záväzkov z tejto zmluvy. Pri vykonávaní servisných zásahov sa Poskytovateľ zaväzuje postupovať s vynaložením všetkej odbornej starostlivosti, ktorú od neho vzhľadom na okolnosti možno očakávať.</p>
+            </li>
+            <li>
+              <p>Poskytovateľ sa zaväzuje:</p>
+            </li>
+            <!--</ul> -->
+            <ul style="font-size:10px;padding-left: 20px;text-align: justify;text-justify:inter-word;">
+              <li>
+                <p>plniť záväzky z tejto zmluvy prostredníctvom osôb, ktoré majú príslušnú kvalifikáciu potrebnú na riadne plnenie záväzkov Poskytovateľa a zároveň sa zaväzuje počas trvania tejto zmluvy udržiavať úroveň kvalifikácie týchto osôb na stále aktuálnej úrovni s ohľadom na stav poznania danej oblasti, v prípade, ak poskytovateľ použije na splnenie záväzku iné osoby, zodpovedá za správnosť a včasnosť ich plnenia tak, ako by ich realizoval sám zachovávať záväzok mlčanlivosti podľa tejto zmluvy</p>
+              </li>
+              <li>
+                <p>na požiadanie potvrdiť Objednávateľovi prevzatie informácií, dokumentov, médií a pod.</p>
+              </li>
+              <li>
+                <p>poskytovať Objednávateľovi súčinnosť potrebnú na dosiahnutie účelu tejto zmluvy</p>
+              </li>
+            </ul>
+            <div style="font-size:10px;text-align: justify;text-justify:inter-word;">
+              <li>
+                <p>Objednávateľ sa zaväzuje poskytnúť Poskytovateľovi na účely riadneho plnenia jeho záväzkov podľa tejto zmluvy všetku potrebnú súčinnosť. Najmä sa Objednávateľ zaväzuje:</p>
+              </li>
+            </div>
+            <ul style="font-size:10px;padding-left: 20px;text-align: justify;text-justify:inter-word;">
+              <li>
+                <p>robiť hlásenia spôsobom dojednaným v tomto článku a uverejneným na webových stránkach Poskytovateľa</p>
+              </li>
+              <li>
+                <p>poskytnúť Poskytovateľovi dostupné informácie o štruktúre počítačovej siete, v rámci ktorej je nainštalované zariadenie, na ktorom vznikol problém a má byť na ňom poskytnutá Služba</p>
+              </li>
+              <li>
+                <p>poskytnúť Poskytovateľovi všetku dostupnú dokumentáciu zariadení, na ktorých majú byť poskytované Služby</p>
+              </li>
+              <li>
+                <p>poskytnúť Poskytovateľovi informácie umožňujúce Poskytovateľovi prístup k systémom Objednávateľa prostredníctvom siete internet</p>
+              </li>
+              <li>
+                <p>poskytnúť Poskytovateľovi ním vyžiadané informácie potrebné pre bezpečnú prevádzku jednotlivých zariadení</p>
+              </li>
+              <li>
+                <p>po vykonaní hlásenia výpadku poskytovať na vyžiadanie aj ďalšie informácie na účely odstránenia výpadku</p>
+              </li>
+              <li>
+                <p>umožniť Poskytovateľovi vstup do všetkých priestorov, v ktorých sa budú nachádzať zariadenia vykazujúce výpadok resp. sa zaväzuje zabezpečiť umožnenie takého prístupu vrátane všetkých prípadných dokladov a/alebo súhlasov akýchkoľvek tretích dotknutých strán</p>
+              </li>
+              <li>
+                <p>podľa potreby poskytovať aj iné formy súčinnosti v záujme a za účelom odstránenia výpadkov a riadneho splnenia záväzkov Poskytovateľa podľa tejto zmluvy</p>
+              </li>
+            </ul>
+          </ul>
+          <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Prenájom'">
+            <h3 style="padding: 8px;color:white;">IV. Práva a povinnosti zmluvých strán</h3>
+          </div>
+          <ul style="font-size:10px;text-align: justify;text-justify:inter-word;" t-if="o.x_contract_type == 'Prenájom'">
+            <li>
+              <p>Prenajímateľ sa zaväzuje:</p>
+            </li>
+            <ul style="font-size:10px;padding-left: 20px;text-align: justify;text-justify:inter-word;">
+              <li>
+                <p>plniť záväzky z tejto zmluvy prostredníctvom osôb, ktoré majú príslušnú kvalifikáciu potrebnú na riadne plnenie záväzkov Prenajímateľa a zároveň sa zaväzuje počas trvania tejto zmluvy udržiavať úroveň kvalifikácie týchto osôb na stále aktuálnej úrovni s ohľadom na stav poznania danej oblasti, v prípade, ak Prenajímateľ použije na splnenie záväzku iné osoby, zodpovedá za správnosť a včasnosť ich plnenia tak, ako by ich realizoval sám</p>
+              </li>
+              <li>
+                <p>zachovávať záväzok mlčanlivosti podľa tejto zmluvy</p>
+              </li>
+              <li>
+                <p>poskytovať Nájomcovi súčinnosť potrebnú na dosiahnutie účelu tejto zmluvy</p>
+              </li>
+              <li>
+                <p>po ukončení inštalácie predmetu nájmu odovzdá Prenajímateľ Nájomcovi kompletnú dostupnú dokumentáciu týkajúcu sa predmetu nájmu</p>
+              </li>
+            </ul>
+            <li>
+              <p>Nájomca sa zaväzuje poskytnúť Prenajímateľovi na účely riadneho plnenia jeho záväzkov podľa tejto zmluvy všetku potrebnú súčinnosť. Najmä sa Nájomca zaväzuje:</p>
+            </li>
+            <ul style="font-size:10px;padding-left: 20px;text-align: justify;text-justify:inter-word;">
+              <li>
+                <p>poskytnúť Prenajímateľovi informácie umožňujúce Prenajímateľovi prístup k predmetu nájmu</p>
+              </li>
+              <li>
+                <p>poskytnúť Prenajímateľovi ním vyžiadané informácie potrebné pre bezpečnú prevádzku jednotlivých zariadení, tvoriacich predmet nájmu</p>
+              </li>
+              <li>
+                <p>umožniť Prenajímateľovi vstup do všetkých priestorov, v ktorých sa budú nachádzať zariadenia predmetu nájmu resp. sa zaväzuje zabezpečiť umožnenie takého prístupu vrátane všetkých prípadných dokladov a/alebo súhlasov akýchkoľvek tretích dotknutých strán</p>
+              </li>
+              <li>
+                <p>podľa potreby poskytovať aj iné formy súčinnosti v záujme a za účelom dosiahnutia účelu tejto zmluvy</p>
+              </li>
+            </ul>
+          </ul>
+          <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Prenájom'">
+            <h3 style="padding: 8px;color:white;">V. Záväzok mlčanlivosti</h3>
+          </div>
+          <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Služby'">
+            <h3 style="padding: 8px;color:white;">IV. Záväzok mlčanlivosti</h3>
+          </div>
+          <ul style="font-size:10px;text-align: justify;text-justify:inter-word;">
+            <li>
+              <p>Zmluvné strany sa zaväzujú zachovávať mlčanlivosť o dôverných informáciách týkajúcich sa tejto zmluvy, vrátane jej prípadných dodatkov; tento záväzok zmluvných strán nie je časovo obmedzený</p>
+            </li>
+            <li>
+              <p>Dôvernými informáciami podľa bodu 1 tohto článku zmluvy sa rozumejú obchodné, právne, finančné, prevádzkové a ďalšie skutočnosti, informácie a údaje, týkajúce sa rokovania o uzavretí, obsahu a plnenia tejto zmluvy, vrátane jej prípadných dodatkov, alebo s nimi súvisiace, s výnimkou:</p>
+            </li>
+            <ul style="font-size:10px;padding-left: 20px;text-align: justify;text-justify:inter-word;">
+              <li>
+                <p>informácií, ktoré sú v deň uzavretia tejto zmluvy verejne známymi alebo ktoré sa už v tento deň dali zadovážiť z bežne dostupných zdrojov</p>
+              </li>
+              <li>
+                <p>informácií, ktoré sa stali po dni uzavretia tejto zmluvy verejne známymi alebo ktoré sa po tomto dni už dajú zadovážiť z bežne dostupných zdrojov, a to inak než v dôsledku porušenia povinnosti zmluvnej strany zachovávať mlčanlivosť podľa tohto článku</p>
+              </li>
+              <li>
+                <p>informácií, z ktorých povahy vyplýva, že dotknutá zmluvná strana nemá záujem o ich utajenie, ak ich dotknutá zmluvná strana výslovne neoznačila za dôverné</p>
+              </li>
+            </ul>
+            <p>(ďalej len „Dôverné informácie“)</p>
+            <li>
+              <p>Povinnosť zachovávať mlčanlivosť o Dôverných informáciách sa nevzťahuje:</p>
+            </li>
+            <ul style="font-size:10px;padding-left: 20px;text-align: justify;text-justify:inter-word;">
+              <li>
+                <p>na prípady, ak zmluvná strana zverejnila Dôverné informácie s predchádzajúcim písomným súhlasom dotknutej zmluvnej strany</p>
+              </li>
+              <li>
+                <p>na prípady, keď na základe zákona vznikne zmluvnej strane povinnosť poskytnúť Dôverné informácie; takáto zmluvná strana je povinná informovať dotknutú zmluvnú stranu o vzniku povinnosti poskytnúť Dôverné informácie na základe zákona a o spôsobe a rozsahu, akým, resp. v akom ju plnila</p>
+              </li>
+              <li>
+                <p>na prípady, ak zmluvná strana použila potrebné informácie alebo dokumenty v prípadných súdnych, rozhodcovských, správnych a iných konaniach ohľadom práv a povinností vyplývajúcich z tejto zmluvy alebo s nimi súvisiacich</p>
+              </li>
+            </ul>
+            <li>
+              <p>Zmluvné strany sa zaväzujú, že Dôverné informácie bez predchádzajúceho písomného súhlasu dotknutej zmluvnej strany ďalej neposkytnú tretím osobám a ani neumožnia prístup tretích osôb k Dôverným informáciám. Za tretie osoby sa však nepokladajú členovia orgánov, zamestnanci alebo iné poverené osoby zmluvných strán, audítori alebo právni a iní poradcovia zmluvných strán, ktorí sú viazaní ohľadne im sprístupnených Dôverných informácii povinnosťou mlčanlivosti na základe zákona</p>
+            </li>
+            <li>
+              <p>Zmluvné strany sa zároveň zaväzujú, že priamo a ani prostredníctvom inej osoby nepoužijú Dôverné informácie v rozpore s ich účelom pre seba alebo pre inú osobu alebo v rozpore so záujmami dotknutej zmluvnej strany</p>
+            </li>
+            <li>
+              <p>Kde sa v tomto článku zmluvy hovorí o dotknutej zmluvnej strane, má sa na mysli tá zmluvná strana, (i) ktorá Dôverné informácie druhej zmluvnej strane sprístupnila, (ii) ktorej sa Dôverné informácie týkajú alebo (iii) ktorá by mohla byť sprístupnením Dôverných informácií tretím osobám alebo ich použitím v rozpore s ich účelom priamo dotknutá na svojich právach a oprávnených záujmoch. Ak vo vzťahu k určitým Dôverným informáciám nie je možné takto dotknutú zmluvnú stranu jednoznačne určiť, sú ňou obidve zmluvné strany</p>
+            </li>
+          </ul>
+          <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Prenájom'">
+            <h3 style="padding: 8px;color:white;">VI. Nájomné a poplatok za inštaláciu</h3>
+          </div>
+          <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Služby'">
+            <h3 style="padding: 8px;color:white;">V. Odplata</h3>
+          </div>
+          <!-- Najomne a poplatok -->
+          <ul style="font-size:10px;text-align: justify;text-justify:inter-word;" t-if="o.x_contract_type == 'Prenájom'">
+            <li>
+              <p>Nájomca je povinný zaplatiť za inštaláciu predmetu nájmu poplatok uvedený na poslednej strane tejto zmluvy v časti „Poznámka k zmluve“. Výška tohto poplatku bola určená dohodou zmluvných strán podľa zákona č. 18/1996 Z. z. o cenách, v znení neskorších predpisov a obsahuje náklady na inštaláciu, konfiguráciu, vytvorenie káblových a iných prepojení potrebných k zabezpečeniu funkčnosti predmetu nájmu</p>
+            </li>
+            <li>
+              <p>Nájomca je povinný platiť za užívanie predmetu nájmu nájomné špecifikované na prvej strane tejto zmluvy v časti „Cena nájomného za mesiac“. Výška nájomného bola určená dohodou zmluvných strán podľa zákona č. 18/1996 Z. z. o cenách, v znení neskorších predpisov</p>
+            </li>
+            <li>
+              <p>Ceny uvedené v bodoch 1. a 2. tohto článku sú uvedené bez platnej dane z pridanej hodnoty podľa platnej a účinnej právnej úpravy Slovenskej republiky</p>
+            </li>
+            <li>
+              <p>Zoznam položiek ktoré tvoria toto nájomné je uvedený na prvej strane tejto zmluvy v časti „Poskytnuté zariadenia do prenájmu“</p>
+            </li>
+            <li>
+              <p>Nájomné je splatné mesačne dopredu na základe faktúry vystavenej Prenajímateľom a doručenej Nájomcovi v súlade s ustanoveniami tejto zmluvy o doručovaní. Splatnosť faktúry vystavenej podľa tohto bodu je 15 dní odo dňa jej doručenia</p>
+            </li>
+            <li>
+              <p>Každá faktúra musí obsahovať všetky náležitosti daňového a účtovného dokladu podľa platných všeobecne záväzných právnych predpisov Slovenskej republiky. Fakturovaná suma sa považuje za uhradenú dňom, v ktorom došlo k jej pripísaniu v prospech účtu Prenajímateľa. Ak faktúra Prenajímateľa nebude obsahovať náležitosti podľa tejto zmluvy je Nájomca oprávnený vrátiť Prenajímateľovi faktúru na doplnenie bez jej uhradenia. V takom prípade do doručenia doplnenej faktúry nie je Nájomca v omeškaní so splnením záväzku zaplatiť odplatu. Odo dňa doručenia doplnenej faktúry plynie Nájomcovi nová lehota splatnosti. Fakturovaná suma bude zaplatená na účet Prenajímateľa uvedený v záhlaví tejto zmluvy alebo na iný účet, pokiaľ bude uvedený vo faktúre</p>
+            </li>
+            <li>
+              <p>Ak sa Nájomca dostane do omeškania so zaplatením akejkoľvek platby podľa tohto článku, zaväzuje sa zaplatiť Prenajímateľovi úrok z omeškania vo výške 0,05% z dlžnej sumy za každý aj začatý deň omeškania</p>
+            </li>
+            <li>
+              <p>Ak omeškanie Nájomcu so zaplatením fakturovanej sumy i napriek písomnému upozorneniu zo strany Prenajímateľa presiahne 30 (tridsať) kalendárnych dní, je Prenajímateľ oprávnený od tejto zmluvy odstúpiť písomným oznámením o odstúpení doručeným Nájomcovi. Táto zmluva sa v takom prípade zruší uplynutím dňa, v ktorý bude oznámenie o odstúpení doručené adresátovi</p>
+            </li>
+            <li>
+              <p>Zmluvné strany sa výslovne dohodli, že ak niektorá zmluvná strana využije, či už v tejto zmluve dohodnuté, alebo z príslušného zákona vyplývajúce právo odstúpiť od zmluvy, odstúpenie sa nedotýka práva na vrátenie predmetu nájmu Prenajímateľovi ani nároku na zaplatenie v tejto zmluve dohodnutej zmluvnej pokuty a/alebo úrokov z omeškania ani iných práv, ktoré z povahy veci samej majú trvať aj po skončení platnosti tejto zmluvy. V súvislosti s odstúpením od tejto zmluvy sa strany odchylne od ustanovenia § 351 ods. 2 Obchodného zákonníka dohodli, že po odstúpení od nej niektorou zmluvnou stranou, sa plnenie, poskytnuté na jej základe jednou zmluvnou stranou a prijaté druhou zmluvnou stranou, nebude vracať (v tejto súvislosti si strany navzájom udeľujú, t.j. zmluvne jedna pre druhú konštituujú, časovo neobmedzené výlučné právo dispozície s výsledkami a úžitkami nimi poskytnutých plnení). Ďalej nezaniká nárok Prenajímateľa na zaplatenie, nájomného, odplaty a cien za plnenia podľa tejto zmluvy, ktoré Prenajímateľ Nájomcovi v súlade s touto zmluvou už poskytol, a ktorú odplatu, nájomné a ceny Nájomca do okamihu odstúpenia od tejto zmluvy Prenajímateľovi nezaplatil</p>
+            </li>
+            <li>
+              <p>Po uplynutí doby viazanosti nájmu uvedenej na prvej strane tejto zmluvy v časti „Dátum ukončenia viazanosti“ má Nájomca predkupné právo na poskytnuté zariadenia a to vo výške 1 EUR (slovo jedno euro) bez platnej DPH za každý kus zariadenia, ktoré bolo poskytnuté ako Predmet nájmu</p>
+            </li>
+            <li>
+              <p>Prenajímateľ je oprávnený nájomné každoročne prehodnotiť a jeho výšku na príslušný kalendárny rok (12 mesiacov) zvýšiť v súlade s oficiálne stanoveným vývojom inflácie za predchádzajúci kalendárny rok zverejneným Štatistickým úradom SR. V takom prípade Prenajímateľ doručí Nájomcovi písomné oznámenie (postačuje formou mailu) o novej výške nájomného, v ktorom uvedie novú výšku nájomného, pričom zvýšenie nájomného podľa doručeného oznámenia nadobudne účinnosť od prvého dňa mesiaca nasledujúceho po mesiaci, v ktorom bolo oznámenie doručené Nájomcovi. Zmluvné strany výslovne potvrdzujú a akceptujú, že pri takomto postupe sa výška nájomného zmení bez potreby uzatvárať dodatok k zmluve; to neplatí, ak novourčená výška nájomného nebude zodpovedať miere inflácie zistenej za kalendárny rok predchádzajúci kalendárnemu roku, v ktorom Prenajímateľ doručí Nájomcovi oznámenie o novej výške nájomného</p>
+            </li>
+          </ul>
+          <!-- ODPLATA - Sluzby -->
+          <ul style="font-size:10px;text-align: justify;text-justify:inter-word;" t-if="o.x_contract_type == 'Služby'">
+            <li>
+              <p>Objednávateľ sa zaväzuje zaplatiť Poskytovateľovi za poskytovanie Služieb podľa tejto zmluvy odplatu vo výške uvedenej na prvej strane tejto zmluvy v sekcii Objednané služby. Ceny uvedené v bodoch 1. a 2. tohto článku sú uvedené bez platnej dane z pridanej hodnoty podľa platnej a účinnej právnej úpravy Slovenskej republiky</p>
+            </li>
+            <li>
+              <p>V odplate nie je zahrnutý spotrebný materiál, ktorý môže byť potrebný na skytnutie Služby. Poskytovateľ je povinný vopred oznamovať Objednávateľovi potrebu a rozsah spotrebného materiálu, resp. akýchkoľvek iných nákladov, súvisiacich s poskytovaním Služieb podľa tejto zmluvy. Poskytovateľ nemá nárok na úhradu vynaložených nákladov a nákladov za spotrebný materiál, ktoré neboli vopred schválené Objednávateľom</p>
+            </li>
+            <li>
+              <p>Ak budú Služby poskytnuté formou výjazdu pracovnej skupiny Poskytovateľa/pracovníka Poskytovateľa, k odplate podľa bodu 1 tohto článku bude účtovaná suma 0,50 EUR bez platnej DPH za každý, aj začatý km jazdy z miesta sídla Poskytovateľa do miesta vykonania zásahu nad</p>
+            </li>
+            <li>
+              <p>Nad rámec odplaty uvedenej v bode 1 tohto článku bude Objednávateľovi účtovaná:</p>
+            </li>
+            <ul style="font-size:10px;padding-left: 20px;text-align: justify;text-justify:inter-word;">
+              <li>
+                <p>Cena vo výške podľa cenníka Poskytovateľa pokiaľ pôjde o činnosti nezahrnuté v Službách, vykonané na základe objednávky Objednávateľa</p>
+              </li>
+              <li>
+                <p>Cena vo výške určenej podľa cenníka Poskytovateľa pokiaľ bude pri poskytnutí Služieb použitý spotrebný materiál</p>
+              </li>
+              <li>
+                <p>Paušálna odplata podľa bodu 1 tohto článku bude platená vždy mesačne dopredu na základe faktúry vystavenej Poskytovateľom a doručenej Objednávateľovi v súlade s ustanoveniami tejto zmluvy o doručovaní. Splatnosť faktúry je 15 dní odo dňa jej doručenia</p>
+              </li>
+            </ul>
+            <li>
+              <p>Platby účtované Poskytovateľom podľa bodu 3 a bodu 4 tohto článku budú platené mesačne pozadu, vždy podľa skutočného stavu, ktorý nastane v kalendárnom mesiaci, za ktorý sú platby účtované. Tieto platby budú zaplatené na základe faktúry vystavenej Poskytovateľom a doručenej Objednávateľovi v súlade s ustanoveniami tejto zmluvy o doručovaní. Splatnosť faktúry vystavenej podľa tohto bodu je 15 dní odo dňa jej doručenia</p>
+            </li>
+            <li>
+              <p>Podstatnou náležitosťou každej faktúry vystavenej podľa bodu 6 tohto článku je vždy detailný rozpis položiek, za ktoré sa fakturuje</p>
+            </li>
+            <li>
+              <p>Každá faktúra musí obsahovať všetky náležitosti daňového a účtovného dokladu podľa platných všeobecne záväzných právnych predpisov Slovenskej republiky. Fakturovaná suma sa považuje za uhradenú dňom, v ktorom došlo k jej pripísaniu v prospech účtu Poskytovateľa. Ak faktúra Poskytovateľa nebude obsahovať náležitosti podľa tejto zmluvy je Objednávateľ oprávnený vrátiť Poskytovateľovi faktúru na doplnenie bez jej uhradenia. V takom prípade do doručenia doplnenej faktúry nie je Objednávateľ v omeškaní so splnením záväzku zaplatiť odplatu. Odo dňa doručenia doplnenej faktúry plynie Objednávateľovi nová lehota splatnosti. Fakturovaná suma bude zaplatená na účet Poskytovateľa uvedený v záhlaví tejto zmluvy alebo na iný účet, pokiaľ bude uvedený vo faktúre</p>
+            </li>
+            <li>
+              <p>Ak sa Objednávateľ dostane do omeškania so zaplatením odplaty podľa tohto článku, zaväzuje sa zaplatiť Poskytovateľovi úrok z omeškania vo výške 0,05% z dlžnej sumy za každý aj začatý deň omeškania</p>
+            </li>
+            <li>
+              <p>Ak omeškanie Objednávateľa so zaplatením fakturovanej sumy presiahne 30 (tridsať) kalendárnych dní, je Poskytovateľ oprávnený od tejto zmluvy odstúpiť písomným oznámením o odstúpení doručeným Objednávateľovi. Táto zmluva sa v takom prípade zruší uplynutím dňa, v ktorý bude oznámenie o odstúpení doručené adresátovi</p>
+            </li>
+            <li>
+              <p>Všetky ceny v tejto zmluve boli určené dohodou zmluvných strán podľa zákona č. 18/1996 Z. z. o cenách, v znení neskorších predpisov</p>
+            </li>
+          </ul>
+          <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Prenájom'">
+            <h3 style="padding: 8px;color:white;">VII. Doručovanie</h3>
+          </div>
+          <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Služby'">
+            <h3 style="padding: 8px;color:white;">VI. Doručovanie</h3>
+          </div>
+          <ul style="font-size:10px;text-align: justify;text-justify:inter-word;">
+            <li>
+              <p>Doručením akýchkoľvek písomností na základe tejto zmluvy alebo v súvislosti s touto zmluvou sa rozumie doručenie písomnosti doporučene poštou preukazujúcou doručenie na adresu určenú podľa bodu 2 tohto článku, doručenie kuriérom alebo osobné doručenie príslušnej zmluvnej strane. Za deň doručenia písomnosti sa považuje aj deň, v ktorý zmluvná strana, ktorá je adresátom, odoprie doručovanú písomnosť prevziať, alebo v ktorý márne uplynie odberná lehota pre vyzdvihnutie si zásielky na pošte, doručovanej poštou zmluvnej strane, alebo v ktorý je na zásielke, doručovanej poštou zmluvnej strane, preukázateľne zamestnancom pošty vyznačená poznámka, že „adresát sa odsťahoval“, „adresát je neznámy“ alebo iná poznámka podobného významu, ak sa súčasne takáto poznámka zakladá na pravde</p>
+            </li>
+            <li>
+              <p>Pre potreby doručovania prostredníctvom pošty sa použijú adresy sídla zmluvných strán uvedené v záhlaví tejto zmluvy, ibaže odosielajúcej zmluvnej strane adresát písomnosti oznámil novú adresu sídla, prípadne inú novú adresu určenú na doručovanie písomností</p>
+            </li>
+            <li>
+              <p>V prípade akejkoľvek zmeny adresy určenej na doručovanie písomností na základe tejto zmluvy alebo v súvislosti s touto zmluvou sa príslušná zmluvná strana zaväzuje o zmene adresy bezodkladne písomne informovať druhú zmluvnú stranu; v takomto prípade je pre doručovanie rozhodujúca nová adresa riadne oznámená zmluvnej strane pred odosielaním písomnosti</p>
+            </li>
+            <li>
+              <p>Ak sa akákoľvek písomnosť na základe tejto zmluvy alebo v súvislosti s touto zmluvou doručuje inak ako poštou, je možné ju doručovať aj na inom mieste ako na adrese určenej podľa 2 alebo bodu 3 tohto článku, ak sa na tomto mieste zdržujú osoby oprávnené prijímať v mene zmluvnej strany písomnosti</p>
+            </li>
+            <li>
+              <p>Ak v tejto zmluve nie je uvedené inak, pokyny, upozornenia, oznámenia, informácie a návrhy podľa tejto zmluvy si zmluvné strany môžu adresovať aj telefonicky, faxom alebo prostredníctvom elektronickej pošty, ak to ich povaha pripúšťa. Pre potreby takejto komunikácie sa použijú telefónne čísla, čísla faxu, resp. adresy elektronickej pošty zmluvných strán uvedené v záhlaví tejto zmluvy, ibaže odosielajúcej zmluvnej strane adresát oznámil nové telefonické číslo, číslo faxu, resp. adresu elektronickej pošty; bod 2 tohto článku sa použije obdobne. Zmluvné strany sa zaväzujú zabezpečiť podmienky pre komunikáciu podľa tohto bodu zmluvy</p>
+            </li>
+            <li>
+              <p>Ak v tejto zmluve nie je uvedené inak, pokyny, upozornenia, oznámenia, informácie a návrhy podľa tejto zmluvy si zmluvné strany môžu adresovať aj ústne prostredníctvom osôb oprávnených zastupovať zmluvné strany vo veciach realizácie tejto zmluvy alebo iných osôb, ak to pripúšťa zákon alebo táto zmluva</p>
+            </li>
+            <li>
+              <p>Na tieto účely sa zmluvné strany dohodli, že platnými údajmi pre doručovanie a zastupovanie vo veci tejto zmluvy sú údaje Zmluvných strán uvedené na prvej strane tejto zmluvy</p>
+            </li>
+            <li>
+              <p>V prípadoch, kedy táto zmluva pripúšťa zasielanie oznámení elektronickou formou, považuje sa elektronická správa za doručenú nasledovne:</p>
+            </li>
+            <ul style="font-size:10px;padding-left: 20px;text-align: justify;text-justify:inter-word;">
+              <li>
+                <p>ak je správa odoslaná v čase od 08:00 hod. do 16:30 hod. pracovného dňa a pracovná stanica odosielateľa nevygeneruje oznámenie o neúspešnom prenose, správa sa považuje za doručenú adresátovi uplynutím jednej hodiny od odoslania</p>
+              </li>
+              <li>
+                <p>ak je správa odoslaná v čase po 16:30 hod. pracovného dňa alebo v deň pracovného pokoja a pracovná stanica odosielateľa nevygeneruje oznámenie o neúspešnom prenose, správa sa považuje za doručenú adresátovi o 07:00 hod. najbližšieho nasledujúceho pracovného dňa</p>
+              </li>
+            </ul>
+            <li>
+              <p>Zmluvné strany sa zaväzujú, že si budú vzájomne poskytovať potrebnú súčinnosť a vzájomne sa informovať o ďalších skutočnostiach potrebných pre plnenie ich záväzkov vyplývajúcich z tejto zmluvy, oznamovať si včas dôležité okolnosti a ich zmeny, ktoré môžu mať vplyv na ich spoluprácu podľa tejto zmluvy</p>
+            </li>
+          </ul>
+          <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Prenájom'">
+            <h3 style="padding: 8px;color:white;">VIII. Spoločné a záverečné ustanovenia</h3>
+          </div>
+          <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Služby'">
+            <h3 style="padding: 8px;color:white;">VII. Spoločné a záverečné ustanovenia</h3>
+          </div>
+          <ul style="font-size:10px;text-align: justify;text-justify:inter-word;">
+            <li>
+              <p>Táto zmluva a právne vzťahy ňou založené sa riadi právnym poriadkom Slovenskej republiky</p>
+            </li>
+            <li>
+              <p>Táto zmluva sa uzatvára na dobu neurčitú a nadobúda platnosť a účinnosť dňom jej uzavretia</p>
+            </li>
+            <li>
+              <p>Táto zmluva ruší a nahrádza všetky predchádzajúce zmluvy a dohovory medzi zúčastnenými zmluvnými stranami vzťahujúce sa na predmet tejto zmluvy, a to bez ohľadu na formu, v akej tieto dohovory boli urobené</p>
+            </li>
+            <li>
+              <p>Skončenie platnosti tejto zmluvy z akéhokoľvek dôvodu sa nedotýka nárokov na náhradu škody, vzniknutej porušením tejto zmluvy, ani zaplatenia zmluvnej pokuty a/alebo úrokov z omeškania ani iných ustanovení, ktoré podľa prejavenej vôle strán alebo vzhľadom na svoju povahu majú trvať aj po ukončení tejto zmluvy</p>
+            </li>
+            <li>
+              <p>Ktorákoľvek strana je oprávnená túto zmluvu vypovedať písomnou výpoveďou aj bez udania dôvodu. V takom prípade platnosť tejto zmluvy skončí uplynutím výpovednej doby, ktorej dĺžka je určená dohodou zmluvných strán na šesť kalendárnych mesiacov a začína plynúť prvým dňom kalendárneho mesiaca nasledujúceho po mesiaci, v ktorom bola výpoveď doručená adresátovi</p>
+            </li>
+            <li>
+              <p>Zmluvné strany sa dohodli, že Nájomca nesmie vypovedať túto zmluvu pred uplynutím doby viazanosti uvedenej na prvej strane tejto zmluvy v časti „Doba viazanosti“. Ak bude mať Nájomca záujem vypovedať túto zmluvu pred uplynutím doby viazanosti môže tak urobiť len doručením písomného oznámenia o využití práva vypovedať túto zmluvu a súčasným zaplatením odstupného vo výške rovnajúcej sa celkovej výške nájomného od zrušenia tejto zmluvy do skončenia doby viazanosti. Zmluvné strany sa odchylne od ustanovenia § 355 ods. 1 dohodli, že v takom prípade sa táto zmluva zruší uplynutím dňa, v ktorom bude Prenajímateľovi zaplatené odstupné. Zmluvné strany sa odchylne od ustanovenia § 355 ods. 2 dohodli, že právo zrušiť túto zmluvu zaplatením odstupného má Nájomca aj v čase, kedy už prijal plnenia Prenajímateľa. Ustanoveniami tohto bodu nie sú dotknuté ustanovenia bodu 7 tohto článku</p>
+            </li>
+            <li>
+              <p>Ktorákoľvek strana je oprávnená odstúpiť od tejto zmluvy písomným oznámením o odstúpení od zmluvy v prípade uvedenom výslovne v tejto zmluve alebo v prípade, že sa druhá strana dopustí podstatného porušenia tejto zmluvy. Oznámenie o odstúpení od zmluvy musí obsahovať skutkové vymedzenie konania, ktoré je podstatným porušením tejto zmluvy a musí byť druhej zmluvnej strane doručené. Doručením oznámenia o odstúpení druhej zmluvnej strane táto zmluva zaniká</p>
+            </li>
+            <li>
+              <p>Ak sa niektoré ustanovenie tejto zmluvy stane neplatným či neúčinným, nedotýka sa to ostatných ustanovení tejto zmluvy, ktoré zostávajú platné a účinné. Zmluvné strany sa v tomto prípade zaväzujú dohodou nahradiť neplatné alebo neúčinné ustanovenie novým ustanovením, ktoré zodpovedá pôvodne zamýšľanému účelu neplatného alebo neúčinného ustanovenia. Do doby dosiahnutia dohody medzi zmluvnými stranami platí zodpovedajúca úprava všeobecne záväzných právnych predpisov Slovenskej republiky</p>
+            </li>
+            <li>
+              <p>Túto zmluvu je možné meniť a/alebo dopĺňať len dohodou strán v písomnej forme</p>
+            </li>
+            <li>
+              <p>Zmluva je vyhotovená v dvoch rovnopisoch, z ktorých Prenajímateľ obdrží jeden a Nájomca jeden</p>
+            </li>
+            <li>
+              <p>Zmluvné strany vyhlasujú, že si zmluvu prečítali, jej obsahu porozumeli, vyhlasujú, že je určitá a zrozumiteľná, nie je uzavretá v tiesni za nápadne nevýhodných podmienok a na znak slobodnej a vážnej vôle ju oprávnení zástupcovia zmluvných strán podpisujú</p>
+            </li>
+          </ul>
+        </div>
+        <div class="row mt-4" id="note" t-if="o.note">
+          <div class="text-center" style="background-color:#568DA9;width:100%;">
+            <h3 style="padding: 8px;color:white;margin-bottom:0;">Poznámka k zmluve:</h3>
+          </div>
+        </div>
+        <div class="row mt-8" style="margin-left:30px;margin-right:30px;margin-top:10px;">
+                            <p t-field="o.note"></p>
+                            <br/>
+        </div>
+<div class="text-center" style="margin-top:10px;">
+    <a href="https://www.novem.sk/nahlasovanie-novem.pdf" 
+       target="_blank"
+       style="color:#568DA9;text-decoration:underline;">
+        POSTUP HLÁSENIA POŽIADAVIEK
+    </a>
 </div>
-<ul style="font-size:10px;padding-left: 20px;text-align: justify;text-justify:inter-word;">
-	<li><p>robiť hlásenia spôsobom dojednaným v tomto článku a v Prílohe číslo 2 tejto Zmluvy</p></li>
-	<li><p>poskytnúť Poskytovateľovi dostupné informácie o štruktúre počítačovej siete, v rámci ktorej je nainštalované zariadenie, na ktorom vznikol problém a má byť na ňom poskytnutá Služba </p></li>
-	<li><p>poskytnúť Poskytovateľovi všetku dostupnú dokumentáciu zariadení, na ktorých majú byť poskytované Služby</p></li>
-	<li><p>poskytnúť Poskytovateľovi informácie umožňujúce Poskytovateľovi prístup k systémom Objednávateľa prostredníctvom siete internet</p></li>
-	<li><p>poskytnúť Poskytovateľovi ním vyžiadané informácie potrebné pre bezpečnú prevádzku jednotlivých zariadení</p></li>
-	<li><p>po vykonaní hlásenia výpadku poskytovať na vyžiadanie aj ďalšie informácie na účely odstránenia výpadku</p></li>
-	<li><p>umožniť Poskytovateľovi vstup do všetkých priestorov, v ktorých sa budú nachádzať zariadenia vykazujúce výpadok resp. sa zaväzuje zabezpečiť umožnenie takého prístupu vrátane všetkých prípadných dokladov a/alebo súhlasov akýchkoľvek tretích dotknutých strán</p></li>
-	<li><p>podľa potreby poskytovať aj iné formy súčinnosti v záujme a za účelom odstránenia výpadkov a riadneho splnenia záväzkov Poskytovateľa podľa tejto zmluvy</p></li>
-	</ul>
-</ul>
-	<div t-if="o.x_contract_type == 'Prenájom'" class="text-center" style="background-color:#568DA9;width:100%;"> 
-			<h3 style="padding: 8px;color:white;">IV. Práva a povinnosti zmluvých strán</h3>
-		</div>
-	<ul style="font-size:10px;text-align: justify;text-justify:inter-word;" t-if="o.x_contract_type == 'Prenájom'">
-		<li><p>Prenajímateľ sa zaväzuje:</p></li>
-		<ul style="font-size:10px;padding-left: 20px;text-align: justify;text-justify:inter-word;">
-			<li><p>plniť záväzky z tejto zmluvy prostredníctvom osôb, ktoré majú príslušnú kvalifikáciu potrebnú na riadne plnenie záväzkov Prenajímateľa a zároveň sa zaväzuje počas trvania tejto zmluvy udržiavať úroveň kvalifikácie týchto osôb na stále aktuálnej úrovni s ohľadom na stav poznania danej oblasti, v prípade, ak Prenajímateľ použije na splnenie záväzku iné osoby, zodpovedá za správnosť a včasnosť ich plnenia tak, ako by ich realizoval sám </p></li>
-			<li><p>zachovávať záväzok mlčanlivosti podľa tejto zmluvy</p></li>
-			<li><p>poskytovať Nájomcovi súčinnosť potrebnú na dosiahnutie účelu tejto zmluvy</p></li>
-			<li><p>po ukončení inštalácie predmetu nájmu odovzdá Prenajímateľ Nájomcovi kompletnú dostupnú dokumentáciu týkajúcu sa predmetu nájmu</p></li>
-				</ul>
-			<li><p>Nájomca sa zaväzuje poskytnúť Prenajímateľovi na účely riadneho plnenia jeho záväzkov podľa tejto zmluvy všetku potrebnú súčinnosť. Najmä sa Nájomca zaväzuje:</p></li>
-	<ul style="font-size:10px;padding-left: 20px;text-align: justify;text-justify:inter-word;">
-		<li><p>poskytnúť Prenajímateľovi informácie umožňujúce Prenajímateľovi prístup k predmetu nájmu</p></li>
-		<li><p>poskytnúť Prenajímateľovi ním vyžiadané informácie potrebné pre bezpečnú prevádzku jednotlivých zariadení, tvoriacich predmet nájmu</p></li>
-		<li><p>umožniť Prenajímateľovi vstup do všetkých priestorov, v ktorých sa budú nachádzať zariadenia predmetu nájmu resp. sa zaväzuje zabezpečiť umožnenie takého prístupu vrátane všetkých prípadných dokladov a/alebo súhlasov akýchkoľvek tretích dotknutých strán</p></li>
-		<li><p>podľa potreby poskytovať aj iné formy súčinnosti v záujme a za účelom dosiahnutia účelu tejto zmluvy</p></li>
-	</ul>
-	</ul>
-	<div t-if="o.x_contract_type == 'Prenájom'" class="text-center" style="background-color:#568DA9;width:100%;"> 
-			<h3 style="padding: 8px;color:white;">V. Záväzok mlčanlivosti</h3>
-		</div>
-	<div t-if="o.x_contract_type == 'Služby'" class="text-center" style="background-color:#568DA9;width:100%;"> 
-			<h3 style="padding: 8px;color:white;">IV. Záväzok mlčanlivosti</h3>
-		</div>
-		<ul style="font-size:10px;text-align: justify;text-justify:inter-word;">
-			<li><p>Zmluvné strany sa zaväzujú zachovávať mlčanlivosť o dôverných informáciách týkajúcich sa tejto zmluvy, vrátane jej prípadných dodatkov; tento záväzok zmluvných strán nie je časovo obmedzený</p></li>
-			<li><p>Dôvernými informáciami podľa bodu 1 tohto článku zmluvy sa rozumejú obchodné, právne, finančné, prevádzkové a ďalšie skutočnosti, informácie a údaje, týkajúce sa rokovania o uzavretí, obsahu a plnenia tejto zmluvy, vrátane jej prípadných dodatkov, alebo s nimi súvisiace, s výnimkou:</p></li>
-	<ul style="font-size:10px;padding-left: 20px;text-align: justify;text-justify:inter-word;">
-		<li><p>informácií, ktoré sú v deň uzavretia tejto zmluvy verejne známymi alebo ktoré sa už v tento deň dali zadovážiť z bežne dostupných zdrojov</p></li>
-		<li><p>informácií, ktoré sa stali po dni uzavretia tejto zmluvy verejne známymi alebo ktoré sa po tomto dni už dajú zadovážiť z bežne dostupných zdrojov, a to inak než v dôsledku porušenia povinnosti zmluvnej strany zachovávať mlčanlivosť podľa tohto článku</p></li>
-		<li><p>informácií, z ktorých povahy vyplýva, že dotknutá zmluvná strana nemá záujem o ich utajenie, ak ich dotknutá zmluvná strana výslovne neoznačila za dôverné</p></li>
-	</ul>
-	<p>(ďalej len „Dôverné informácie“)</p>
-	<li><p>Povinnosť zachovávať mlčanlivosť o Dôverných informáciách sa nevzťahuje:</p></li>
-	<ul style="font-size:10px;padding-left: 20px;text-align: justify;text-justify:inter-word;">
-		<li><p>na prípady, ak zmluvná strana zverejnila Dôverné informácie s predchádzajúcim písomným súhlasom dotknutej zmluvnej strany</p></li>
-		<li><p>na prípady, keď na základe zákona vznikne zmluvnej strane povinnosť poskytnúť Dôverné informácie; takáto zmluvná strana je povinná informovať dotknutú zmluvnú stranu o vzniku povinnosti poskytnúť Dôverné informácie na základe zákona a o spôsobe a rozsahu, akým, resp. v akom ju plnila</p></li>
-		<li><p>na prípady, ak zmluvná strana použila potrebné informácie alebo dokumenty v prípadných súdnych, rozhodcovských, správnych a iných konaniach ohľadom práv a povinností vyplývajúcich z tejto zmluvy alebo s nimi súvisiacich</p></li>
-			</ul>
-			<li><p>Zmluvné strany sa zaväzujú, že Dôverné informácie bez predchádzajúceho písomného súhlasu dotknutej zmluvnej strany ďalej neposkytnú tretím osobám a ani neumožnia prístup tretích osôb k Dôverným informáciám. Za tretie osoby sa však nepokladajú členovia orgánov, zamestnanci alebo iné poverené osoby zmluvných strán, audítori alebo právni a iní poradcovia zmluvných strán, ktorí sú viazaní ohľadne im sprístupnených Dôverných informácii povinnosťou mlčanlivosti na základe zákona</p></li>
-			<li><p>Zmluvné strany sa zároveň zaväzujú, že priamo a ani prostredníctvom inej osoby nepoužijú Dôverné informácie v rozpore s ich účelom pre seba alebo pre inú osobu alebo v rozpore so záujmami dotknutej zmluvnej strany</p></li>
-			<li><p>Kde sa v tomto článku zmluvy hovorí o dotknutej zmluvnej strane, má sa na mysli tá zmluvná strana, (i) ktorá Dôverné informácie druhej zmluvnej strane sprístupnila, (ii) ktorej sa Dôverné informácie týkajú alebo (iii) ktorá by mohla byť sprístupnením Dôverných informácií tretím osobám alebo ich použitím v rozpore s ich účelom priamo dotknutá na svojich právach a oprávnených záujmoch. Ak vo vzťahu k určitým Dôverným informáciám nie je možné takto dotknutú zmluvnú stranu jednoznačne určiť, sú ňou obidve zmluvné strany</p></li>
-		</ul>
-	<div t-if="o.x_contract_type == 'Prenájom'" class="text-center" style="background-color:#568DA9;width:100%;"> 
-			<h3 style="padding: 8px;color:white;">VI. Nájomné a poplatok za inštaláciu</h3>
-		</div>
-	<div t-if="o.x_contract_type == 'Služby'" class="text-center" style="background-color:#568DA9;width:100%;"> 
-			<h3 style="padding: 8px;color:white;">V. Odplata</h3>
-		</div>
-		<!-- Najomne a poplatok -->
-	<ul style="font-size:10px;text-align: justify;text-justify:inter-word;" t-if="o.x_contract_type == 'Prenájom'">
 
-		<li><p>Nájomca je povinný zaplatiť za inštaláciu predmetu nájmu poplatok uvedený na poslednej strane tejto zmluvy v časti „Poznámka k zmluve“. Výška tohto poplatku bola určená dohodou zmluvných strán podľa zákona č. 18/1996 Z. z. o cenách, v znení neskorších predpisov a obsahuje náklady na inštaláciu, konfiguráciu, vytvorenie káblových a iných prepojení potrebných k zabezpečeniu funkčnosti predmetu nájmu</p></li>
-		<li><p>Nájomca je povinný platiť za užívanie predmetu nájmu nájomné špecifikované na prvej strane tejto zmluvy v časti „Cena nájomného za mesiac“. Výška nájomného bola určená dohodou zmluvných strán podľa zákona č. 18/1996 Z. z. o cenách, v znení neskorších predpisov</p></li>
-		<li><p>Ceny uvedené v bodoch 1. a 2. tohto článku sú uvedené bez platnej dane z pridanej hodnoty podľa platnej a účinnej právnej úpravy Slovenskej republiky</p></li>
-		<li><p>Zoznam položiek ktoré tvoria toto nájomné je uvedený na prvej strane tejto zmluvy v časti „Poskytnuté zariadenia do prenájmu“</p></li>
-		<li><p>Nájomné je splatné mesačne dopredu na základe faktúry vystavenej Prenajímateľom a doručenej Nájomcovi v súlade s ustanoveniami tejto zmluvy o doručovaní. Splatnosť faktúry vystavenej podľa tohto bodu je 15 dní odo dňa jej doručenia</p></li>
-		<li><p>Každá faktúra musí obsahovať všetky náležitosti daňového a účtovného dokladu podľa platných všeobecne záväzných právnych predpisov Slovenskej republiky. Fakturovaná suma sa považuje za uhradenú dňom, v ktorom došlo k jej pripísaniu v prospech účtu Prenajímateľa. Ak faktúra Prenajímateľa nebude obsahovať náležitosti podľa tejto zmluvy je Nájomca oprávnený vrátiť Prenajímateľovi faktúru na doplnenie bez jej uhradenia. V takom prípade do doručenia doplnenej faktúry nie je Nájomca v omeškaní so splnením záväzku zaplatiť odplatu. Odo dňa doručenia doplnenej faktúry plynie Nájomcovi nová lehota splatnosti. Fakturovaná suma bude zaplatená na účet Prenajímateľa uvedený v záhlaví tejto zmluvy alebo na iný účet, pokiaľ bude uvedený vo faktúre</p></li>
-		<li><p>Ak sa Nájomca dostane do omeškania so zaplatením akejkoľvek platby podľa tohto článku, zaväzuje sa zaplatiť Prenajímateľovi úrok z omeškania vo výške 0,05% z dlžnej sumy za každý aj začatý deň omeškania</p></li>
-		<li><p>Ak omeškanie Nájomcu so zaplatením fakturovanej sumy i napriek písomnému upozorneniu zo strany Prenajímateľa presiahne 30 (tridsať) kalendárnych dní, je Prenajímateľ oprávnený od tejto zmluvy odstúpiť písomným oznámením o odstúpení doručeným Nájomcovi. Táto zmluva sa v takom prípade zruší uplynutím dňa, v ktorý bude oznámenie o odstúpení doručené adresátovi</p></li>
-		<li><p>Zmluvné strany sa výslovne dohodli, že ak niektorá zmluvná strana využije, či už v tejto zmluve dohodnuté, alebo z príslušného zákona vyplývajúce právo odstúpiť od zmluvy, odstúpenie sa nedotýka práva na vrátenie predmetu nájmu Prenajímateľovi ani nároku na zaplatenie v tejto zmluve dohodnutej zmluvnej pokuty a/alebo úrokov z omeškania ani iných práv, ktoré z povahy veci samej majú trvať aj po skončení platnosti tejto zmluvy. V súvislosti s odstúpením od tejto zmluvy sa strany odchylne od ustanovenia § 351 ods. 2 Obchodného zákonníka dohodli, že po odstúpení od nej niektorou zmluvnou stranou, sa plnenie, poskytnuté na jej základe jednou zmluvnou stranou a prijaté druhou zmluvnou stranou, nebude vracať (v tejto súvislosti si strany navzájom udeľujú, t.j. zmluvne jedna pre druhú konštituujú, časovo neobmedzené výlučné právo dispozície s výsledkami a úžitkami nimi poskytnutých plnení). Ďalej nezaniká nárok Prenajímateľa na zaplatenie, nájomného, odplaty a cien za plnenia podľa tejto zmluvy, ktoré Prenajímateľ Nájomcovi v súlade s touto zmluvou už poskytol, a ktorú odplatu, nájomné a ceny Nájomca do okamihu odstúpenia od tejto zmluvy Prenajímateľovi nezaplatil</p></li>
-		<li><p>Po uplynutí doby viazanosti nájmu uvedenej na prvej strane tejto zmluvy v časti „Dátum ukončenia viazanosti“ má Nájomca predkupné právo na poskytnuté zariadenia a to vo výške 1 EUR (slovo jedno euro) bez platnej DPH za každý kus zariadenia, ktoré bolo poskytnuté ako Predmet nájmu</p></li>
-		<li><p>Prenajímateľ je oprávnený nájomné každoročne prehodnotiť a jeho výšku na príslušný kalendárny rok (12 mesiacov) zvýšiť v súlade s oficiálne stanoveným vývojom inflácie za predchádzajúci kalendárny rok zverejneným Štatistickým úradom SR. V takom prípade Prenajímateľ doručí Nájomcovi písomné oznámenie (postačuje formou mailu) o novej výške nájomného, v ktorom uvedie novú výšku nájomného, pričom zvýšenie nájomného podľa doručeného oznámenia nadobudne účinnosť od prvého dňa mesiaca nasledujúceho po mesiaci, v ktorom bolo oznámenie doručené Nájomcovi. Zmluvné strany výslovne potvrdzujú a akceptujú, že pri takomto postupe sa výška nájomného zmení bez potreby uzatvárať dodatok k zmluve; to neplatí, ak novourčená výška nájomného nebude zodpovedať miere inflácie zistenej za kalendárny rok predchádzajúci kalendárnemu roku, v ktorom Prenajímateľ doručí Nájomcovi oznámenie o novej výške nájomného</p></li>
-	</ul>
-	<!-- ODPLATA - Sluzby -->
-	<ul style="font-size:10px;text-align: justify;text-justify:inter-word;" t-if="o.x_contract_type == 'Služby'">
-		<li><p>Objednávateľ sa zaväzuje zaplatiť Poskytovateľovi za poskytovanie Služieb podľa tejto zmluvy odplatu vo výške uvedenej na prvej strane tejto zmluvy v sekcii Objednané služby. Ceny uvedené v bodoch 1. a 2. tohto článku sú uvedené bez platnej dane z pridanej hodnoty podľa platnej a účinnej právnej úpravy Slovenskej republiky</p></li>
-		<li><p>V odplate nie je zahrnutý spotrebný materiál, ktorý môže byť potrebný na skytnutie Služby. Poskytovateľ je povinný vopred oznamovať Objednávateľovi potrebu a rozsah spotrebného materiálu, resp. akýchkoľvek iných nákladov, súvisiacich s poskytovaním Služieb podľa tejto zmluvy. Poskytovateľ nemá nárok na úhradu vynaložených nákladov a nákladov za spotrebný materiál, ktoré neboli vopred schválené Objednávateľom</p></li>
-		<li><p>Ak budú Služby poskytnuté formou výjazdu pracovnej skupiny Poskytovateľa/pracovníka Poskytovateľa, k odplate podľa bodu 1 tohto článku bude účtovaná suma 0,50 EUR bez platnej DPH za každý, aj začatý km jazdy z miesta sídla Poskytovateľa do miesta vykonania zásahu nad</p></li>
-		<li><p>Nad rámec odplaty uvedenej v bode 1 tohto článku bude Objednávateľovi účtovaná:</p></li>
-		<ul style="font-size:10px;padding-left: 20px;text-align: justify;text-justify:inter-word;">
-			<li><p>Cena vo výške podľa cenníka Poskytovateľa pokiaľ pôjde o činnosti nezahrnuté v Službách, vykonané na základe objednávky Objednávateľa</p></li>
-			<li><p>Cena vo výške určenej podľa cenníka Poskytovateľa pokiaľ bude pri poskytnutí Služieb použitý spotrebný materiál</p></li>
-			<li><p>Paušálna odplata podľa bodu 1 tohto článku bude platená vždy mesačne dopredu na základe faktúry vystavenej Poskytovateľom a doručenej Objednávateľovi v súlade s ustanoveniami tejto zmluvy o doručovaní. Splatnosť faktúry je 15 dní odo dňa jej doručenia</p></li>
-		</ul>
-		<li><p>Platby účtované Poskytovateľom podľa bodu 3 a bodu 4 tohto článku budú platené mesačne pozadu, vždy podľa skutočného stavu, ktorý nastane v kalendárnom mesiaci, za ktorý sú platby účtované. Tieto platby budú zaplatené na základe faktúry vystavenej Poskytovateľom a doručenej Objednávateľovi v súlade s ustanoveniami tejto zmluvy o doručovaní. Splatnosť faktúry vystavenej podľa tohto bodu je 15 dní odo dňa jej doručenia</p></li>
-		<li><p>Podstatnou náležitosťou každej faktúry vystavenej podľa bodu 6 tohto článku je vždy detailný rozpis položiek, za ktoré sa fakturuje</p></li>
-		<li><p>Každá faktúra musí obsahovať všetky náležitosti daňového a účtovného dokladu podľa platných všeobecne záväzných právnych predpisov Slovenskej republiky. Fakturovaná suma sa považuje za uhradenú dňom, v ktorom došlo k jej pripísaniu v prospech účtu Poskytovateľa. Ak faktúra Poskytovateľa nebude obsahovať náležitosti podľa tejto zmluvy je Objednávateľ oprávnený vrátiť Poskytovateľovi faktúru na doplnenie bez jej uhradenia. V takom prípade do doručenia doplnenej faktúry nie je Objednávateľ v omeškaní so splnením záväzku zaplatiť odplatu. Odo dňa doručenia doplnenej faktúry plynie Objednávateľovi nová lehota splatnosti. Fakturovaná suma bude zaplatená na účet Poskytovateľa uvedený v záhlaví tejto zmluvy alebo na iný účet, pokiaľ bude uvedený vo faktúre</p></li>
-		<li><p>Ak sa Objednávateľ dostane do omeškania so zaplatením odplaty podľa tohto článku, zaväzuje sa zaplatiť Poskytovateľovi úrok z omeškania vo výške 0,05% z dlžnej sumy za každý aj začatý deň omeškania</p></li>
-		<li><p>Ak omeškanie Objednávateľa so zaplatením fakturovanej sumy presiahne 30 (tridsať) kalendárnych dní, je Poskytovateľ oprávnený od tejto zmluvy odstúpiť písomným oznámením o odstúpení doručeným Objednávateľovi. Táto zmluva sa v takom prípade zruší uplynutím dňa, v ktorý bude oznámenie o odstúpení doručené adresátovi</p></li>
-		<li><p>Všetky ceny v tejto zmluve boli určené dohodou zmluvných strán podľa zákona č. 18/1996 Z. z. o cenách, v znení neskorších predpisov</p></li>
-	</ul>
-	<div t-if="o.x_contract_type == 'Prenájom'" class="text-center" style="background-color:#568DA9;width:100%;"> 
-			<h3 style="padding: 8px;color:white;">VII. Doručovanie</h3>
-		</div>
-	<div t-if="o.x_contract_type == 'Služby'" class="text-center" style="background-color:#568DA9;width:100%;"> 
-			<h3 style="padding: 8px;color:white;">VI. Doručovanie</h3>
-		</div>
-		<ul style="font-size:10px;text-align: justify;text-justify:inter-word;">
-			<li><p>Doručením akýchkoľvek písomností na základe tejto zmluvy alebo v súvislosti s touto zmluvou sa rozumie doručenie písomnosti doporučene poštou preukazujúcou doručenie na adresu určenú podľa bodu 2 tohto článku, doručenie kuriérom alebo osobné doručenie príslušnej zmluvnej strane. Za deň doručenia písomnosti sa považuje aj deň, v ktorý zmluvná strana, ktorá je adresátom, odoprie doručovanú písomnosť prevziať, alebo v ktorý márne uplynie odberná lehota pre vyzdvihnutie si zásielky na pošte, doručovanej poštou zmluvnej strane, alebo v ktorý je na zásielke, doručovanej poštou zmluvnej strane, preukázateľne zamestnancom pošty vyznačená poznámka, že „adresát sa odsťahoval“, „adresát je neznámy“ alebo iná poznámka podobného významu, ak sa súčasne takáto poznámka zakladá na pravde</p></li>
-			<li><p>Pre potreby doručovania prostredníctvom pošty sa použijú adresy sídla zmluvných strán uvedené v záhlaví tejto zmluvy, ibaže odosielajúcej zmluvnej strane adresát písomnosti oznámil novú adresu sídla, prípadne inú novú adresu určenú na doručovanie písomností</p></li>
-			<li><p>V prípade akejkoľvek zmeny adresy určenej na doručovanie písomností na základe tejto zmluvy alebo v súvislosti s touto zmluvou sa príslušná zmluvná strana zaväzuje o zmene adresy bezodkladne písomne informovať druhú zmluvnú stranu; v takomto prípade je pre doručovanie rozhodujúca nová adresa riadne oznámená zmluvnej strane pred odosielaním písomnosti</p></li>
-			<li><p>Ak sa akákoľvek písomnosť na základe tejto zmluvy alebo v súvislosti s touto zmluvou doručuje inak ako poštou, je možné ju doručovať aj na inom mieste ako na adrese určenej podľa 2 alebo bodu 3 tohto článku, ak sa na tomto mieste zdržujú osoby oprávnené prijímať v mene zmluvnej strany písomnosti</p></li>
-			<li><p>Ak v tejto zmluve nie je uvedené inak, pokyny, upozornenia, oznámenia, informácie a návrhy podľa tejto zmluvy si zmluvné strany môžu adresovať aj telefonicky, faxom alebo prostredníctvom elektronickej pošty, ak to ich povaha pripúšťa. Pre potreby takejto komunikácie sa použijú telefónne čísla, čísla faxu, resp. adresy elektronickej pošty zmluvných strán uvedené v záhlaví tejto zmluvy, ibaže odosielajúcej zmluvnej strane adresát oznámil nové telefonické číslo, číslo faxu, resp. adresu elektronickej pošty; bod 2 tohto článku sa použije obdobne. Zmluvné strany sa zaväzujú zabezpečiť podmienky pre komunikáciu podľa tohto bodu zmluvy</p></li>
-			<li><p>Ak v tejto zmluve nie je uvedené inak, pokyny, upozornenia, oznámenia, informácie a návrhy podľa tejto zmluvy si zmluvné strany môžu adresovať aj ústne prostredníctvom osôb oprávnených zastupovať zmluvné strany vo veciach realizácie tejto zmluvy alebo iných osôb, ak to pripúšťa zákon alebo táto zmluva</p></li>
-			<li><p>Na tieto účely sa zmluvné strany dohodli, že platnými údajmi pre doručovanie a zastupovanie vo veci tejto zmluvy sú údaje Zmluvných strán uvedené na prvej strane tejto zmluvy</p></li>
-			<li><p>V prípadoch, kedy táto zmluva pripúšťa zasielanie oznámení elektronickou formou, považuje sa elektronická správa za doručenú nasledovne:</p></li>
-		<ul style="font-size:10px;padding-left: 20px;text-align: justify;text-justify:inter-word;">
-			<li><p>ak je správa odoslaná v čase od 08:00 hod. do 16:30 hod. pracovného dňa a pracovná stanica odosielateľa nevygeneruje oznámenie o neúspešnom prenose, správa sa považuje za doručenú adresátovi uplynutím jednej hodiny od odoslania</p></li>
-			<li><p>ak je správa odoslaná v čase po 16:30 hod. pracovného dňa alebo v deň pracovného pokoja a pracovná stanica odosielateľa nevygeneruje oznámenie o neúspešnom prenose, správa sa považuje za doručenú adresátovi o 07:00 hod. najbližšieho nasledujúceho pracovného dňa</p></li>
-		</ul>
-		<li><p>Zmluvné strany sa zaväzujú, že si budú vzájomne poskytovať potrebnú súčinnosť a vzájomne sa informovať o ďalších skutočnostiach potrebných pre plnenie ich záväzkov vyplývajúcich z tejto zmluvy, oznamovať si včas dôležité okolnosti a ich zmeny, ktoré môžu mať vplyv na ich spoluprácu podľa tejto zmluvy</p></li>
-		</ul>
-	<div t-if="o.x_contract_type == 'Prenájom'" class="text-center" style="background-color:#568DA9;width:100%;"> 
-			<h3 style="padding: 8px;color:white;">VIII. Spoločné a záverečné ustanovenia</h3>
-		</div>
-	<div t-if="o.x_contract_type == 'Služby'" class="text-center" style="background-color:#568DA9;width:100%;"> 
-			<h3 style="padding: 8px;color:white;">VII. Spoločné a záverečné ustanovenia</h3>
-		</div>
-		<ul style="font-size:10px;text-align: justify;text-justify:inter-word;">
-		<li><p>Táto zmluva a právne vzťahy ňou založené sa riadi právnym poriadkom Slovenskej republiky</p></li>
-		<li><p>Táto zmluva sa uzatvára na dobu neurčitú a nadobúda platnosť a účinnosť dňom jej uzavretia</p></li>
-		<li><p>Táto zmluva ruší a nahrádza všetky predchádzajúce zmluvy a dohovory medzi zúčastnenými zmluvnými stranami vzťahujúce sa na predmet tejto zmluvy, a to bez ohľadu na formu, v akej tieto dohovory boli urobené</p></li>
-		<li><p>Skončenie platnosti tejto zmluvy z akéhokoľvek dôvodu sa nedotýka nárokov na náhradu škody, vzniknutej porušením tejto zmluvy, ani zaplatenia zmluvnej pokuty a/alebo úrokov z omeškania ani iných ustanovení, ktoré podľa prejavenej vôle strán alebo vzhľadom na svoju povahu majú trvať aj po ukončení tejto zmluvy</p></li>
-		<li><p>Ktorákoľvek strana je oprávnená túto zmluvu vypovedať písomnou výpoveďou aj bez udania dôvodu. V takom prípade platnosť tejto zmluvy skončí uplynutím výpovednej doby, ktorej dĺžka je určená dohodou zmluvných strán na šesť kalendárnych mesiacov a začína plynúť prvým dňom kalendárneho mesiaca nasledujúceho po mesiaci, v ktorom bola výpoveď doručená adresátovi</p></li>
-		<li><p>Zmluvné strany sa dohodli, že Nájomca nesmie vypovedať túto zmluvu pred uplynutím doby viazanosti uvedenej na prvej strane tejto zmluvy v časti „Doba viazanosti“. Ak bude mať Nájomca záujem vypovedať túto zmluvu pred uplynutím doby viazanosti môže tak urobiť len doručením písomného oznámenia o využití práva vypovedať túto zmluvu a súčasným zaplatením odstupného vo výške rovnajúcej sa celkovej výške nájomného od zrušenia tejto zmluvy do skončenia doby viazanosti. Zmluvné strany sa odchylne od ustanovenia § 355 ods. 1 dohodli, že v takom prípade sa táto zmluva zruší uplynutím dňa, v ktorom bude Prenajímateľovi zaplatené odstupné. Zmluvné strany sa odchylne od ustanovenia § 355 ods. 2 dohodli, že právo zrušiť túto zmluvu zaplatením odstupného má Nájomca aj v čase, kedy už prijal plnenia Prenajímateľa. Ustanoveniami tohto bodu nie sú dotknuté ustanovenia bodu 7 tohto článku</p></li>
-		<li><p>Ktorákoľvek strana je oprávnená odstúpiť od tejto zmluvy písomným oznámením o odstúpení od zmluvy v prípade uvedenom výslovne v tejto zmluve alebo v prípade, že sa druhá strana dopustí podstatného porušenia tejto zmluvy. Oznámenie o odstúpení od zmluvy musí obsahovať skutkové vymedzenie konania, ktoré je podstatným porušením tejto zmluvy a musí byť druhej zmluvnej strane doručené. Doručením oznámenia o odstúpení druhej zmluvnej strane táto zmluva zaniká</p></li>
-		<li><p>Ak sa niektoré ustanovenie tejto zmluvy stane neplatným či neúčinným, nedotýka sa to ostatných ustanovení tejto zmluvy, ktoré zostávajú platné a účinné. Zmluvné strany sa v tomto prípade zaväzujú dohodou nahradiť neplatné alebo neúčinné ustanovenie novým ustanovením, ktoré zodpovedá pôvodne zamýšľanému účelu neplatného alebo neúčinného ustanovenia. Do doby dosiahnutia dohody medzi zmluvnými stranami platí zodpovedajúca úprava všeobecne záväzných právnych predpisov Slovenskej republiky</p></li>
-		<li><p>Túto zmluvu je možné meniť a/alebo dopĺňať len dohodou strán v písomnej forme</p></li>
-		<li><p>Zmluva je vyhotovená v dvoch rovnopisoch, z ktorých Prenajímateľ obdrží jeden a Nájomca jeden</p></li>
-		<li><p>Zmluvné strany vyhlasujú, že si zmluvu prečítali, jej obsahu porozumeli, vyhlasujú, že je určitá a zrozumiteľná, nie je uzavretá v tiesni za nápadne nevýhodných podmienok a na znak slobodnej a vážnej vôle ju oprávnení zástupcovia zmluvných strán podpisujú </p></li>
-		</ul>
-	</div>
-                    <div class="row mt-4" id="note" t-if="o.note">
-                        <div>
-                            <h3>Poznámka k zmluve: </h3>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <p t-field="o.note" />
-                    </div>
-		    <!-- Insert this block near the bottom of your report_contract_document template,
+        <!-- Insert this block near the bottom of your report_contract_document template,
      for example, right before the 'Poznámka k zmluve' section
 
 <div class="row" style="margin-top: 40px;">
@@ -488,20 +648,18 @@ potrebné na riadne splnenie záväzkov z tejto zmluvy. Pri vykonávaní servisn
 </div>
 		    <-->
 
-<div style="margin-top: 100px; margin-bottom: 100px;">
-    <!-- Intentionally left blank for e-signatures -->
-</div>
-
-
-            </div>
+        <div style="margin-top: 400px; margin-bottom: 400px;"><!-- Intentionally left blank for e-signatures --></div>
+      </div>
+    </t>
+    </t>
         </t>
-    </template>
-    <template id="report_contract_template">
-        <t t-call="web.html_container">
-            <t t-foreach="docs" t-as="o">
-                <t t-set="lang" t-value="o.partner_id.lang" />
-                <t t-call="contract.report_contract_document" t-lang="lang" />
-            </t>
-        </t>
-    </template>
+  </template>
+  <template id="report_contract_template">
+    <t t-call="web.html_container">
+      <t t-as="o" t-foreach="docs">
+        <t t-set="lang" t-value="o.partner_id.lang"></t>
+        <t t-call="contract.report_contract_document" t-lang="lang"></t>
+      </t>
+    </t>
+  </template>
 </odoo>
