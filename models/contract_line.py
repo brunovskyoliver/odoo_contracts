@@ -558,6 +558,16 @@ class ContractLine(models.Model):
             self.last_date_invoiced, self.recurring_next_date
         )
         name = self._insert_markers(dates[0], dates[1])
+        
+        # Add commitment discount information to the name if applicable
+        if self.commitment != 'none' and self.commitment_discount > 0:
+            name += _(" (with commitment discount: %s)") % self.commitment_discount
+        
+        # Calculate price with commitment discount
+        price_unit = self.price_unit
+        if hasattr(self, 'commitment_discount') and self.commitment_discount:
+            price_unit = max(0, price_unit - self.commitment_discount)
+        
         return {
             "quantity": self._get_quantity_to_invoice(*dates),
             "product_uom_id": self.uom_id.id,
@@ -566,7 +576,7 @@ class ContractLine(models.Model):
             "analytic_distribution": self.analytic_distribution,
             "sequence": self.sequence,
             "name": name,
-            "price_unit": self.price_unit,
+            "price_unit": price_unit,
             "display_type": self.display_type or "product",
             "product_id": self.product_id.id,
         }
@@ -1100,3 +1110,5 @@ class ContractLine(models.Model):
     ):
         self.ensure_one()
         return self.quantity if not self.display_type else 0.0
+
+

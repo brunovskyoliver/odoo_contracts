@@ -171,6 +171,9 @@
           <br></br>
           <p>Doba viazanosti do: <span t-field="o.x_datum_viazanost"></span></p>
         </div>
+        <div>
+        <p>Všetky ceny sú uvedené bez DPH.</p>
+        </div>
         <div style="margin-bottom:0px;">
           <!-- <div class="row mt-4" id="note" t-if="o.note">
                         <div>

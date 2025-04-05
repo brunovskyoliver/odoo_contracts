@@ -46,9 +46,15 @@ class ContractAbstractContractLine(models.AbstractModel):
         compute="_compute_price_unit",
         inverse="_inverse_price_unit",
     )
+    price_subtotal_before_discount = fields.Float(
+        string="Subtotal Before Discount",
+        compute="_compute_price_subtotal",
+        store=True,
+    )
     price_subtotal = fields.Monetary(
         compute="_compute_price_subtotal",
         string="Súčet",
+        #store=True,
     )
     discount = fields.Float(
         string="Zľava (%)",
@@ -139,6 +145,23 @@ class ContractAbstractContractLine(models.AbstractModel):
     )
     is_recurring_note = fields.Boolean(compute="_compute_is_recurring_note")
     company_id = fields.Many2one(related="contract_id.company_id", store=True)
+    
+    # Add the new field
+    commitment = fields.Selection(
+        [
+            ('none', 'No Commitment'),
+            ('1_year', '1 Year'),
+            ('2_years', '2 Years'),
+        ],
+        string="Viazanosť",
+        default='none',
+    )
+    
+    commitment_discount = fields.Float(
+        string="Zľava z viazanosti",
+        compute="_compute_commitment_discount",
+        store=True,
+    )
 
     def _set_recurrence_field(self, field):
         """Helper method for computed methods that gets the equivalent field
@@ -224,10 +247,18 @@ class ContractAbstractContractLine(models.AbstractModel):
         for line in self.filtered(lambda x: not x.automatic_price):
             line.specific_price = line.price_unit
 
-    @api.depends("quantity", "price_unit", "discount")
+    @api.depends("quantity", "price_unit", "discount", "commitment_discount")
     def _compute_price_subtotal(self):
         for line in self:
-            subtotal = line.quantity * line.price_unit
+            # Store the original subtotal before discount
+            line.price_subtotal_before_discount = line.quantity * line.price_unit
+            
+            # Apply the commitment discount
+            discounted_price = line.price_unit - line.commitment_discount
+            if discounted_price < 0:
+                discounted_price = 0
+                
+            subtotal = line.quantity * discounted_price
             discount = line.discount / 100
             subtotal *= 1 - discount
             if line.contract_id.pricelist_id:
@@ -235,6 +266,16 @@ class ContractAbstractContractLine(models.AbstractModel):
                 line.price_subtotal = cur.round(subtotal)
             else:
                 line.price_subtotal = subtotal
+
+    @api.depends('commitment')
+    def _compute_commitment_discount(self):
+        for line in self:
+            if line.commitment == '1_year':
+                line.commitment_discount = 2.0
+            elif line.commitment == '2_years':
+                line.commitment_discount = 4.0
+            else:
+                line.commitment_discount = 0.0
 
     @api.constrains("discount")
     def _check_discount(self):
@@ -269,3 +310,53 @@ class ContractAbstractContractLine(models.AbstractModel):
             else:
                 vals["price_unit"] = 0.0
         self.update(vals)
+
+    def _prepare_invoice_line(self, move_form=False, **kwargs):
+        """Prepare the values for creating an invoice line.
+
+        This is where we need to apply the commitment discount to ensure it's
+        reflected in the invoice.
+        """
+        self.ensure_one()
+        res = {
+            'display_type': self.display_type,
+            'product_id': self.product_id.id,
+            'name': self.name,
+            'quantity': self.quantity,
+            'price_unit': self.price_unit - self.commitment_discount,  # Apply commitment discount
+            'discount': self.discount,
+            'tax_ids': [(6, 0, self.product_id.taxes_id.ids)],
+            'analytic_distribution': self.contract_id.analytic_distribution or False,
+        }
+        
+        # Ensure price doesn't go below zero
+        if res['price_unit'] < 0:
+            res['price_unit'] = 0
+            
+        if self.uom_id:
+            res['product_uom_id'] = self.uom_id.id
+        if move_form and res.get('price_unit', 0.0) != 0.0:
+            res['product_id'] = self.product_id
+        kwargs['contract_line'] = self
+        # Take current description if needed
+        if kwargs.get('contract_line_name', False) and self.display_type not in [
+            'line_section',
+            'line_note',
+        ]:
+            res['name'] = kwargs.get('contract_line_name')
+        # Allow customizations by other modules
+        self.contract_id._prepare_invoice_line(res, **kwargs)
+        return res
+
+    def _get_invoice_line_name(self):
+        """Return the invoice line name for this contract line."""
+        self.ensure_one()
+        name = self.name
+        if self.commitment != 'none' and self.commitment_discount > 0:
+            name = "{} (s viazanosťou: {} - zľava: {} {})".format(
+                name, 
+                dict(self._fields['commitment'].selection).get(self.commitment),
+                self.commitment_discount,
+                self.currency_id.symbol
+            )
+        return name
