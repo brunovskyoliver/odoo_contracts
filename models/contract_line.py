@@ -561,7 +561,7 @@ class ContractLine(models.Model):
         
         # Add commitment discount information to the name if applicable
         if self.commitment != 'none' and self.commitment_discount > 0:
-            name += _(" (with commitment discount: %s)") % self.commitment_discount
+            name += _(" (so zľavou z viazanosti: %s)") % self.commitment_discount
         
         # Calculate price with commitment discount
         price_unit = self.price_unit
