@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Contract Inventory Form View -->
+    <record id="contract_inventory_form_view" model="ir.ui.view">
+        <field name="name">contract.inventory.form.view</field>
+        <field name="model">contract.inventory</field>
+        <field name="arch" type="xml">
+            <form string="Inventory Storage">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button 
+                            name="toggle_active" 
+                            type="object" 
+                            class="oe_stat_button" 
+                            icon="fa-archive">
+                            <field name="active" widget="boolean_button" 
+                                options="{'terminology': 'archive'}"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1><field name="name" placeholder="e.g. Main Storage"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="partner_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="total_products"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Inventory Lines" name="inventory_lines">
+                            <field name="inventory_line_ids" widget="one2many">
+                                <list string="Inventory Lines" editable="bottom">
+                                    <field name="product_id"/>
+                                    <field name="quantity"/>
+                                    <field name="uom_id"/>
+                                    <field name="contract_line_id"/>
+                                    <field name="contract_id"/>
+                                    <field name="serial_number"/>
+                                    <field name="date_added"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Contracts" name="contracts">
+                            <field name="contract_ids" readonly="1">
+                                <list string="Contracts">
+                                    <field name="name"/>
+                                    <field name="code"/>
+                                    <field name="partner_id"/>
+                                    <field name="date_start"/>
+                                    <field name="date_end"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notes" name="notes">
+                            <field name="note" placeholder="Internal notes..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Contract Inventory list View -->
+    <record id="contract_inventory_list_view" model="ir.ui.view">
+        <field name="name">contract.inventory.list.view</field>
+        <field name="model">contract.inventory</field>
+        <field name="arch" type="xml">
+            <list string="Inventory Storage">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="partner_id"/>
+                <field name="total_products"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Contract Inventory Search View -->
+    <record id="contract_inventory_search_view" model="ir.ui.view">
+        <field name="name">contract.inventory.search.view</field>
+        <field name="model">contract.inventory</field>
+        <field name="arch" type="xml">
+            <search string="Search Inventory Storage">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="partner_id"/>
+                <separator/>
+                <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Partner" name="group_by_partner" context="{'group_by': 'partner_id'}"/>
+                    <filter string="Company" name="group_by_company" context="{'group_by': 'company_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Contract Inventory Line list View -->
+    <record id="contract_inventory_line_list_view" model="ir.ui.view">
+        <field name="name">contract.inventory.line.list.view</field>
+        <field name="model">contract.inventory.line</field>
+        <field name="arch" type="xml">
+            <list string="Inventory Lines">
+                <field name="inventory_id"/>
+                <field name="product_id"/>
+                <field name="quantity"/>
+                <field name="uom_id"/>
+                <field name="contract_line_id"/>
+                <field name="contract_id"/>
+                <field name="serial_number"/>
+                <field name="date_added"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Contract Inventory Line Form View -->
+    <record id="contract_inventory_line_form_view" model="ir.ui.view">
+        <field name="name">contract.inventory.line.form.view</field>
+        <field name="model">contract.inventory.line</field>
+        <field name="arch" type="xml">
+            <form string="Inventory Line">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="inventory_id"/>
+                            <field name="product_id"/>
+                            <field name="quantity"/>
+                            <field name="uom_id"/>
+                        </group>
+                        <group>
+                            <field name="contract_line_id"/>
+                            <field name="contract_id"/>
+                            <field name="serial_number"/>
+                            <field name="date_added"/>
+                            <field name="state"/>
+                        </group>
+                    </group>
+                    <group string="Notes">
+                        <field name="note" nolabel="1" placeholder="Add notes here..."/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Contract Inventory Line Search View -->
+    <record id="contract_inventory_line_search_view" model="ir.ui.view">
+        <field name="name">contract.inventory.line.search.view</field>
+        <field name="model">contract.inventory.line</field>
+        <field name="arch" type="xml">
+            <search string="Search Inventory Lines">
+                <field name="product_id"/>
+                <field name="inventory_id"/>
+                <field name="contract_id"/>
+                <field name="serial_number"/>
+                <separator/>
+                <filter string="Available" name="available" domain="[('state', '=', 'available')]"/>
+                <filter string="Assigned" name="assigned" domain="[('state', '=', 'assigned')]"/>
+                <filter string="Returned" name="returned" domain="[('state', '=', 'returned')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Inventory" name="group_by_inventory" context="{'group_by': 'inventory_id'}"/>
+                    <filter string="Product" name="group_by_product" context="{'group_by': 'product_id'}"/>
+                    <filter string="Contract" name="group_by_contract" context="{'group_by': 'contract_id'}"/>
+                    <filter string="Status" name="group_by_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action for Contract Inventory -->
+    <record id="action_contract_inventory" model="ir.actions.act_window">
+        <field name="name">Inventory Storage</field>
+        <field name="res_model">contract.inventory</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a new inventory storage
+            </p>
+            <p>
+                Organize your contract products in inventory storages.
+            </p>
+        </field>
+    </record>
+
+    <!-- Action for Contract Inventory Lines -->
+    <record id="action_contract_inventory_line" model="ir.actions.act_window">
+        <field name="name">Inventory Products</field>
+        <field name="res_model">contract.inventory.line</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No inventory products found
+            </p>
+            <p>
+                Inventory products are automatically created when contract lines are marked for inventory tracking.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Items -->
+    <menuitem id="menu_contract_inventory" 
+              name="Storage Locations" 
+              action="action_contract_inventory" 
+              parent="contract.menu_contract_inventory_root" 
+              sequence="1"/>
+
+    <menuitem id="menu_contract_inventory_lines" 
+              name="Inventory Products" 
+              action="action_contract_inventory_line" 
+              parent="contract.menu_contract_inventory_root" 
+              sequence="2"/>
+</odoo>

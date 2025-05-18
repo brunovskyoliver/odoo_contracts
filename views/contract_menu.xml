@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Contract Menus -->
+    <menuitem
+        id="menu_customer_contracts"
+        name="Customer Contracts"
+        parent="contract.menu_contract_root"
+        action="action_customer_contract"
+        sequence="10"
+    />
+    
+    <menuitem
+        id="menu_supplier_contracts"
+        name="Supplier Contracts"
+        parent="contract.menu_contract_root"
+        action="action_supplier_contract"
+        sequence="20"
+    />
+</odoo>

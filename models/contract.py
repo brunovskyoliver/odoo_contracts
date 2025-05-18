@@ -145,6 +145,21 @@ class ContractContract(models.Model):
         inverse_name="contract_id",
         string="Úpravy",
     )
+    inventory_id = fields.Many2one(
+        comodel_name="contract.inventory",
+        string="Inventory Storage",
+        tracking=True,
+    )
+    has_inventory_products = fields.Boolean(
+        string="Has Inventory Products",
+        compute="_compute_has_inventory_products",
+        store=True,
+    )
+    
+    @api.depends('contract_line_ids.in_inventory', 'contract_line_ids')
+    def _compute_has_inventory_products(self):
+        for contract in self:
+            contract.has_inventory_products = any(contract.contract_line_ids.mapped('in_inventory'))
 
     def get_formview_id(self, access_uid=None):
         if self.contract_type == "sale":
@@ -486,6 +501,7 @@ class ContractContract(models.Model):
             "ref": self.code,
             "currency_id": self.currency_id.id,
             "invoice_date": date_invoice,
+            "taxable_supply_date": date_invoice,  # Setting taxable_supply_date to match invoice_date
             "journal_id": journal.id,
             "invoice_origin": self.name,
             "invoice_line_ids": [],

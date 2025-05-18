@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Sample Inventory Storage Locations -->
+        <record id="contract_inventory_1" model="contract.inventory">
+            <field name="name">Main Storage</field>
+            <field name="code">MS001</field>
+            <field name="note">Primary inventory storage for contract products.</field>
+        </record>
+        
+        <record id="contract_inventory_2" model="contract.inventory">
+            <field name="name">Customer Warehouse</field>
+            <field name="code">CW002</field>
+            <field name="note">Storage for products at customer sites.</field>
+        </record>
+        
+        <record id="contract_inventory_3" model="contract.inventory">
+            <field name="name">Repair Center</field>
+            <field name="code">RC003</field>
+            <field name="note">Storage for products under repair or maintenance.</field>
+        </record>
+    </data>
+</odoo>

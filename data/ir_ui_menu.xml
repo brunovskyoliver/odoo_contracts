@@ -1,9 +1,26 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
+    <!-- Top-level Contracts menu -->
+    <menuitem
+        id="menu_contract_root"
+        name="Zmluvy"
+        web_icon="contract,static/description/icon.png"
+        sequence="65"
+    />
+    
+    <!-- Configuration menu under main accounting -->
     <menuitem
         id="menu_config_contract"
         name="Contracts"
         sequence="1"
         parent="account.menu_finance_configuration"
+    />
+    
+    <!-- Inventory root menu -->
+    <menuitem
+        id="menu_contract_inventory_root"
+        name="Inventory"
+        parent="menu_contract_root"
+        sequence="4"
     />
 </odoo>

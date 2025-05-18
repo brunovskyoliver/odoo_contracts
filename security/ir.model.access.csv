@@ -14,3 +14,7 @@
 "contract_line_wizard","contract_line_wizard","model_contract_line_wizard","account.group_account_manager",1,1,1,1
 "contract_manually_create_invoice_wizard","contract_manually_create_invoice_wizard","model_contract_manually_create_invoice","account.group_account_invoice",1,1,1,1
 "contract_contract_terminate_wizard","contract_contract_terminate_wizard","model_contract_contract_terminate","contract.can_terminate_contract",1,1,1,1
+"contract_inventory_manager","Contract Inventory Manager","model_contract_inventory","account.group_account_manager",1,1,1,1
+"contract_inventory_user","Contract Inventory User","model_contract_inventory","account.group_account_invoice",1,1,1,0
+"contract_inventory_line_manager","Contract Inventory Line Manager","model_contract_inventory_line","account.group_account_manager",1,1,1,1
+"contract_inventory_line_user","Contract Inventory Line User","model_contract_inventory_line","account.group_account_invoice",1,1,1,0

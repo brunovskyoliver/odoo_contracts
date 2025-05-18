@@ -114,6 +114,7 @@
                             <field name="pricelist_id" readonly="is_terminated" />
                             <field name="payment_term_id" readonly="is_terminated" />
                             <field name="user_id" readonly="is_terminated" />
+                            <field name="inventory_id" options="{'no_create': True, 'no_open': True}" readonly="has_inventory_products"/>
                         </group>
                         <group>
                             <field
@@ -176,6 +177,7 @@
                     </group>
                     <notebook>
                         <page name="recurring_invoice_line" string="Položky zmluvy">
+                            <field name="has_inventory_products" invisible="1" />
                             <field
                                 name="contract_line_fixed_ids"
                                 readonly="is_terminated"
@@ -186,6 +188,9 @@
                                 <list
                                     decoration-muted="is_canceled"
                                     decoration-info="create_invoice_visibility and not is_canceled"
+                                    decoration-success="inventory_state == 'allocated'"
+                                    decoration-warning="inventory_state == 'partial'"
+                                    decoration-danger="inventory_state == 'pending' and in_inventory"
                                     editable="bottom"
                                 >
                                     <control>
@@ -235,6 +240,8 @@
                                         groups="product.group_discount_per_so_line"
                                     />
                                     <field name="price_subtotal" />
+                                    <field name="in_inventory" attrs="{'readonly': [('display_type', 'in', ['line_section', 'line_note'])]}"/>
+                                    <field name="inventory_state" attrs="{'column_invisible': [('parent.inventory_id', '=', False)]}"/>
                                     <field
                                         name="recurring_interval"
                                         column_invisible="True"
@@ -290,6 +297,9 @@
                                 <list
                                     decoration-muted="is_canceled"
                                     decoration-info="create_invoice_visibility and not is_canceled"
+                                    decoration-success="inventory_state == 'allocated'"
+                                    decoration-warning="inventory_state == 'partial'"
+                                    decoration-danger="inventory_state == 'pending' and in_inventory"
                                 >
                                     <control>
                                         <create string="Add a line" />
@@ -334,6 +344,8 @@
                                         groups="product.group_discount_per_so_line"
                                     />
                                     <field name="price_subtotal" />
+                                    <field name="in_inventory" attrs="{'readonly': [('display_type', 'in', ['line_section', 'line_note'])]}"/>
+                                    <field name="inventory_state" attrs="{'column_invisible': [('parent.inventory_id', '=', False)]}"/>
                                     <field
                                         name="recurring_interval"
                                         column_invisible="True"

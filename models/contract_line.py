@@ -68,6 +68,31 @@ class ContractLine(models.Model):
         "and temporary one for which a user is not able to plan a"
         "successor in advance",
     )
+    in_inventory = fields.Boolean(
+        string="Track in Inventory",
+        default=False,
+        help="If checked, the product will be tracked in inventory",
+    )
+    inventory_line_ids = fields.One2many(
+        comodel_name="contract.inventory.line",
+        inverse_name="contract_line_id",
+        string="Inventory Lines",
+    )
+    inventory_quantity = fields.Float(
+        string="Inventory Quantity",
+        compute="_compute_inventory_quantity",
+    )
+    inventory_state = fields.Selection(
+        selection=[
+            ('not_tracked', 'Not Tracked'),
+            ('pending', 'Pending'),
+            ('allocated', 'Allocated'),
+            ('partial', 'Partially Allocated'),
+        ],
+        string="Inventory Status",
+        compute="_compute_inventory_state",
+        store=True,
+    )
     is_plan_successor_allowed = fields.Boolean(
         string="Plan successor allowed?", compute="_compute_allowed"
     )
@@ -1110,5 +1135,80 @@ class ContractLine(models.Model):
     ):
         self.ensure_one()
         return self.quantity if not self.display_type else 0.0
+        
+    @api.depends('inventory_line_ids.quantity')
+    def _compute_inventory_quantity(self):
+        for line in self:
+            line.inventory_quantity = sum(line.inventory_line_ids.mapped('quantity'))
+            
+    @api.depends('in_inventory', 'quantity', 'inventory_quantity')
+    def _compute_inventory_state(self):
+        for line in self:
+            if not line.in_inventory:
+                line.inventory_state = 'not_tracked'
+            elif line.inventory_quantity <= 0:
+                line.inventory_state = 'pending'
+            elif line.inventory_quantity >= line.quantity:
+                line.inventory_state = 'allocated'
+            else:
+                line.inventory_state = 'partial'
+                
+    @api.onchange('in_inventory')
+    def _onchange_in_inventory(self):
+        if self.in_inventory and not self.contract_id.inventory_id:
+            return {
+                'warning': {
+                    'title': _('No Inventory Selected'),
+                    'message': _('Please select an inventory storage in the contract form.')
+                }
+            }
+            
+    def update_inventory(self):
+        """Create or update inventory lines based on contract lines"""
+        for line in self.filtered('in_inventory'):
+            if not line.contract_id.inventory_id:
+                continue
+                
+            # Check if an inventory line already exists
+            existing_line = self.env['contract.inventory.line'].search([
+                ('contract_line_id', '=', line.id),
+                ('product_id', '=', line.product_id.id),
+            ], limit=1)
+            
+            if existing_line:
+                # If quantity has changed, update the inventory line
+                if existing_line.quantity != line.quantity:
+                    existing_line.write({'quantity': line.quantity})
+            else:
+                # Create a new inventory line
+                self.env['contract.inventory.line'].create({
+                    'inventory_id': line.contract_id.inventory_id.id,
+                    'product_id': line.product_id.id,
+                    'contract_line_id': line.id,
+                    'quantity': line.quantity,
+                    'state': 'assigned',
+                })
+                
+    def remove_from_inventory(self):
+        """Remove products from inventory when contract line is removed or marked as not in inventory"""
+        for line in self:
+            inventory_lines = self.env['contract.inventory.line'].search([
+                ('contract_line_id', '=', line.id),
+            ])
+            if inventory_lines:
+                inventory_lines.write({'state': 'returned'})
+                
+    def write(self, vals):
+        result = super().write(vals)
+        # Handle inventory changes
+        if 'in_inventory' in vals:
+            for line in self:
+                if vals['in_inventory']:
+                    line.update_inventory()
+                else:
+                    line.remove_from_inventory()
+        elif 'product_id' in vals or 'quantity' in vals:
+            self.filtered('in_inventory').update_inventory()
+        return result
 
 

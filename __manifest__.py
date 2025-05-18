@@ -24,6 +24,7 @@
         "security/ir.model.access.csv",
         "security/contract_security.xml",
         "security/contract_terminate_reason.xml",
+        "security/contract_inventory.xml",
         "report/report_contract.xml",
         "report/contract_views.xml",
         "data/contract_cron.xml",
@@ -45,7 +46,13 @@
         "views/res_config_settings.xml",
         "views/contract_terminate_reason.xml",
         "views/contract_portal_templates.xml",
+        "views/contract_inventory.xml",
+        "views/contract_line_inventory.xml",
+        "views/contract_menu.xml",
         'data/contract_sequence.xml',
+    ],
+    "demo": [
+        "data/contract_inventory_demo.xml",
     ],
     "assets": {
         "web.assets_frontend": ["contract/static/src/scss/frontend.scss"],

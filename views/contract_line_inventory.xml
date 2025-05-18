@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Contract Line Inventory Action Window -->
+    <record id="action_contract_line_inventory" model="ir.actions.act_window">
+        <field name="name">Contract Line Inventory</field>
+        <field name="res_model">contract.line</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('in_inventory', '=', True)]</field>
+        <field name="context">{'search_default_group_by_inventory_state': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No inventory items found
+            </p>
+            <p>
+                No contract lines are currently marked for inventory tracking.
+            </p>
+        </field>
+    </record>
+
+    <!-- Contract Line Inventory list View -->
+    <record id="contract_line_inventory_list_view" model="ir.ui.view">
+        <field name="name">contract.line.inventory.list</field>
+        <field name="model">contract.line</field>
+        <field name="arch" type="xml">
+            <list string="Contract Lines in Inventory"
+                  decoration-success="inventory_state == 'allocated'"
+                  decoration-warning="inventory_state == 'partial'"
+                  decoration-danger="inventory_state == 'pending'">
+                <field name="contract_id"/>
+                <field name="product_id"/>
+                <field name="name"/>
+                <field name="quantity"/>
+                <field name="uom_id"/>
+                <field name="inventory_quantity"/>
+                <field name="inventory_state"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="is_canceled" invisible="1"/>
+                <button name="update_inventory" 
+                        string="Update Inventory"
+                        type="object"
+                        icon="fa-refresh"
+                        invisible="is_canceled or inventory_state == 'allocated'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Contract Line Inventory Form View -->
+    <record id="contract_line_inventory_form_view" model="ir.ui.view">
+        <field name="name">contract.line.inventory.form</field>
+        <field name="model">contract.line</field>
+        <field name="arch" type="xml">
+            <form string="Contract Line Inventory">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="update_inventory" 
+                                string="Update Inventory"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-refresh"
+                                invisible="is_canceled or inventory_state == 'allocated'"/>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="product_id" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="contract_id" readonly="1"/>
+                            <field name="name" readonly="1"/>
+                            <field name="quantity" readonly="1"/>
+                            <field name="uom_id" readonly="1"/>
+                            <field name="date_start" readonly="1"/>
+                            <field name="date_end" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="in_inventory" readonly="1"/>
+                            <field name="inventory_quantity"/>
+                            <field name="inventory_state"/>
+                            <field name="is_canceled" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Inventory Lines" name="inventory_lines">
+                            <field name="inventory_line_ids" readonly="0">
+                                <list editable="bottom">
+                                    <field name="product_id"/>
+                                    <field name="quantity"/>
+                                    <field name="uom_id"/>
+                                    <field name="serial_number"/>
+                                    <field name="date_added"/>
+                                    <field name="state"/>
+                                    <field name="note"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Contract Line Inventory Search View -->
+    <record id="contract_line_inventory_search_view" model="ir.ui.view">
+        <field name="name">contract.line.inventory.search</field>
+        <field name="model">contract.line</field>
+        <field name="arch" type="xml">
+            <search string="Search Contract Line Inventory">
+                <field name="name"/>
+                <field name="product_id"/>
+                <field name="contract_id"/>
+                <separator/>
+                <filter string="Pending" name="pending" domain="[('inventory_state', '=', 'pending')]"/>
+                <filter string="Partially Allocated" name="partial" domain="[('inventory_state', '=', 'partial')]"/>
+                <filter string="Fully Allocated" name="allocated" domain="[('inventory_state', '=', 'allocated')]"/>
+                <filter string="Canceled Lines" name="canceled" domain="[('is_canceled', '=', True)]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Contract" name="group_by_contract" context="{'group_by': 'contract_id'}"/>
+                    <filter string="Product" name="group_by_product" context="{'group_by': 'product_id'}"/>
+                    <filter string="Inventory Status" name="group_by_inventory_state" context="{'group_by': 'inventory_state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    
+    <!-- Menu Item for Contract Line Inventory -->
+    <menuitem id="menu_contract_line_inventory"
+              name="Contract Products"
+              action="action_contract_line_inventory"
+              parent="contract.menu_contract_inventory_root"
+              sequence="3"/>
+</odoo>
