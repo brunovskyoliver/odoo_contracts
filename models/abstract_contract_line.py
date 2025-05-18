@@ -146,7 +146,7 @@ class ContractAbstractContractLine(models.AbstractModel):
     is_recurring_note = fields.Boolean(compute="_compute_is_recurring_note")
     company_id = fields.Many2one(related="contract_id.company_id", store=True)
     
-    # Add the new field
+    # Add the new fields
     commitment = fields.Selection(
         [
             ('none', 'No Commitment'),
@@ -161,6 +161,11 @@ class ContractAbstractContractLine(models.AbstractModel):
         string="Zľava z viazanosti",
         compute="_compute_commitment_discount",
         store=True,
+    )
+
+    x_zlavnena_cena = fields.Float(
+        string="Zlavnena cena",
+        help="Discounted price applied when within commitment date (Datum viazanosti)",
     )
 
     def _set_recurrence_field(self, field):
@@ -247,27 +252,47 @@ class ContractAbstractContractLine(models.AbstractModel):
         for line in self.filtered(lambda x: not x.automatic_price):
             line.specific_price = line.price_unit
 
-    @api.depends("quantity", "price_unit", "discount", "commitment_discount")
+    @api.depends("quantity", "price_unit", "discount", "commitment_discount", "x_zlavnena_cena")
     def _compute_price_subtotal(self):
+        today = fields.Date.context_today(self)
         for line in self:
             # Store the original subtotal before discount
             line.price_subtotal_before_discount = line.quantity * line.price_unit
             
-            # Apply the commitment discount
-            discounted_price = line.price_unit - line.commitment_discount
-            if discounted_price < 0:
-                discounted_price = 0
-                
-            subtotal = line.quantity * discounted_price
+            # Determine which price to use based on commitment date
+            use_discounted_price = False
+            if hasattr(line.contract_id, 'x_datum_viazanost') and line.contract_id.x_datum_viazanost:
+                if line.contract_id.x_datum_viazanost >= today and line.x_zlavnena_cena > 0:
+                    use_discounted_price = True
+            # Even if there's no commitment date but we have a discounted price, use it
+            elif line.x_zlavnena_cena > 0:
+                use_discounted_price = True
+            
+            # Apply the appropriate price
+            if use_discounted_price:
+                # Use the discounted price directly
+                unit_price = line.x_zlavnena_cena
+            else:
+                # Apply the commitment discount to the regular price
+                unit_price = line.price_unit - line.commitment_discount
+                if unit_price < 0:
+                    unit_price = 0
+            
+            # Calculate subtotal with the selected price
+            subtotal = line.quantity * unit_price
+            
+            # Apply the percentage discount if any
             discount = line.discount / 100
             subtotal *= 1 - discount
+            
+            # Apply currency rounding if needed
             if line.contract_id.pricelist_id:
                 cur = line.contract_id.pricelist_id.currency_id
                 line.price_subtotal = cur.round(subtotal)
             else:
                 line.price_subtotal = subtotal
 
-    @api.depends('commitment')
+    @api.depends('x_zlavnena_cena')
     def _compute_commitment_discount(self):
         today = fields.Date.context_today(self)
         for line in self:
@@ -277,11 +302,15 @@ class ContractAbstractContractLine(models.AbstractModel):
             # Check if commitment date exists and is valid
             if hasattr(line.contract_id, 'x_datum_viazanost') and line.contract_id.x_datum_viazanost:
                 if line.contract_id.x_datum_viazanost >= today:
-                    # Apply discount based on commitment
-                    if line.commitment == '1_year':
-                        line.commitment_discount = 2.0
-                    elif line.commitment == '2_years':
-                        line.commitment_discount = 4.0
+                    # If within commitment date and we have a discounted price, calculate the commitment discount
+                    if line.x_zlavnena_cena > 0:
+                        line.commitment_discount = line.price_unit - line.x_zlavnena_cena
+                    # If no discounted price set specifically, use the old logic
+                    else:
+                        if line.commitment == '1_year':
+                            line.commitment_discount = 2.0
+                        elif line.commitment == '2_years':
+                            line.commitment_discount = 4.0
 
     @api.constrains("discount")
     def _check_discount(self):
@@ -320,24 +349,39 @@ class ContractAbstractContractLine(models.AbstractModel):
     def _prepare_invoice_line(self, move_form=False, **kwargs):
         """Prepare the values for creating an invoice line.
 
-        This is where we need to apply the commitment discount to ensure it's
-        reflected in the invoice.
+        This is where we need to apply the discounted price when within commitment date.
         """
         self.ensure_one()
+        
+        # Determine which price to use based on commitment date
+        unit_price = self.price_unit
+        today = fields.Date.context_today(self)
+        
+        if hasattr(self.contract_id, 'x_datum_viazanost') and self.contract_id.x_datum_viazanost:
+            if self.contract_id.x_datum_viazanost >= today:
+                # Within commitment date
+                if self.x_zlavnena_cena > 0:
+                    # Use the directly specified discounted price
+                    unit_price = self.x_zlavnena_cena
+                else:
+                    # Use the calculated commitment discount
+                    unit_price = self.price_unit - self.commitment_discount
+                    if unit_price < 0:
+                        unit_price = 0
+        # Even if there's no commitment date but we have a discounted price, use it
+        elif self.x_zlavnena_cena > 0:
+            unit_price = self.x_zlavnena_cena
+        
         res = {
             'display_type': self.display_type,
             'product_id': self.product_id.id,
             'name': self.name,
             'quantity': self.quantity,
-            'price_unit': self.price_unit - self.commitment_discount,  # Apply commitment discount
+            'price_unit': unit_price,  # Use the discounted price when applicable
             'discount': self.discount,
             'tax_ids': [(6, 0, self.product_id.taxes_id.ids)],
             'analytic_distribution': self.contract_id.analytic_distribution or False,
         }
-        
-        # Ensure price doesn't go below zero
-        if res['price_unit'] < 0:
-            res['price_unit'] = 0
             
         if self.uom_id:
             res['product_uom_id'] = self.uom_id.id
@@ -358,11 +402,31 @@ class ContractAbstractContractLine(models.AbstractModel):
         """Return the invoice line name for this contract line."""
         self.ensure_one()
         name = self.name
-        if self.commitment != 'none' and self.commitment_discount > 0:
-            name = "{} (s viazanosťou: {} - zľava: {} {})".format(
-                name, 
-                dict(self._fields['commitment'].selection).get(self.commitment),
-                self.commitment_discount,
+        today = fields.Date.context_today(self)
+        
+        # Check if we're within the commitment date
+        if hasattr(self.contract_id, 'x_datum_viazanost') and self.contract_id.x_datum_viazanost:
+            if self.contract_id.x_datum_viazanost >= today:
+                # Show discounted price information
+                if self.x_zlavnena_cena > 0:
+                    name = "{} (s viazanosťou do: {} - zlavnena cena: {} {})".format(
+                        name,
+                        self.contract_id.x_datum_viazanost.strftime('%d.%m.%Y'),
+                        self.x_zlavnena_cena,
+                        self.currency_id.symbol
+                    )
+                elif self.commitment != 'none' and self.commitment_discount > 0:
+                    name = "{} (s viazanosťou: {} - zľava: {} {})".format(
+                        name, 
+                        dict(self._fields['commitment'].selection).get(self.commitment),
+                        self.commitment_discount,
+                        self.currency_id.symbol
+                    )
+        # Show discounted price even if no commitment date
+        elif self.x_zlavnena_cena > 0:
+            name = "{} (zlavnena cena: {} {})".format(
+                name,
+                self.x_zlavnena_cena,
                 self.currency_id.symbol
             )
         return name

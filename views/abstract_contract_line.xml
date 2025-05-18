@@ -27,6 +27,7 @@
                             <field name="price_unit" readonly="automatic_price" />
                             <field name="commitment" />
                             <field name="commitment_discount" readonly="1" />
+                            <field name="x_zlavnena_cena" />
                             <field name="quantity" />
                         </group>
                         <group>
