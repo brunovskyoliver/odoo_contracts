@@ -28,6 +28,7 @@
                             <field name="commitment" />
                             <field name="commitment_discount" readonly="1" />
                             <field name="x_zlavnena_cena" />
+                            <field name="x_datum_viazanosti_produktu" />
                             <field name="quantity" />
                         </group>
                         <group>

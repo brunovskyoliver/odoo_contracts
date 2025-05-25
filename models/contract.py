@@ -184,10 +184,8 @@ class ContractContract(models.Model):
             self._modification_mail_send()
         else:
             res = super().write(vals)
-        if 'x_datum_viazanost' in vals:
-            for contract in self:
-                contract.contract_line_ids._compute_commitment_discount()
-                contract.contract_line_ids._compute_price_subtotal()
+        # We're no longer using the contract-level datum_viazanost
+        # Each contract line has its own x_datum_viazanosti_produktu field now
         return res
 
     @api.model
@@ -708,14 +706,14 @@ class ContractContract(models.Model):
         if not date_ref:
             date_ref = fields.Date.context_today(self)
             
-        # First check and update commitments
-        all_contracts = self.search([])
-        for contract in all_contracts:
-            if (contract.x_datum_viazanost and 
-                contract.x_datum_viazanost < date_ref):
-                # Commitment expired, recalculate discounts
-                contract.contract_line_ids._compute_commitment_discount()
-                contract.contract_line_ids._compute_price_subtotal()
+        # First check and update commitments for product lines with expired commitment dates
+        all_lines = self.env['contract.line'].search([
+            ('x_datum_viazanosti_produktu', '<', date_ref),
+            ('x_datum_viazanosti_produktu', '!=', False)
+        ])
+        if all_lines:
+            all_lines._compute_commitment_discount()
+            all_lines._compute_price_subtotal()
         
         # Continue with regular invoice creation
         domain = self._get_contracts_to_invoice_domain(date_ref)

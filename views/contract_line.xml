@@ -105,6 +105,7 @@
                 <field name="automatic_price" />
                 <field name="price_unit" readonly="automatic_price" />
                 <field name="x_zlavnena_cena" />
+                <field name="x_datum_viazanosti_produktu" />
                 <field name="specific_price" column_invisible="True" />
                 <field name="discount" groups="product.group_discount_per_so_line" />
                 <field name="price_subtotal" />
