@@ -267,7 +267,7 @@ class ContractAbstractContractLine(models.AbstractModel):
             # Determine which price to use based on product-specific commitment date
             use_discounted_price = False
             if line.x_datum_viazanosti_produktu:
-                if line.x_datum_viazanosti_produktu >= today and line.x_zlavnena_cena > 0:
+                if line.x_datum_viazanosti_produktu >= today:
                     use_discounted_price = True
             # Even if there's no commitment date but we have a discounted price, use it
             elif line.x_zlavnena_cena > 0:
@@ -310,6 +310,8 @@ class ContractAbstractContractLine(models.AbstractModel):
                 if line.x_zlavnena_cena > 0:
                     line.commitment_discount = line.price_unit - line.x_zlavnena_cena
                 # If no discounted price set specifically, use the old logic
+                elif line.x_zlavnena_cena < 0:
+                    line.price_unit = line.x_zlavnena_cena
                 else:
                     if line.commitment == '1_year':
                         line.commitment_discount = 2.0
