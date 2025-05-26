@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Mobile Service list View -->
+    <record id="contract_mobile_service_view_tree" model="ir.ui.view">
+        <field name="name">contract.mobile.service.tree</field>
+        <field name="model">contract.mobile.service</field>
+        <field name="arch" type="xml">
+            <list string="Mobile Services">
+                <field name="name"/>
+                <field name="phone_number"/>
+                <field name="operator"/>
+                <field name="is_active"/>
+                <field name="partner_id"/>
+                <field name="inventory_id"/>
+                <field name="contract_id"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Mobile Service Form View -->
+    <record id="contract_mobile_service_view_form" model="ir.ui.view">
+        <field name="name">contract.mobile.service.form</field>
+        <field name="model">contract.mobile.service</field>
+        <field name="arch" type="xml">
+            <form string="Mobile Service">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="phone_number"/>
+                            <field name="operator"/>
+                            <field name="is_active"/>
+                        </group>
+                        <group>
+                            <field name="inventory_id"/>
+                            <field name="contract_line_id"/>
+                            <field name="contract_id"/>
+                            <field name="partner_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Mobile Service Search View -->
+    <record id="contract_mobile_service_view_search" model="ir.ui.view">
+        <field name="name">contract.mobile.service.search</field>
+        <field name="model">contract.mobile.service</field>
+        <field name="arch" type="xml">
+            <search string="Search Mobile Services">
+                <field name="name"/>
+                <field name="phone_number"/>
+                <field name="operator"/>
+                <field name="partner_id"/>
+                <field name="contract_id"/>
+                <field name="inventory_id"/>
+                <filter string="Active" name="active" domain="[('is_active', '=', True)]"/>
+                <filter string="Inactive" name="inactive" domain="[('is_active', '=', False)]"/>
+                <separator/>
+                <filter string="Telekom" name="telekom" domain="[('operator', '=', 'telekom')]"/>
+                <filter string="O2" name="o2" domain="[('operator', '=', 'o2')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Partner" name="partner_id" context="{'group_by': 'partner_id'}"/>
+                    <filter string="Contract" name="contract_id" context="{'group_by': 'contract_id'}"/>
+                    <filter string="Inventory" name="inventory_id" context="{'group_by': 'inventory_id'}"/>
+                    <filter string="Operator" name="operator" context="{'group_by': 'operator'}"/>
+                    <filter string="Active" name="is_active" context="{'group_by': 'is_active'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Mobile Service Action -->
+    <record id="action_contract_mobile_service" model="ir.actions.act_window">
+        <field name="name">Mobile Services</field>
+        <field name="res_model">contract.mobile.service</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a new Mobile Service
+            </p>
+        </field>
+    </record>
+
+    <!-- Mobile Service Menu -->
+    <menuitem id="menu_contract_mobile_service"
+              name="Mobilky"
+              action="action_contract_mobile_service"
+              parent="contract.menu_contract_inventory_root"
+              sequence="20"/>
+</odoo>

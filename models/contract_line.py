@@ -73,6 +73,20 @@ class ContractLine(models.Model):
         default=False,
         help="If checked, the product will be tracked in inventory",
     )
+    is_mobile_service = fields.Boolean(
+        string="Is Mobile Service",
+        default=False,
+        help="If checked, this contract line represents a mobile service",
+    )
+    mobile_service_ids = fields.One2many(
+        comodel_name="contract.mobile.service",
+        inverse_name="contract_line_id",
+        string="Mobile Services",
+    )
+    mobile_service_count = fields.Integer(
+        string="Mobile Service Count",
+        compute="_compute_mobile_service_count",
+    )
     inventory_line_ids = fields.One2many(
         comodel_name="contract.inventory.line",
         inverse_name="contract_line_id",
@@ -585,7 +599,7 @@ class ContractLine(models.Model):
         name = self._insert_markers(dates[0], dates[1])
         
         # Add commitment discount information to the name if applicable
-        if self.commitment != 'none' and self.commitment_discount > 0:
+        if hasattr(self, 'commitment') and self.commitment != 'none' and self.commitment_discount > 0:
             name += _(" (so zľavou z viazanosti: %s)") % self.commitment_discount
         
         # Calculate price with commitment discount
@@ -593,8 +607,31 @@ class ContractLine(models.Model):
         if hasattr(self, 'commitment_discount') and self.commitment_discount:
             price_unit = max(0, price_unit - self.commitment_discount)
         
+        # For mobile services, only invoice active ones
+        quantity = self._get_quantity_to_invoice(*dates)
+        if self.is_mobile_service and self.mobile_service_ids:
+            active_services = len(self.mobile_service_ids.filtered('is_active'))
+            if active_services > 0:
+                quantity = active_services
+                # Add mobile service info to the name
+                operators = self.mobile_service_ids.filtered('is_active').mapped('operator')
+                operator_counts = {}
+                for op in operators:
+                    operator_counts[op] = operator_counts.get(op, 0) + 1
+                
+                operator_info = []
+                for op, count in operator_counts.items():
+                    operator_name = dict(self.env['contract.mobile.service']._fields['operator'].selection).get(op, op)
+                    operator_info.append(f"{operator_name}: {count}")
+                
+                if operator_info:
+                    name += _(" (%s)") % ", ".join(operator_info)
+            else:
+                # If no active mobile services, don't invoice this line
+                quantity = 0
+        
         return {
-            "quantity": self._get_quantity_to_invoice(*dates),
+            "quantity": quantity,
             "product_uom_id": self.uom_id.id,
             "discount": self.discount,
             "contract_line_id": self.id,
@@ -852,10 +889,10 @@ class ContractLine(models.Model):
                 -> apply delay
                     - delay: suspension.date_end - contract_line.date_start
             * contract line start in the suspension period and end after it
-                -> apply delay
+                -> apply delay:
                     - delay: suspension.date_end - contract_line.date_start
             * contract line start  and end after the suspension period
-                -> apply delay
+                -> apply delay:
                     - delay: suspension.date_end - suspension.start_date
         :param date_start: suspension start date
         :param date_end: suspension end date
@@ -1124,10 +1161,7 @@ class ContractLine(models.Model):
         return super().get_view(view_id, view_type, **options)
 
     def unlink(self):
-        """stop unlink uncnacled lines"""
-        for record in self:
-            if not (record.is_canceled or record.display_type):
-                raise ValidationError(_("Contract line must be canceled before delete"))
+        """Allow deletion of any contract line regardless of cancellation status"""
         return super().unlink()
 
     def _get_quantity_to_invoice(
@@ -1209,6 +1243,57 @@ class ContractLine(models.Model):
                     line.remove_from_inventory()
         elif 'product_id' in vals or 'quantity' in vals:
             self.filtered('in_inventory').update_inventory()
+        
+        # Handle mobile service changes
+        if 'is_mobile_service' in vals:
+            for line in self:
+                if vals['is_mobile_service']:
+                    line.update_mobile_services_inventory()
+                else:
+                    line.remove_mobile_services_from_inventory()
+        
         return result
+
+    @api.depends('mobile_service_ids')
+    def _compute_mobile_service_count(self):
+        for line in self:
+            line.mobile_service_count = len(line.mobile_service_ids)
+            
+    def update_mobile_services_inventory(self):
+        """Create or update mobile services in inventory based on contract lines"""
+        for line in self.filtered('is_mobile_service'):
+            if not line.contract_id.inventory_id:
+                continue
+                
+            # If there are no mobile services yet, create a default one
+            if not line.mobile_service_ids:
+                self.env['contract.mobile.service'].create({
+                    'name': line.name or line.product_id.name,
+                    'phone_number': _('New Phone Number'),
+                    'operator': 'telekom',  # Default operator
+                    'is_active': True,
+                    'inventory_id': line.contract_id.inventory_id.id,
+                    'contract_line_id': line.id,
+                })
+    
+    def remove_mobile_services_from_inventory(self):
+        """Mark mobile services as inactive when contract line is removed or not tracked"""
+        for line in self:
+            if line.mobile_service_ids:
+                line.mobile_service_ids.write({'is_active': False})
+    
+    def action_view_mobile_services(self):
+        """Open the mobile services related to this contract line"""
+        self.ensure_one()
+        action = self.env.ref('contract.action_contract_mobile_service').read()[0]
+        action.update({
+            'domain': [('contract_line_id', '=', self.id)],
+            'context': {
+                'default_contract_line_id': self.id,
+                'default_inventory_id': self.contract_id.inventory_id.id,
+                'default_name': self.name or self.product_id.name,
+            },
+        })
+        return action
 
 

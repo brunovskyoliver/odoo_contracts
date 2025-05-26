@@ -9,6 +9,10 @@
         <field name="arch" type="xml">
             <header position="inside">
                 <field name="state" widget="statusbar" />
+                <button name="cancel" string="Cancel Contract Line" type="object" 
+                    class="oe_highlight" 
+                    confirm="Are you sure you want to cancel this contract line?" 
+                    invisible="[('is_canceled', '=', True)]" />
             </header>
             <group name="recurrence_info" position="inside">
                 <group>
@@ -37,12 +41,32 @@
                 <group>
                     <field name="successor_contract_line_id" />
                 </group>
+                <group>
+                    <field name="is_canceled" readonly="True" />
+                </group>
+                <group name="inventory_group">
+                    <field name="in_inventory" />
+                    <field name="inventory_state" invisible="[('in_inventory', '=', False)]" />
+                    <field name="inventory_quantity" invisible="[('in_inventory', '=', False)]" />
+                </group>
+                <group name="mobile_service_group">
+                    <field name="is_mobile_service" />
+                    <field name="mobile_service_count" invisible="[('is_mobile_service', '=', False)]" />
+                    <button 
+                        name="action_view_mobile_services" 
+                        type="object" 
+                        class="oe_stat_button" 
+                        icon="fa-mobile"
+                        string="Mobile Services"
+                        invisible="[('is_mobile_service', '=', False)]"
+                    />
+                </group>
             </group>
             <group name="recurrence_info" position="after">
                 <group
                     name="analytic"
                     groups="analytic.group_analytic_accounting"
-                    invisible="display_type"
+                    invisible="[('display_type', '!=', False)]"
                 >
                     <field
                         name="analytic_distribution"
@@ -124,26 +148,28 @@
                 <field name="is_un_cancel_allowed" column_invisible="True" />
                 <field name="is_auto_renew" column_invisible="True" />
                 <field name="is_canceled" column_invisible="True" />
+                <field name="is_mobile_service" />
+                <field name="mobile_service_count" invisible="[('is_mobile_service', '=', False)]" />
                 <button
                     name="action_plan_successor"
                     title="Plan Start"
                     type="object"
                     icon="fa-calendar text-success"
-                    invisible="not is_plan_successor_allowed"
+                    invisible="[('is_plan_successor_allowed', '=', False)]"
                 />
                 <button
                     name="action_stop_plan_successor"
                     title="Stop Plan Successor"
                     type="object"
                     icon="fa-pause text-muted"
-                    invisible="not is_stop_plan_successor_allowed"
+                    invisible="[('is_stop_plan_successor_allowed', '=', False)]"
                 />
                 <button
                     name="action_stop"
                     title="Stop"
                     type="object"
                     icon="fa-stop text-danger"
-                    invisible="not is_stop_allowed"
+                    invisible="[('is_stop_allowed', '=', False)]"
                 />
                 <button
                     name="cancel"
@@ -151,14 +177,14 @@
                     type="object"
                     icon="fa-ban text-danger"
                     confirm="Are you sure you want to cancel this line"
-                    invisible="not is_cancel_allowed"
+                    invisible="[('is_cancel_allowed', '=', False)]"
                 />
                 <button
                     name="action_uncancel"
                     title="Un-cancel"
                     type="object"
                     icon="fa-ban text-success"
-                    invisible="not is_un_cancel_allowed"
+                    invisible="[('is_un_cancel_allowed', '=', False)]"
                 />
                 <button
                     name="renew"
@@ -166,7 +192,7 @@
                     type="object"
                     icon="fa-fast-forward text-success"
                     groups="base.group_no_one"
-                    invisible="not is_auto_renew"
+                    invisible="[('is_auto_renew', '=', False)]"
                 />
             </list>
         </field>

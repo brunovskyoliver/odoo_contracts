@@ -18,3 +18,5 @@
 "contract_inventory_user","Contract Inventory User","model_contract_inventory","account.group_account_invoice",1,1,1,0
 "contract_inventory_line_manager","Contract Inventory Line Manager","model_contract_inventory_line","account.group_account_manager",1,1,1,1
 "contract_inventory_line_user","Contract Inventory Line User","model_contract_inventory_line","account.group_account_invoice",1,1,1,0
+"contract_mobile_service_manager","Contract Mobile Service Manager","model_contract_mobile_service","account.group_account_manager",1,1,1,1
+"contract_mobile_service_user","Contract Mobile Service User","model_contract_mobile_service","account.group_account_invoice",1,1,1,0
