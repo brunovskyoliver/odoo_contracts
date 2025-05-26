@@ -622,10 +622,10 @@ class ContractLine(models.Model):
                 operator_info = []
                 for op, count in operator_counts.items():
                     operator_name = dict(self.env['contract.mobile.service']._fields['operator'].selection).get(op, op)
-                    operator_info.append(f"{operator_name}: {count}")
+                    #operator_info.append(f"{operator_name}: {count}")
                 
-                if operator_info:
-                    name += _(" (%s)") % ", ".join(operator_info)
+                #if operator_info:
+                #    name += _(" (%s)") % ", ".join(operator_info)
             else:
                 # If no active mobile services, don't invoice this line
                 quantity = 0
@@ -1252,6 +1252,14 @@ class ContractLine(models.Model):
                 else:
                     line.remove_mobile_services_from_inventory()
         
+        # Skip name update if we're already doing it from mobile service update
+        # or if 'name' was explicitly passed in vals (direct user update)
+        if not self.env.context.get('skip_mobile_service_description_update') and 'name' not in vals:
+            # Update the name with phone numbers for mobile services
+            mobile_service_lines = self.filtered('is_mobile_service')
+            if mobile_service_lines:
+                mobile_service_lines._compute_mobile_service_description()
+        
         return result
 
     @api.depends('mobile_service_ids')
@@ -1267,8 +1275,8 @@ class ContractLine(models.Model):
                 
             # If there are no mobile services yet, create a default one
             if not line.mobile_service_ids:
-                self.env['contract.mobile.service'].create({
-                    'name': line.name or line.product_id.name,
+                mobile_service = self.env['contract.mobile.service'].create({
+                    'name': line.product_id.name or "Mobile Service",
                     'phone_number': _('New Phone Number'),
                     'operator': 'telekom',  # Default operator
                     'is_active': True,
@@ -1286,6 +1294,11 @@ class ContractLine(models.Model):
         """Open the mobile services related to this contract line"""
         self.ensure_one()
         action = self.env.ref('contract.action_contract_mobile_service').read()[0]
+        
+        # Make the button/link description more informative
+        if self.mobile_service_ids:
+            action['name'] = _('Mobile Services: %s') % ", ".join(self.mobile_service_ids.mapped('phone_number'))
+        
         action.update({
             'domain': [('contract_line_id', '=', self.id)],
             'context': {
@@ -1295,5 +1308,24 @@ class ContractLine(models.Model):
             },
         })
         return action
+
+    @api.depends('mobile_service_ids', 'mobile_service_ids.phone_number', 'mobile_service_ids.is_active')
+    def _compute_mobile_service_description(self):
+        """Update the description of the contract line based on mobile service phone numbers"""
+        # Check if we're already in a mobile service update to prevent recursion
+        if self.env.context.get('skip_mobile_service_description_update'):
+            return
+            
+        for line in self:
+            if line.is_mobile_service and line.mobile_service_ids:
+                # Get all active mobile services phone numbers
+                active_services = line.mobile_service_ids.filtered('is_active')
+                if active_services:
+                    # Get all phone numbers as a comma-separated string
+                    phone_numbers = ", ".join(active_services.mapped('phone_number'))
+                    # Update the name with the product name and phone numbers
+                    product_name = line.product_id.name or "Mobile Service"
+                    # Use with_context to avoid triggering recursion
+                    line.with_context(skip_mobile_service_description_update=True).name = f"{product_name}: {phone_numbers}"
 
 

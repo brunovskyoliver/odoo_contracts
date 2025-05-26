@@ -54,3 +54,25 @@ class ContractMobileService(models.Model):
         tracking=True,
     )
     notes = fields.Text(string="Notes")
+
+    def write(self, vals):
+        """Update the parent contract line's name when phone number or active status changes"""
+        result = super().write(vals)
+        # If phone number or active status changed, update the contract line name
+        if 'phone_number' in vals or 'is_active' in vals:
+            # Group by contract line and call _compute_mobile_service_description
+            contract_lines = self.mapped('contract_line_id')
+            for contract_line in contract_lines:
+                if contract_line and contract_line.is_mobile_service:
+                    # Use context to prevent infinite recursion
+                    contract_line.with_context(from_mobile_service_update=True)._compute_mobile_service_description()
+        return result
+
+    @api.model
+    def create(self, vals):
+        """Update the parent contract line's name when a new mobile service is created"""
+        record = super().create(vals)
+        if record.contract_line_id and record.contract_line_id.is_mobile_service:
+            # Use context to prevent infinite recursion
+            record.contract_line_id.with_context(from_mobile_service_update=True)._compute_mobile_service_description()
+        return record

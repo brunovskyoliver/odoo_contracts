@@ -55,9 +55,9 @@
                     <button 
                         name="action_view_mobile_services" 
                         type="object" 
-                        class="oe_stat_button" 
+                        class="btn-primary"
                         icon="fa-mobile"
-                        string="Mobile Services"
+                        string="Manage Mobile Services in Inventory"
                         invisible="[('is_mobile_service', '=', False)]"
                     />
                 </group>
