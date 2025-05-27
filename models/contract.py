@@ -683,6 +683,8 @@ class ContractContract(models.Model):
         self._add_contract_origin(moves)
         self._invoice_followers(moves)
         self._compute_recurring_next_date()
+        # Post the invoices automatically
+        moves.action_post()
         return moves
 
     @api.model
