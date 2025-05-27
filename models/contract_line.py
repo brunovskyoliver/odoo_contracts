@@ -1161,7 +1161,13 @@ class ContractLine(models.Model):
         return super().get_view(view_id, view_type, **options)
 
     def unlink(self):
-        """Allow deletion of any contract line regardless of cancellation status"""
+        """Allow deletion of any contract line regardless of cancellation status
+        and delete associated mobile services if any"""
+        # First delete mobile services if this is a mobile service line
+        for line in self:
+            if line.is_mobile_service and line.mobile_service_ids:
+                line.mobile_service_ids.unlink()
+                
         return super().unlink()
 
     def _get_quantity_to_invoice(
