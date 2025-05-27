@@ -74,7 +74,7 @@ class ContractLine(models.Model):
         help="If checked, the product will be tracked in inventory",
     )
     is_mobile_service = fields.Boolean(
-        string="Is Mobile Service",
+        string="Mobilka",
         default=False,
         help="If checked, this contract line represents a mobile service",
     )

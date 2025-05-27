@@ -57,8 +57,7 @@
                         type="object" 
                         class="btn-primary"
                         icon="fa-mobile"
-                        string="Manage Mobile Services in Inventory"
-                        invisible="[('is_mobile_service', '=', False)]"
+                        string="Mobilný balík"
                     />
                 </group>
             </group>
