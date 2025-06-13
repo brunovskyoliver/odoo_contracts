@@ -68,6 +68,14 @@ class ContractContract(models.Model):
         copy=True,
         context={"active_test": False},
     )
+    
+    total_subtotal = fields.Monetary(
+        string='Sucet na fakture bez DPH',
+        compute='_compute_total_subtotal',
+        store=True,
+        currency_field='currency_id',
+    )
+
     # Trick for being able to have 2 different views for the same o2m
     # We need this as one2many widget doesn't allow to define in the view
     # the same field 2 times with different views. 2 views are needed because
@@ -792,3 +800,8 @@ class ContractContract(models.Model):
                 "terminate_date": False,
             }
         )
+
+    @api.depends('contract_line_ids.price_subtotal')
+    def _compute_total_subtotal(self):
+        for contract in self:
+            contract.total_subtotal = sum(contract.contract_line_ids.mapped('price_subtotal'))

@@ -165,6 +165,10 @@
                                 name="recurring_invoicing_type"
                                 required="not line_recurrence"
                             />
+                            <field
+                                name="total_subtotal"
+                                readonly="1"
+                            />
                         </group>
                         <group invisible="line_recurrence">
                             <field name="date_start" required="not line_recurrence" />
