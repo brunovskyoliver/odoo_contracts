@@ -104,67 +104,161 @@ class ContractMobileInvoice(models.Model):
         result = []
         
         try:
-            # Use pandas to read the CSV file
-            df = pd.read_csv(io.BytesIO(csv_content), encoding='utf-8', low_memory=False)
+            # Read the CSV file into a pandas DataFrame
+            df_raw = pd.read_csv(io.BytesIO(csv_content), encoding='utf-8', low_memory=False)
             
-            # Known column names for Telekom CSV
-            phone_col = 'Charges__BudgetCentre__MSISDN__@Value'
-            desc_col = 'Charges__BudgetCentre__ProductFamily__Charge__@Desc'
-            amount_col = 'Charges__BudgetCentre__ProductFamily__Charge__@Amount'
-            price_col = 'Charges__BudgetCentre__ProductFamily__Charge__@Price'
+            # Group by phone number (Label column)
+            grouped = df_raw.groupby("Charges__BudgetCentre__ProductFamily__Charge__@Label")
             
-            # Process rows based on the Telekom CSV structure
-            for _, row in df.iterrows():
-                try:
-                    # Skip rows without phone number
-                    if phone_col not in df.columns or pd.isna(row[phone_col]):
-                        continue
-                        
-                    phone_number = str(row[phone_col])
-                    service_name = row[desc_col] if desc_col in df.columns and pd.notna(row[desc_col]) else ''
+            for phone_number, data in grouped:
+                if pd.isna(phone_number):
+                    continue
                     
-                    # Use the safe conversion helper for amount
-                    amount = self._safe_convert_to_float(row[amount_col] if amount_col in df.columns else 0.0)
-                    price = self._safe_convert_to_float(row[price_col] if price_col in df.columns else 0.0)
-                    
-                    # Log the values for debugging
-                    _logger.info(f"Processing row for {phone_number}:")
-                    _logger.info(f"  Service: {service_name}")
-                    _logger.info(f"  Amount: {amount} (from {row[amount_col] if amount_col in df.columns else 'N/A'})")
-                    _logger.info(f"  Price: {price} (from {row[price_col] if price_col in df.columns else 'N/A'})")
-                    
-                    # Determine service type based on description
-                    service_type = 'other'
-                    if 'T-Biznis' in service_name:
-                        service_type = 'basic'
-                    elif 'Data' in service_name or 'dáta' in service_name.lower():
-                        service_type = 'data'
-                    elif 'Hovory' in service_name or 'hovor' in service_name.lower():
-                        service_type = 'voice'
-                    elif 'SMS' in service_name:
-                        service_type = 'sms'
-                    elif 'MMS' in service_name:
-                        service_type = 'mms'
-                    elif 'Roaming' in service_name:
-                        service_type = 'roaming'
-                    
-                    # Check if it's excess usage
-                    is_excess = False
-                    if service_type in ['data', 'voice', 'sms', 'mms', 'roaming']:
-                        is_excess = True
-                    
-                    result.append({
-                        'phone_number': phone_number,
-                        'service_name': service_name,
-                        'service_type': service_type,
-                        'amount': amount,
-                        'total': price,  # Use price for total
-                        'is_excess_usage': is_excess,
-                    })
+                phone_number = str(phone_number).lstrip('00')
                 
-                except Exception as e:
-                    # Log the error but continue processing other rows
-                    _logger.error(f"Error processing row in Telekom CSV: {str(e)}")
+                # Skip non-Slovak numbers
+                if not phone_number.startswith('421'):
+                    continue
+                
+                # Process T-Biznis services (basic plans)
+                tbiznis_services = data[data['Charges__BudgetCentre__ProductFamily__Charge__@Desc'].str.contains('T-Biznis', na=False)]
+                
+                for _, row in tbiznis_services.iterrows():
+                    service_name = row['Charges__BudgetCentre__ProductFamily__Charge__@Desc']
+                    price = self._safe_convert_to_float(row['Charges__BudgetCentre__ProductFamily__Charge__@Price'])
+                    vat_rate = row['Charges__BudgetCentre__ProductFamily__Charge__@VatRate']
+                    
+                    if pd.notna(service_name):
+                        # Map T-Biznis service names to NOVEM names
+                        service_name = service_name.replace("T-Biznis Flex Variant 1", "NOVEM nekonečno 6GB")
+                        service_name = service_name.replace("T-Biznis Flex Variant 10", "NOVEM nekonečno 10GB")
+                        service_name = service_name.replace("T-Biznis Flex Variant 11", "NOVEM nekonečno 30GB")
+                        service_name = service_name.replace("T-Biznis Flex Variant 2", "NOVEM Fér bez dát")
+                        service_name = service_name.replace("T-Biznis Flex Variant 3", "NOVEM nekonečno 20GB")
+                        service_name = service_name.replace("T-Biznis Flex Variant 4", "NOVEM nekonečno 50GB")
+                        service_name = service_name.replace("T-Biznis Flex Variant 5", "NOVEM 250 0,5GB")
+                        service_name = service_name.replace("T-Biznis Flex Variant 6", "NOVEM nekonečno 0,5GB")
+                        service_name = service_name.replace("T-Biznis Flex Variant 7", "NOVEM 250 30 GB")
+                        service_name = service_name.replace("T-Biznis Flex Variant 8", "NOVEM 250 10 GB")
+                        service_name = service_name.replace("T-Biznis Flex Variant 9", "NOVEM nekonečno bez dát")
+                        
+                        result.append({
+                            'phone_number': phone_number,
+                            'service_name': service_name,
+                            'service_type': 'basic',
+                            'amount': price,
+                            'total': price,
+                            'is_excess_usage': False,
+                        })
+                
+                # Process paid services (excluding T-Biznis)
+                paid_services = data[
+                    (data['Charges__BudgetCentre__ProductFamily__Charge__@Price'] > 0) &
+                    (~data['Charges__BudgetCentre__ProductFamily__Charge__@Desc'].str.contains('T-Biznis', na=False))
+                ]
+                
+                for _, row in paid_services.iterrows():
+                    service_name = row['Charges__BudgetCentre__ProductFamily__Charge__@Desc']
+                    price = self._safe_convert_to_float(row['Charges__BudgetCentre__ProductFamily__Charge__@Price'])
+                    vat_rate = row['Charges__BudgetCentre__ProductFamily__Charge__@VatRate']
+                    
+                    if pd.notna(service_name):
+                        service_type = 'other'
+                        if 'data' in service_name.lower():
+                            service_type = 'data'
+                        elif 'voice' in service_name.lower() or 'call' in service_name.lower():
+                            service_type = 'voice'
+                        elif 'sms' in service_name.lower():
+                            service_type = 'sms'
+                        elif 'mms' in service_name.lower():
+                            service_type = 'mms'
+                        elif 'roaming' in service_name.lower():
+                            service_type = 'roaming'
+                        
+                        result.append({
+                            'phone_number': phone_number,
+                            'service_name': service_name,
+                            'service_type': service_type,
+                            'amount': price,
+                            'total': price,
+                            'is_excess_usage': True,
+                        })
+                
+                # Process SMS usage
+                sms_usage = data[
+                    (data['Charges__BudgetCentre__ProductFamily__Charge__@UnitType'] == 'Ks') &
+                    (data['Charges__BudgetCentre__ProductFamily__Charge__@Desc'].str.contains('SMS', na=False))
+                ]
+                
+                for _, row in sms_usage.iterrows():
+                    service_name = row['Charges__BudgetCentre__ProductFamily__Charge__@Desc']
+                    count = int(float(row['Charges__BudgetCentre__ProductFamily__Charge__@Units']))
+                    if pd.notna(service_name):
+                        result.append({
+                            'phone_number': phone_number,
+                            'service_name': service_name,
+                            'service_type': 'sms',
+                            'amount': 0.0,
+                            'quantity': count,
+                            'unit': 'SMS',
+                            'total': 0.0,
+                            'is_excess_usage': False,
+                        })
+                
+                # Process MMS usage
+                mms_usage = data[
+                    (data['Charges__BudgetCentre__ProductFamily__Charge__@UnitType'] == 'Ks') &
+                    (data['Charges__BudgetCentre__ProductFamily__Charge__@Desc'].str.contains('MMS', na=False))
+                ]
+                
+                for _, row in mms_usage.iterrows():
+                    service_name = row['Charges__BudgetCentre__ProductFamily__Charge__@Desc']
+                    count = int(float(row['Charges__BudgetCentre__ProductFamily__Charge__@Units']))
+                    if pd.notna(service_name):
+                        result.append({
+                            'phone_number': phone_number,
+                            'service_name': service_name,
+                            'service_type': 'mms',
+                            'amount': 0.0,
+                            'quantity': count,
+                            'unit': 'MMS',
+                            'total': 0.0,
+                            'is_excess_usage': False,
+                        })
+                
+                # Process call usage
+                call_usage = data[data['Charges__BudgetCentre__ProductFamily__Charge__@UnitType'] == 'sekundy']
+                for _, row in call_usage.iterrows():
+                    service_name = row['Charges__BudgetCentre__ProductFamily__Charge__@Desc']
+                    duration = float(row['Charges__BudgetCentre__ProductFamily__Charge__@Units'])
+                    if pd.notna(service_name):
+                        result.append({
+                            'phone_number': phone_number,
+                            'service_name': service_name,
+                            'service_type': 'voice',
+                            'amount': 0.0,
+                            'quantity': duration,
+                            'unit': 'Second',
+                            'total': 0.0,
+                            'is_excess_usage': False,
+                        })
+                
+                # Process data usage
+                data_usage = data[data['Charges__BudgetCentre__ProductFamily__Charge__@UnitType'] == 'MB']
+                for _, row in data_usage.iterrows():
+                    service_name = row['Charges__BudgetCentre__ProductFamily__Charge__@Desc']
+                    volume = float(row['Charges__BudgetCentre__ProductFamily__Charge__@Units'])
+                    if pd.notna(service_name):
+                        result.append({
+                            'phone_number': phone_number,
+                            'service_name': service_name,
+                            'service_type': 'data',
+                            'amount': 0.0,
+                            'quantity': volume,
+                            'unit': 'MB',
+                            'total': 0.0,
+                            'is_excess_usage': False,
+                        })
             
         except Exception as e:
             _logger.error(f"Error processing Telekom CSV file: {str(e)}")
@@ -201,7 +295,11 @@ class ContractMobileInvoice(models.Model):
                 if pd.isna(phone_number):
                     continue
                     
-                phone_number = str(phone_number)
+                phone_number = str(phone_number).lstrip('00')
+                
+                # Skip non-Slovak numbers
+                if not phone_number.startswith('421'):
+                    continue
                 
                 # Get the basic plan amount from SubscriberTotalNETAmount
                 basic_plan_amount = self._safe_convert_to_float(data['Subscribers__Subscriber__SubscriberTotalNETAmount'].iloc[0])
