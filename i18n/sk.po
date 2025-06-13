@@ -2,6 +2,8 @@
 # This file contains the translation of the following modules:
 # * contract
 #
+# Slovak translation for mobile invoice functionality
+#
 # Translators:
 # OCA Transbot <transbot@odoo-community.org>, 2017
 msgid ""
@@ -17,6 +19,96 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+
+#. module: contract
+#: model:ir.ui.view,arch_db:contract.contract_mobile_invoice_view_form
+msgid "Mobile Invoice"
+msgstr "Mobilná faktúra"
+
+#. module: contract
+#: model:ir.ui.view,arch_db:contract.contract_mobile_invoice_view_form
+msgid "Process"
+msgstr "Spracovať"
+
+#. module: contract
+#: model:ir.ui.view,arch_db:contract.contract_mobile_invoice_view_form
+msgid "Mark as Done"
+msgstr "Označiť ako hotové"
+
+#. module: contract
+#: model:ir.ui.view,arch_db:contract.contract_mobile_invoice_view_form
+msgid "Reset to Draft"
+msgstr "Vrátiť na koncept"
+
+#. module: contract
+#: model:ir.ui.view,arch_db:contract.contract_mobile_invoice_view_list
+msgid "Mobile Invoices"
+msgstr "Mobilné faktúry"
+
+#. module: contract
+#: model:ir.model.fields,field_description:contract.field_contract_mobile_invoice__operator
+msgid "Operator"
+msgstr "Operátor"
+
+#. module: contract
+#: model:ir.model.fields,field_description:contract.field_contract_mobile_invoice_line__service_name
+msgid "Service"
+msgstr "Služba"
+
+#. module: contract
+#: model:ir.model.fields,field_description:contract.field_contract_mobile_invoice_line__service_type
+msgid "Type"
+msgstr "Typ"
+
+#. module: contract
+#: model:ir.model.fields,field_description:contract.field_contract_mobile_invoice_line__amount
+msgid "Amount"
+msgstr "Suma"
+
+#. module: contract
+#: model:ir.model.fields,field_description:contract.field_contract_mobile_invoice_line__quantity
+msgid "Quantity"
+msgstr "Množstvo"
+
+#. module: contract
+#: model:ir.model.fields,field_description:contract.field_contract_mobile_invoice_line__total
+msgid "Total"
+msgstr "Celkom"
+
+#. module: contract
+#: model:ir.model.fields,field_description:contract.field_contract_mobile_invoice_line__is_excess_usage
+msgid "Excess Usage"
+msgstr "Nadspotreba"
+
+#. module: contract
+#: model:ir.model.fields.selection,name:contract.selection__contract_mobile_invoice__operator__telekom
+msgid "Telekom"
+msgstr "Telekom"
+
+#. module: contract
+#: model:ir.model.fields.selection,name:contract.selection__contract_mobile_invoice__operator__o2
+msgid "O2"
+msgstr "O2"
+
+#. module: contract
+#: model:ir.model.fields,field_description:contract.field_contract_mobile_invoice__state
+msgid "Status"
+msgstr "Stav"
+
+#. module: contract
+#: model:ir.model.fields.selection,name:contract.selection__contract_mobile_invoice__state__draft
+msgid "Draft"
+msgstr "Koncept"
+
+#. module: contract
+#: model:ir.model.fields.selection,name:contract.selection__contract_mobile_invoice__state__processed
+msgid "Processed"
+msgstr "Spracované"
+
+#. module: contract
+#: model:ir.model.fields.selection,name:contract.selection__contract_mobile_invoice__state__done
+msgid "Done"
+msgstr "Hotové"
 
 #. module: contract
 #: model:mail.template,body_html:contract.email_contract_template

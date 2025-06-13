@@ -6,11 +6,11 @@
         <field name="name">contract.mobile.invoice.form</field>
         <field name="model">contract.mobile.invoice</field>
         <field name="arch" type="xml">
-            <form string="Mobile Invoice">
+            <form string="Mobilná faktúra">
                 <header>
-                    <button name="action_process_invoice" string="Process" type="object" class="oe_highlight" invisible="state != 'draft'"/>
-                    <button name="action_done" string="Mark as Done" type="object" class="oe_highlight" invisible="state != 'processed'"/>
-                    <button name="action_reset_to_draft" string="Reset to Draft" type="object" invisible="state == 'draft'"/>
+                    <button name="action_process_invoice" string="Spracovať" type="object" class="oe_highlight" invisible="state != 'draft'"/>
+                    <button name="action_done" string="Označiť ako hotové" type="object" class="oe_highlight" invisible="state != 'processed'"/>
+                    <button name="action_reset_to_draft" string="Vrátiť na koncept" type="object" invisible="state == 'draft'"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,processed,done"/>
                 </header>
                 <sheet>
@@ -29,27 +29,27 @@
                             <field name="line_count"/>
                         </group>
                     </group>
-                    <group string="CSV File" invisible="state != 'draft'">
+                    <group string="CSV súbor" invisible="state != 'draft'">
                         <field name="csv_file" filename="csv_filename"/>
                         <field name="csv_filename" invisible="1"/>
                     </group>
-                    <group string="Notes">
+                    <group string="Poznámky">
                         <field name="notes" nolabel="1"/>
                     </group>
                     <notebook>
-                        <page string="Invoice Lines" name="invoice_lines">
+                        <page string="Riadky faktúry" name="invoice_lines">
                             <field name="invoice_line_ids">
                                 <list>
-                                    <field name="phone_number"/>
-                                    <field name="mobile_service_id"/>
-                                    <field name="partner_id"/>
-                                    <field name="service_name"/>
-                                    <field name="service_type"/>
-                                    <field name="amount"/>
-                                    <field name="quantity"/>
-                                    <field name="unit"/>
-                                    <field name="total" sum="Total"/>
-                                    <field name="is_excess_usage"/>
+                                    <field name="phone_number" string="Telefónne číslo"/>
+                                    <field name="mobile_service_id" string="Mobilná služba"/>
+                                    <field name="partner_id" string="Partner"/>
+                                    <field name="service_name" string="Služba"/>
+                                    <field name="service_type" string="Typ"/>
+                                    <field name="amount" string="Suma"/>
+                                    <field name="quantity" string="Množstvo"/>
+                                    <field name="unit" string="Jednotka"/>
+                                    <field name="total" sum="Celkom" string="Celkom"/>
+                                    <field name="is_excess_usage" string="Nadspotreba"/>
                                 </list>
                             </field>
                         </page>
@@ -69,12 +69,12 @@
         <field name="name">contract.mobile.invoice.list</field>
         <field name="model">contract.mobile.invoice</field>
         <field name="arch" type="xml">
-            <list string="Mobile Invoices">
-                <field name="name"/>
-                <field name="date"/>
-                <field name="operator"/>
-                <field name="line_count"/>
-                <field name="state"/>
+            <list string="Mobilné faktúry">
+                <field name="name" string="Referencia"/>
+                <field name="date" string="Dátum"/>
+                <field name="operator" string="Operátor"/>
+                <field name="line_count" string="Počet riadkov"/>
+                <field name="state" string="Stav"/>
             </list>
         </field>
     </record>
@@ -84,18 +84,18 @@
         <field name="name">contract.mobile.invoice.search</field>
         <field name="model">contract.mobile.invoice</field>
         <field name="arch" type="xml">
-            <search string="Search Mobile Invoices">
-                <field name="name"/>
-                <field name="date"/>
-                <field name="operator"/>
+            <search string="Vyhľadať mobilné faktúry">
+                <field name="name" string="Referencia"/>
+                <field name="date" string="Dátum"/>
+                <field name="operator" string="Operátor"/>
                 <separator/>
-                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
-                <filter string="Processed" name="processed" domain="[('state', '=', 'processed')]"/>
-                <filter string="Done" name="done" domain="[('state', '=', 'done')]"/>
-                <group expand="0" string="Group By">
-                    <filter string="State" name="group_by_state" context="{'group_by': 'state'}"/>
-                    <filter string="Operator" name="group_by_operator" context="{'group_by': 'operator'}"/>
-                    <filter string="Date" name="group_by_date" context="{'group_by': 'date'}"/>
+                <filter string="Koncept" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Spracované" name="processed" domain="[('state', '=', 'processed')]"/>
+                <filter string="Hotové" name="done" domain="[('state', '=', 'done')]"/>
+                <group expand="0" string="Zoskupiť podľa">
+                    <filter string="Stav" name="group_by_state" context="{'group_by': 'state'}"/>
+                    <filter string="Operátor" name="group_by_operator" context="{'group_by': 'operator'}"/>
+                    <filter string="Dátum" name="group_by_date" context="{'group_by': 'date'}"/>
                 </group>
             </search>
         </field>
