@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- filepath: /var/lib/odoo/addons/contract/wizards/contract_mobile_invoice_import.xml -->
+<odoo>
+    <!-- Mobile Invoice Import Wizard Form View -->
+    <record id="contract_mobile_invoice_import_view_form" model="ir.ui.view">
+        <field name="name">contract.mobile.invoice.import.form</field>
+        <field name="model">contract.mobile.invoice.import</field>
+        <field name="arch" type="xml">
+            <form string="Import Mobile Invoice">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="date"/>
+                            <field name="operator"/>
+                        </group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <group string="CSV File">
+                        <field name="csv_file" filename="csv_filename" required="1"/>
+                        <field name="csv_filename" invisible="1"/>
+                    </group>
+                    <group string="Notes">
+                        <field name="notes" nolabel="1"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_import" string="Import" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Mobile Usage Report Generation Wizard Form View -->
+    <record id="contract_mobile_generate_report_view_form" model="ir.ui.view">
+        <field name="name">contract.mobile.generate.report.form</field>
+        <field name="model">contract.mobile.generate.report</field>
+        <field name="arch" type="xml">
+            <form string="Generate Usage Report">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="date"/>
+                        </group>
+                        <group>
+                            <field name="invoice_id"/>
+                            <field name="partner_id"/>
+                        </group>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_generate" string="Generate" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action for Mobile Invoice Import Wizard -->
+    <record id="action_contract_mobile_invoice_import" model="ir.actions.act_window">
+        <field name="name">Import Mobile Invoice</field>
+        <field name="res_model">contract.mobile.invoice.import</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Action for Mobile Usage Report Generation Wizard -->
+    <record id="action_contract_mobile_generate_report" model="ir.actions.act_window">
+        <field name="name">Generate Usage Report</field>
+        <field name="res_model">contract.mobile.generate.report</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

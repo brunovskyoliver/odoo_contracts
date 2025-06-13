@@ -1,0 +1,873 @@
+InvoiceHeader__InvoiceNumber,InvoiceHeader__AccountName,InvoiceHeader__AccountStreet,InvoiceHeader__AccountCity,InvoiceHeader__AccountZIP,InvoiceHeader__AccountCountry,InvoiceHeader__BillingAccountNumber,InvoiceHeader__BillingAccountName,InvoiceHeader__BillingAccountStreet,InvoiceHeader__BillingAccountCity,InvoiceHeader__BillingAccountZIP,InvoiceHeader__BillingAccountCountry,InvoiceHeader__IssueDate,InvoiceHeader__DueDate,InvoiceHeader__DeliveryDate,InvoiceHeader__Currency,InvoiceHeader__TotalNetAmount,InvoiceHeader__TotalVAT,InvoiceHeader__TotalAmount,InvoiceHeader__Taxes__TaxItem__TaxRate,InvoiceHeader__Taxes__TaxItem__TaxBase,InvoiceHeader__Taxes__TaxItem__TaxAmount,Subscribers__Subscriber__MSISDN,Subscribers__Subscriber__SubscriberTotalNETAmount,Subscribers__Subscriber__InvoiceLines__FeeLines__Fee__Site,Subscribers__Subscriber__InvoiceLines__FeeLines__Fee__FeeType,Subscribers__Subscriber__InvoiceLines__FeeLines__Fee__FeeName,Subscribers__Subscriber__InvoiceLines__FeeLines__Fee__PeriodStart,Subscribers__Subscriber__InvoiceLines__FeeLines__Fee__PeriodEnd,Subscribers__Subscriber__InvoiceLines__FeeLines__Fee__FeeUOM,Subscribers__Subscriber__InvoiceLines__FeeLines__Fee__FeeNetAmount,Subscribers__Subscriber__InvoiceLines__FeeLines__Fee__VAT,Subscribers__Subscriber__InvoiceLines__UsageLines,Subscribers__Subscriber__InvoiceLines__UsageLines__Usage__Site,Subscribers__Subscriber__InvoiceLines__UsageLines__Usage__UsageItemName,Subscribers__Subscriber__InvoiceLines__UsageLines__Usage__Amount,Subscribers__Subscriber__InvoiceLines__UsageLines__Usage__Volume,Subscribers__Subscriber__InvoiceLines__UsageLines__Usage__UsageUOM,Subscribers__Subscriber__InvoiceLines__UsageLines__Usage__UsageItemNetAmount,Subscribers__Subscriber__InvoiceLines__UsageLines__Usage__VAT
+7100109474.0,NOVEM IT s.r.o.,Lichnerova,Senec,90301.0,Slovakia,BAC000006409,NOVEM IT s.r.o.- Mobile Voice,Lichnerova,Senec,90301.0,Slovakia,2024-12-02,2024-12-16,2024-12-02,EUR,1147.26,218.85,1366.11,0.0,53.02,0.0,421940946916,0.4007,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,12.0,662.0,Second,0.2207,20%
+,,,,,,,,,,,,,,,,,,,20.0,1094.24,218.85,421940946916,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421940946917,0.6131,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,21.0,1299.0,Second,0.4331,20%
+,,,,,,,,,,,,,,,,,,,,,,421940946917,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421905989688,9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Volania v roamingu prijaté,1.0,45.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905989688,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,176.0,26610.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905989688,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),31.0,10191534080.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905989688,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,53.0,2847.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905989688,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,3.0,406.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905989688,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,10.0,819.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905989688,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,8.0,8.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905417176,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,2.0,223.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905417176,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,2.0,2.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905417176,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,9.0,2361.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905417176,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,9.0,13199.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905417176,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,1.0,207.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905417176,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),28.0,3752182784.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905417176,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,10.0,10.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949226711,9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,25.0,1100.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949226711,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),2.0,127313920.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949226711,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,16601882624.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949226711,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,13.0,551.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949226711,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,51.0,1589.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949226711,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu,1.0,18.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948708904,18.33,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,"SLUŽBY MODRA, s.r.o. | Parkovné | Jednorazová platba | 2200",2.0,34000.0,Money,3.4,0%
+,,,,,,,,,,,,,,,,,,,,,,421948708904,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,3324232704.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948708904,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,9.0,1863.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948708904,,,,,,,,,,,NOVEM IT s.r.o.,"BAUER MEDIA Slovakia, k.s. | SMS SÚŤAŽ EXPRES7779 | Jednorazová platba | 7779",6.0,60000.0,Money,6.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948708904,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,49.0,3861.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948708904,,,,,,,,,,,NOVEM IT s.r.o.,BPS PARK a.s. | Parkovné Bratislava | Jednorazová platba | 2200,2.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948708904,,,,,,,,,,,NOVEM IT s.r.o.,Info SMS | Info SMS | Jednorazová platba | 7779,4.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948708904,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,1.0,1.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948708904,,,,,,,,,,,NOVEM IT s.r.o.,Služby mobilnej zábavy poskytovateľa | 7779,6.0,3000.0,Money,0.3,20%
+,,,,,,,,,,,,,,,,,,,,,,421948708904,,,,,,,,,,,NOVEM IT s.r.o.,Služby mobilnej zábavy partnerov poskytovateľa | 2200,2.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948708904,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,30.0,2883.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903552567,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),22.0,1839230976.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903552567,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,2.0,2.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903552567,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,23.0,6251.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903552567,,,,,,,,,,,NOVEM IT s.r.o.,DV Payment | Busuu | Opakovaná platba 1/W,2.0,60000.0,Money,6.0,0%
+,,,,,,,,,,,,,,,,,,,,,,421903552567,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,13.0,2980.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903552567,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,53.0,10378.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903552567,,,,,,,,,,,NOVEM IT s.r.o.,DV Payment | Myallsports | Jednorazová platba,1.0,30000.0,Money,-3.0,0%
+,,,,,,,,,,,,,,,,,,,,,,421903552567,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,9.0,9.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903552567,,,,,,,,,,,NOVEM IT s.r.o.,DV Payment | Myallsports | Opakovaná platba 1/W,1.0,30000.0,Money,3.0,0%
+,,,,,,,,,,,,,,,,,,,,,,421903552567,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,6.0,427.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903552567,,,,,,,,,,,NOVEM IT s.r.o.,DV Payment | Busuu | Jednorazová platba,2.0,60000.0,Money,-6.0,0%
+,,,,,,,,,,,,,,,,,,,,,,421903646599,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),26.0,176010240.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903646599,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,1.0,107.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903646599,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,1.0,1.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948838888,12.73,NOVEM IT s.r.o.,recurring_arrears,e-Net 150 minut 20GB,2024-11-01,2024-11-30,Money,7.9,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,29.0,1448.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948838888,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,2.0,37.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948838888,,,,,,,,,,,NOVEM IT s.r.o.,"Dopravný podnik Bratislava, a.s. | MHD lístok | Jednorazová platba | 1140",4.0,48000.0,Money,4.8,0%
+,,,,,,,,,,,,,,,,,,,,,,421948838888,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,7930227712.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948838888,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,4.0,123.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948838888,,,,,,,,,,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,1.0,53.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948838888,,,,,,,,,,,NOVEM IT s.r.o.,Služby mobilnej zábavy poskytovateľa | 1140,4.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903440344,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),29.0,223521792.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903440344,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,1.0,684.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903440344,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,1.0,39.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903440344,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,4.0,209.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903440344,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,3.0,173.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421910859118,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),26.0,178678784.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421910859118,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,2.0,278.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421910419100,9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,19.0,1971.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421910419100,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),29.0,10903054336.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421910419100,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu,1.0,39.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421910419100,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),3.0,2013707264.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948191170,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,2028544.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948191170,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421944012802,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,3.0,3.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421944012802,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,24.0,1365.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421944012802,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,37797888.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948324417,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,3193856.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948324417,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948863297,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,3996672.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948863297,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421940658451,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,3632128.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421940658451,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421940948300,9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Odoslané SMS do zahraničia,3.0,3.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421940948300,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,19.0,19.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421940948300,,,,,,,,,,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,2.0,168.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421940948300,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,10.0,10.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421940948300,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,22.0,2432.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421940948300,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,72.0,14537.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421940948300,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,6.0,820.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421940948300,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,376927232.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911553400,26.130000000000003,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,EEI s.r.o. | Parkovné VnT | Jednorazová platba | 2200,1.0,6000.0,Money,0.6,0%
+,,,,,,,,,,,,,,,,,,,,,,421911553400,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,1.0,1.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911553400,,,,,,,,,,,NOVEM IT s.r.o.,BAPOS m.p. Bardejov | Parkovné | Jednorazová platba | 2200,2.0,20000.0,Money,2.0,0%
+,,,,,,,,,,,,,,,,,,,,,,421911553400,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu,11.0,2367.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911553400,,,,,,,,,,,NOVEM IT s.r.o.,"O2 Slovakia, s.r.o. | SMS Platba | Jednorazová platba | 2200",5.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911553400,,,,,,,,,,,NOVEM IT s.r.o.,BPS PARK a.s. | Parkovné Bratislava | Jednorazová platba | 2200,1.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911553400,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,2.0,2.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911553400,,,,,,,,,,,NOVEM IT s.r.o.,"O2 Slovakia, s.r.o. | SMS Platba | Opakovaná platba 1/M | 8844",1.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911553400,,,,,,,,,,,NOVEM IT s.r.o.,Mediatex s.r.o. | Platba sms | Opakovaná platba 1/M | 8844,1.0,120000.0,Money,12.0,0%
+,,,,,,,,,,,,,,,,,,,,,,421911553400,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,7280156672.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911553400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,71.0,6080.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911553400,,,,,,,,,,,NOVEM IT s.r.o.,Mediatex s.r.o. | Parkovné Prešov | Jednorazová platba | 2200,2.0,20000.0,Money,2.0,0%
+,,,,,,,,,,,,,,,,,,,,,,421911553400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,72.0,6325.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911553400,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu prijaté,6.0,470.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911553400,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),1.0,453409792.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911553400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,27.0,3964.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911553400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,50.0,24289.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911553400,,,,,,,,,,,NOVEM IT s.r.o.,Služby mobilnej zábavy partnerov poskytovateľa | 2200,6.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911556400,10.73,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,3.0,3.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911556400,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,24.0,10453.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911556400,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),4.0,995425280.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911556400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,13.0,774.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911556400,,,,,,,,,,,NOVEM IT s.r.o.,BPS PARK a.s. | Parkovné Bratislava | Jednorazová platba | 2200,1.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911556400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,98.0,16781.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911556400,,,,,,,,,,,NOVEM IT s.r.o.,Volania na čísla so špec. sadzbou,2.0,165.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911556400,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu prijaté,3.0,203.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911556400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,58.0,18289.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911556400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,1.0,145.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911556400,,,,,,,,,,,NOVEM IT s.r.o.,"Pezinská mestská spoločnosť, s.r.o. | Parkovné | Jednorazová platba | 2200",1.0,12000.0,Money,1.2,0%
+,,,,,,,,,,,,,,,,,,,,,,421911556400,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,9004986368.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911556400,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS v roamingu,2.0,2.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911556400,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,20.0,20.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911556400,,,,,,,,,,,NOVEM IT s.r.o.,Služby mobilnej zábavy partnerov poskytovateľa | 2200,1.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911556400,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu,7.0,543.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911552400,9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,1.0,112.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911552400,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,5.0,3753.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911552400,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,1434765312.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911552400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,7.0,754.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911552400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,21.0,12418.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911552400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,14.0,3702.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949014606,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,NOVEM IT s.r.o.,Volania do siete O2,1.0,259.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949014606,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),8.0,7218176.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949014604,2.0643,NOVEM IT s.r.o.,recurring_arrears,e-Net fér 20GB,2024-11-20,2024-11-30,Money,2.0533,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),20.0,218053632.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949014604,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-20,2024-11-30,Money,0.011,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),10.0,7624704.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911558400,14.48,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,4.0,4.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911558400,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,54.0,5148.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911558400,,,,,,,,,,,NOVEM IT s.r.o.,BPS PARK a.s. | Parkovné Bratislava | Jednorazová platba | 2200,3.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911558400,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS v roamingu,4.0,4.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911558400,,,,,,,,,,,NOVEM IT s.r.o.,"O2 Slovakia, s.r.o. | SMS Platba | Jednorazová platba | 2200",2.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911558400,,,,,,,,,,,NOVEM IT s.r.o.,Mesto Galanta | Parkovné | Jednorazová platba | 2200,2.0,12000.0,Money,1.2,0%
+,,,,,,,,,,,,,,,,,,,,,,421911558400,,,,,,,,,,,NOVEM IT s.r.o.,Municipal Real Estate Dunajská Streda | Parkovné | Jednorazová platba | 2200,2.0,24000.0,Money,2.4,0%
+,,,,,,,,,,,,,,,,,,,,,,421911558400,,,,,,,,,,,NOVEM IT s.r.o.,"NOVOVITAL, p.o. mesta Nové Zámky | Parkovné | Jednorazová platba | 2200",1.0,6500.0,Money,0.65,0%
+,,,,,,,,,,,,,,,,,,,,,,421911558400,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,1.0,1.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911558400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,40.0,4396.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911558400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,24.0,4611.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911558400,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu prijaté,3.0,420.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911558400,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),1.0,41704448.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911558400,,,,,,,,,,,NOVEM IT s.r.o.,Technické služby mesta Šahy | Parkovné | Jednorazová platba | 2200,1.0,7000.0,Money,0.7,0%
+,,,,,,,,,,,,,,,,,,,,,,421911558400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,34.0,7130.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911558400,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu,2.0,72.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911558400,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,4442929152.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911558400,,,,,,,,,,,NOVEM IT s.r.o.,Služby mobilnej zábavy partnerov poskytovateľa | 2200,6.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911333808,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Odoslané SMS do zahraničia,3.0,3.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911333808,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,3.0,332.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911333808,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,76.0,76.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911333808,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,8.0,2058.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911333808,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,34.0,6184.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911333808,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,13.0,13.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911333808,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),24.0,34639872.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949007471,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,NOVEM IT s.r.o.,Volania do siete O2,3.0,74.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949007471,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,40.0,1267.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949007471,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),16.0,524288000.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949007471,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),15.0,169321472.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949007472,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),20.0,204934144.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949007472,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),11.0,524288000.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949007472,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,22.0,815.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949007472,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,9.0,2546.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949007472,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,3.0,99.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911557400,13.0154,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Správa cestovného ruchu Senec s.r.o. | Parkovné | Jednorazová platba | 2200,1.0,10000.0,Money,1.0,0%
+,,,,,,,,,,,,,,,,,,,,,,421911557400,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,3.0,3.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911557400,,,,,,,,,,,NOVEM IT s.r.o.,"O2 Slovakia, s.r.o. | SMS Platba | Jednorazová platba | 2200",2.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911557400,,,,,,,,,,,NOVEM IT s.r.o.,BPS PARK a.s. | Parkovné Bratislava | Jednorazová platba | 2200,1.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911557400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,94.0,9228.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911557400,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),1.0,131692544.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911557400,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),31.0,2065099776.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911557400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,2.0,182.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911557400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,137.0,18552.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911557400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,18.0,1205.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911557400,,,,,,,,,,,NOVEM IT s.r.o.,Volania na čísla so špec. sadzbou,1.0,113.0,Second,0.2354,20%
+,,,,,,,,,,,,,,,,,,,,,,421911557400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,44.0,8069.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911557400,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu prijaté,2.0,111.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911557400,,,,,,,,,,,NOVEM IT s.r.o.,Mesto Trenčín | Parkovné | Jednorazová platba | 2200,4.0,17500.0,Money,1.75,0%
+,,,,,,,,,,,,,,,,,,,,,,421911557400,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu,8.0,551.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911557400,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS v roamingu,1.0,1.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911557400,,,,,,,,,,,NOVEM IT s.r.o.,Kysucké Nové Mesto | Parkovné | Jednorazová platba | 2200,1.0,5000.0,Money,0.5,0%
+,,,,,,,,,,,,,,,,,,,,,,421911557400,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,2.0,2.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911557400,,,,,,,,,,,NOVEM IT s.r.o.,Služby mobilnej zábavy partnerov poskytovateľa | 2200,7.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911557400,,,,,,,,,,,NOVEM IT s.r.o.,"Union poisťovňa, a. s. | Poistenie | Jednorazová platba | 2200",4.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911557400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,1.0,6.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908525400,9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Volania do siete O2,8.0,1151.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908525400,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,25.0,3705.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908525400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,13.0,894.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908525400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,3.0,380.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908525400,,,,,,,,,,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,7.0,1555.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908525400,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,5782404096.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421947925828,9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,184.0,42889.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421947925828,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,9.0,9.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421947925828,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,1.0,14.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421947925828,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,10139476992.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421947925828,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,43.0,13601.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421947925828,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,15.0,15.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421947925828,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),1.0,1064473600.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421947925828,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu prijaté,3.0,305.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421947925828,,,,,,,,,,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,1.0,13.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421947925828,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,6.0,495.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421947925828,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu,1.0,73.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918936079,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,57.0,5566.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918936079,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,19.0,2666.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918936079,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,7.0,538.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918936079,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,6.0,771.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948113747,8.727599999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,14.0,1901.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948113747,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),3.0,228352.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948113747,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,11.0,2051.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948113747,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,21.0,3520.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948113747,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu mimo EÚ (MB),2.0,20480.0,Byte,0.0976,20%
+,,,,,,,,,,,,,,,,,,,,,,421948113747,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,5.0,684.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948304080,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,10.0,10.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948304080,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,82.0,3858.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948304080,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,1.0,136.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948304080,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,55.0,2944.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948304080,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,29.0,928.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948304080,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),26.0,336874496.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948304080,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,9.0,9.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905321878,15.93,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 50GB,2024-11-01,2024-11-30,Money,15.9,20%,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,139.0,139.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905321878,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Odoslané SMS do zahraničia,9.0,9.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905321878,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,3212991488.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905321878,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,38.0,38.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905321878,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,112.0,20585.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905321878,,,,,,,,,,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,1.0,104.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905321878,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,85.0,6759.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905321878,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,25.0,6131.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905321878,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,15.0,1729.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918845123,18.33,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,7.0,903.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918845123,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,13.0,4127.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918845123,,,,,,,,,,,NOVEM IT s.r.o.,Správa cestovného ruchu Senec s.r.o. | Parkovné | Jednorazová platba | 2200,3.0,30000.0,Money,3.0,0%
+,,,,,,,,,,,,,,,,,,,,,,421918845123,,,,,,,,,,,NOVEM IT s.r.o.,"Dopravný podnik Bratislava, a.s. | MHD lístok | Jednorazová platba | 1140",2.0,24000.0,Money,2.4,0%
+,,,,,,,,,,,,,,,,,,,,,,421918845123,,,,,,,,,,,NOVEM IT s.r.o.,Služby mobilnej zábavy partnerov poskytovateľa | 8877,3.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918845123,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),32.0,3943472128.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918845123,,,,,,,,,,,NOVEM IT s.r.o.,BPS PARK a.s. | Parkovné Bratislava | Jednorazová platba | 2200,3.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918845123,,,,,,,,,,,NOVEM IT s.r.o.,"eČasenka, s.r.o. | Ecasenka.sk | Jednorazová platba | 8877",3.0,43000.0,Money,4.3,0%
+,,,,,,,,,,,,,,,,,,,,,,421918845123,,,,,,,,,,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,5.0,2374.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918845123,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,4.0,231.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918845123,,,,,,,,,,,NOVEM IT s.r.o.,Služby mobilnej zábavy poskytovateľa | 1140,2.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918845123,,,,,,,,,,,NOVEM IT s.r.o.,"O2 Slovakia, s.r.o. | SMS Platba | Jednorazová platba | 8877",6.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918845123,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu prijaté,4.0,1073.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918845123,,,,,,,,,,,NOVEM IT s.r.o.,Služby mobilnej zábavy poskytovateľa | 777,2.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918845123,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),1.0,10403840.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918845123,,,,,,,,,,,NOVEM IT s.r.o.,Služby mobilnej zábavy partnerov poskytovateľa | 2200,3.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918845123,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,1.0,15.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918844362,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),32.0,642176000.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918844362,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2,2.0,51.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918844362,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,3.0,287.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918844362,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),1.0,1881088.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918844362,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,5.0,421.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918844362,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,1.0,1.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908834799,20.89,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 100GB,2024-11-01,2024-11-30,Money,20.7,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,93.0,7877.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908834799,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),32.0,23358156800.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908834799,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,1.0,1.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908834799,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do zahraničia,2.0,2.0,occurrence,0.16,20%
+,,,,,,,,,,,,,,,,,,,,,,421908834799,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,25.0,3837.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908834799,,,,,,,,,,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,8.0,318.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908834799,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do zahraničia,3.0,3.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908834799,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,4.0,711.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948171550,10.13,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Volania do siete O2,1.0,156.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948171550,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,103.0,26837.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948171550,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,14.0,14.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948171550,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS v roamingu,3.0,3.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948171550,,,,,,,,,,,NOVEM IT s.r.o.,Mesto Trnava | Parkovné | Jednorazová platba | 2200,1.0,6000.0,Money,0.6,0%
+,,,,,,,,,,,,,,,,,,,,,,421948171550,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,3.0,3.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948171550,,,,,,,,,,,NOVEM IT s.r.o.,BPS PARK a.s. | Parkovné Bratislava | Jednorazová platba | 2200,1.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948171550,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),2.0,24646656.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948171550,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,14973292544.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948171550,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,120.0,24598.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948171550,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu prijaté,3.0,310.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948171550,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu,1.0,19.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948171550,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,3.0,733.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948171550,,,,,,,,,,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,3.0,1658.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948171550,,,,,,,,,,,NOVEM IT s.r.o.,Služby mobilnej zábavy partnerov poskytovateľa | 2200,1.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918348577,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,39.0,2139.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918348577,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2,1.0,70.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918348577,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),2.0,2048.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918348577,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,1.0,175.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948050889,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,6.0,6.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948050889,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,1.0,76.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948050889,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),23.0,103172096.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948050889,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,16.0,2162.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948050889,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,11.0,1037.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948050889,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,1.0,1.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948050889,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,40.0,3434.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948050889,,,,,,,,,,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,1.0,101.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948050889,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do zahraničia,1.0,1.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905143198,4.5392,NOVEM IT s.r.o.,recurring_arrears,e-Net fér 6GB,2024-11-01,2024-11-30,Money,4.3,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,37.0,1996.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905143198,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),26.0,5432682496.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905143198,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,7.0,251.0,Second,0.2092,20%
+,,,,,,,,,,,,,,,,,,,,,,421948099987,9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,15.0,15.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948099987,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,50.0,5104.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948099987,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu prijaté,18.0,1136.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948099987,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),1.0,418816.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948099987,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,5.0,5.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948099987,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,17.0,1704.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948099987,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu,9.0,476.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948099987,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),8.0,2223677440.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948099987,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,13.0,931.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948099987,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,1.0,48.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905106453,9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Volania na čísla so špec. sadzbou,2.0,651.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905106453,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,6.0,6.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905106453,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu prijaté,6.0,204.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905106453,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,7.0,7.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905106453,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),31.0,1391697920.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905106453,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,50.0,5304.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905106453,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,7.0,535.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905106453,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,4.0,155.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905106453,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,190.0,13222.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915205351,17.03,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,90.0,15264.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915205351,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,102.0,4327.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915205351,,,,,,,,,,,NOVEM IT s.r.o.,"BAUER MEDIA Slovakia, k.s. | SMS SÚŤAŽ EXPRES7779 | Jednorazová platba | 7779",8.0,80000.0,Money,8.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915205351,,,,,,,,,,,NOVEM IT s.r.o.,Služby mobilnej zábavy poskytovateľa | 7779,8.0,4000.0,Money,0.4,20%
+,,,,,,,,,,,,,,,,,,,,,,421915205351,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,4821507072.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915205351,,,,,,,,,,,NOVEM IT s.r.o.,Info SMS | Info SMS | Jednorazová platba | 7779,4.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915205351,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,14.0,7031.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911400852,10.737799999999998,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,5.0,179.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911400852,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,"BAUER MEDIA Slovakia, k.s. | SMS SÚŤAŽ EXPRES7779 | Jednorazová platba | 7779",2.0,20000.0,Money,2.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911400852,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,2747730944.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911400852,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,58.0,2339.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911400852,,,,,,,,,,,NOVEM IT s.r.o.,Služby mobilnej zábavy poskytovateľa | 7779,2.0,1000.0,Money,0.1,20%
+,,,,,,,,,,,,,,,,,,,,,,421911400852,,,,,,,,,,,NOVEM IT s.r.o.,Info SMS | Info SMS | Jednorazová platba | 7779,4.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911400852,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,9.0,872.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911400852,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,23.0,6591.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911400852,,,,,,,,,,,NOVEM IT s.r.o.,Volania na čísla so špec. sadzbou,1.0,2.0,Second,0.0078,20%
+,,,,,,,,,,,,,,,,,,,,,,421948878888,10.33,NOVEM IT s.r.o.,recurring_arrears,e-Net 150 minut 20GB,2024-11-01,2024-11-30,Money,7.9,20%,,NOVEM IT s.r.o.,"Dopravný podnik Bratislava, a.s. | MHD lístok | Jednorazová platba | 1140",2.0,24000.0,Money,2.4,0%
+,,,,,,,,,,,,,,,,,,,,,,421948878888,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,3.0,59.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948878888,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,1350808576.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948878888,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,28.0,1094.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948878888,,,,,,,,,,,NOVEM IT s.r.o.,Služby mobilnej zábavy poskytovateľa | 1140,2.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948355803,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,8.0,169.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948355803,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,1.0,1.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948355803,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,2.0,2.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948355803,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,26.0,1423.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948355803,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),10.0,115436544.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948113180,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,4.0,240.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948113180,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421903414941,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Volania na čísla so špec. sadzbou,1.0,650.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903414941,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,7.0,780.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903414941,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,3.0,102.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903414941,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,8.0,353.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903414941,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,16.0,653.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948883388,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),6.0,6839296.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948883388,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),1.0,473088.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421944330964,18.7068,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,1.0,1.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421944330964,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Odoslané SMS v roamingu,1.0,1.0,occurrence,0.25,20%
+,,,,,,,,,,,,,,,,,,,,,,421944330964,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),24.0,598732800.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421944330964,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,4.0,226.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421944330964,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané MMS v roamingu,1.0,1.0,occurrence,0.25,20%
+,,,,,,,,,,,,,,,,,,,,,,421944330964,,,,,,,,,,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,6.0,415.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421944330964,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,27.0,2597.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421944330964,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,8.0,590.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421944330964,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu prijaté,4.0,124.0,Second,0.8268,20%
+,,,,,,,,,,,,,,,,,,,,,,421944330964,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,14.0,14.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421944330964,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),1.0,232448.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421944330964,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,50.0,6106.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421944330964,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS v roamingu,35.0,35.0,occurrence,8.75,20%
+,,,,,,,,,,,,,,,,,,,,,,421902046509,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,20433920.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421902046509,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948338833,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),1.0,524288000.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948338833,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2,1.0,61.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948338833,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,189304832.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948433101,10.13,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Mesto Podolínec | Parkovné | Jednorazová platba | 2200,1.0,6000.0,Money,0.6,0%
+,,,,,,,,,,,,,,,,,,,,,,421948433101,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,8.0,8.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948433101,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,91.0,7955.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948433101,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),19.0,2606790656.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948433101,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,20.0,2676.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948433101,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,2.0,60.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948433101,,,,,,,,,,,NOVEM IT s.r.o.,BPS PARK a.s. | Parkovné Bratislava | Jednorazová platba | 2200,1.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948433101,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,43.0,6241.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948433101,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,2.0,2.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948433101,,,,,,,,,,,NOVEM IT s.r.o.,Služby mobilnej zábavy partnerov poskytovateľa | 2200,1.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949337782,9.8904,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,50.0,3006.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949337782,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),23.0,10005035008.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949337782,,,,,,,,,,,NOVEM IT s.r.o.,Volania na čísla so špec. sadzbou,1.0,173.0,Second,0.3604,20%
+,,,,,,,,,,,,,,,,,,,,,,421949337782,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu prijaté,7.0,560.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949337782,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,3.0,77.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949337782,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),2.0,623700992.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949337782,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,3.0,86.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949337782,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,4.0,4.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949337782,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,18.0,1513.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949337782,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu,7.0,654.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948224577,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,2.0,350.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948224577,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421902568231,15.93,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 50GB,2024-11-01,2024-11-30,Money,15.9,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,25566385152.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421902568231,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948781010,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,3.0,442.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948781010,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,10.0,10.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948781010,,,,,,,,,,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,1.0,72.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948781010,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,838798336.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948781010,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,75.0,7912.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948781010,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,16.0,1130.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948781010,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,30.0,2233.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948781010,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,2.0,2.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948330111,9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,6423842816.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948330111,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,8.0,563.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948330111,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,2.0,2.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948330111,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,61.0,9238.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948330111,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,1.0,989.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948330111,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,31.0,5016.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948330111,,,,,,,,,,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,2.0,190.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948330111,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,5.0,5.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222913,9.03,NOVEM IT s.r.o.,recurring_arrears,e-Net fér 30GB,2024-11-01,2024-11-30,Money,9.0,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,13873324032.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222913,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948222912,4.33,NOVEM IT s.r.o.,recurring_arrears,e-Net fér 6GB,2024-11-01,2024-11-30,Money,4.3,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),28.0,109616128.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222912,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948222915,3.8533,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,NOVEM IT s.r.o.,Odoslané SMS v roamingu,1.0,1.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222915,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),1.0,1473536.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222915,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,1.0,1.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222915,,,,,,,,,,,NOVEM IT s.r.o.,SMS na tiesňovú linku,3.0,3.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222915,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),1.0,1024.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222915,,,,,,,,,,,NOVEM IT s.r.o.,Volania na čísla so špec. sadzbou,1.0,121.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222915,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,4.0,335.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222915,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),1.0,524286976.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222915,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,83.0,8665.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222915,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,7.0,988.0,Second,0.8233,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222914,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,27574272.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222914,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948222908,0.93,NOVEM IT s.r.o.,recurring_arrears,"e-Net fér 0,5GB",2024-11-01,2024-11-30,Money,0.9,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,17212416.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222908,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948222910,5.83,NOVEM IT s.r.o.,recurring_arrears,e-Net 150minut 6GB,2024-11-01,2024-11-30,Money,5.8,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,262530048.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222910,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421905731100,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,9.0,3945.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905731100,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,1.0,1.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905731100,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,23.0,2294.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222909,0.93,NOVEM IT s.r.o.,recurring_arrears,"e-Net fér 0,5GB",2024-11-01,2024-11-30,Money,0.9,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,34310144.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222909,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421908787770,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,1.0,150.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908787770,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,1.0,1.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908787770,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,150.0,50031.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908787770,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,60.0,60.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908787770,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,28.0,15407.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908787770,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),1.0,17114112.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908787770,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu prijaté,1.0,80.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908787770,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu,1.0,49.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908787770,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,1062681600.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908787770,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,4.0,165.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908787770,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,64.0,10325.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908627470,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,2.0,9.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908627470,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2,3.0,125.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908627470,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,1.0,250.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908627470,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),24.0,1619712000.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908627470,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,22.0,1459.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949206335,15.93,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 50GB,2024-11-01,2024-11-30,Money,15.9,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,13.0,13.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949206335,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),7.0,2233435136.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949206335,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,200.0,14530.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949206335,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,65.0,4618.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949206335,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,39.0,3460.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949206335,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu,3.0,70.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949206335,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),23.0,44176834560.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949206335,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,10.0,651.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949206335,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu prijaté,2.0,58.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949206335,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,27.0,27.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949206335,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS v roamingu,1.0,1.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948305587,8.83,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 10GB,2024-11-01,2024-11-30,Money,8.8,20%,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,8.0,8.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948305587,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),17.0,10737418240.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948305587,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,20.0,679.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948305587,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),2.0,35826688.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948305587,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,4.0,366.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421940649944,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,5.0,414.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421940649944,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,2.0,2.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421940649944,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),3.0,12715008.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908594589,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,4.0,4.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908594589,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2,5.0,732.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908594589,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,1.0,20.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908594589,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,8.0,578.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908594589,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),2.0,29940736.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908594589,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,15.0,1028.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905512219,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),11.0,7340032000.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905512219,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,4.0,363.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905512219,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),2.0,193709056.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948299951,10.73,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),22.0,5033036800.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948299951,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,2.0,132.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948299951,,,,,,,,,,,NOVEM IT s.r.o.,Mesto Žilina | Parkovné | Jednorazová platba | 2200,2.0,12000.0,Money,1.2,0%
+,,,,,,,,,,,,,,,,,,,,,,421948299951,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,25.0,2405.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948299951,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,26.0,26.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948299951,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,22.0,22.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948299951,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,36.0,5359.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948299951,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,29.0,3964.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948299951,,,,,,,,,,,NOVEM IT s.r.o.,Služby mobilnej zábavy partnerov poskytovateľa | 2200,2.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948299951,,,,,,,,,,,NOVEM IT s.r.o.,"Union poisťovňa, a. s. | Poistenie | Jednorazová platba | 2200",2.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918406285,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,4.0,4.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918406285,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,43.0,3041.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918406285,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,1.0,72.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918406285,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,2.0,383.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918406285,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,3.0,159.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948484200,9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Volania na čísla so špec. sadzbou,2.0,431.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948484200,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,10881223680.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948484200,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,4.0,459.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948484200,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,102.0,14033.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948484200,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,14.0,14.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948484200,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,27.0,9054.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948484200,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,15.0,1353.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948484200,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,25.0,25.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918757489,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,7.0,287.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918757489,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,2.0,2.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918757489,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu prijaté,2.0,126.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421940600303,4.070100000000001,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,2.0,176.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421940600303,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,781076480.0,Byte,3.7242,20%
+,,,,,,,,,,,,,,,,,,,,,,421940600303,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,7.0,199.0,Second,0.1659,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222916,0.93,NOVEM IT s.r.o.,recurring_arrears,"e-Net fér 0,5GB",2024-11-01,2024-11-30,Money,0.9,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,24143872.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222916,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948318927,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,12.0,12.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948318927,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421917443322,9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,4.0,412.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421917443322,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2,59.0,11297.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421917443322,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,152.0,15172.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421917443322,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,7.0,7.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421917443322,,,,,,,,,,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,1.0,338.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421917443322,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,59.0,7255.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421917443322,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),1.0,179117056.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421917443322,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,12.0,12.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421917443322,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),27.0,20605927424.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918406215,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Volania do siete O2,14.0,579.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918406215,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,74.0,3195.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918406215,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,255.0,10228.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918406215,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,7.0,464.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918406215,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,5.0,5.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222901,5.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net nekonečno 0,5GB",2024-11-01,2024-11-30,Money,5.0,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,5.0,563.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222901,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2,19.0,3359.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222901,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,2.0,2.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222901,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,70.0,11146.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918856830,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),1.0,1260544.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918856830,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,1.0,92.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918856830,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,5.0,453.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908111146,4.73,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno bez dát,2024-11-01,2024-11-30,Money,4.7,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,4.0,4.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908111146,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,7.0,7.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421908111146,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,5.0,576.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421917678450,2.583699999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net 150minut bez dát,2024-11-01,2024-11-30,Money,2.3,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,4.0,4.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421917678450,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2,1.0,103.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421917678450,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),22.0,53186560.0,Byte,0.2537,20%
+,,,,,,,,,,,,,,,,,,,,,,421917678450,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,11.0,11.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421917678450,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,2.0,362.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421917678450,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,8.0,2417.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905415524,11.93,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 30GB,2024-11-01,2024-11-30,Money,11.9,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),24.0,10523954176.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905415524,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),2.0,637652992.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905415524,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,141.0,9877.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905415524,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,95.0,7299.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905415524,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,8.0,671.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905415524,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu,7.0,434.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905415524,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,6.0,692.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905415524,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu prijaté,6.0,372.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905415524,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu prijaté,3.0,100.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905415524,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,1.0,1.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905415524,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,29.0,29.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905415524,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS v roamingu,3.0,3.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905415524,,,,,,,,,,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,5.0,467.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918453464,0.8683000000000001,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,6.0,165.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918453464,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2,5.0,163.0,Second,0.1358,20%
+,,,,,,,,,,,,,,,,,,,,,,421918453464,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),2.0,20480.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918453464,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,6.0,663.0,Second,0.5525,20%
+,,,,,,,,,,,,,,,,,,,,,,421948733782,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,10.0,615.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948733782,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,6.0,6.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948733782,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do zahraničia,6.0,6.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948733782,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,11.0,765.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948733782,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,9.0,9.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948733782,,,,,,,,,,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,5.0,241.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948733782,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,2.0,94.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948733782,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,2.0,204.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905281545,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,2.0,782.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905281545,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,1677899776.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905281545,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,10.0,1029.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905281545,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,1.0,1.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905281545,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,78.0,13783.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905281545,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,31.0,4081.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905281545,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,1.0,40.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905281545,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,39.0,39.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421904818771,9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,1.0,194.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421904818771,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,7.0,1294.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421904818771,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,14.0,1143.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421904818771,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,50.0,13882.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421904818771,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,10.0,10.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421904818771,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),29.0,15509412864.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915973048,65.7354,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,8.0,8.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915973048,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),1.0,15690752.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915973048,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,195.0,15412.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915973048,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu,17.0,1816.0,Second,12.1066,20%
+,,,,,,,,,,,,,,,,,,,,,,421915973048,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),23.0,2535877632.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915973048,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu prijaté,3.0,106.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915973048,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu prijaté,3.0,137.0,Second,0.9133,20%
+,,,,,,,,,,,,,,,,,,,,,,421915973048,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,37.0,3706.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915973048,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,8.0,658.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915973048,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu mimo EÚ (MB),5.0,218552320.0,Byte,41.6855,20%
+,,,,,,,,,,,,,,,,,,,,,,421915973048,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS v roamingu,6.0,6.0,occurrence,1.5,20%
+,,,,,,,,,,,,,,,,,,,,,,421915973048,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,16.0,715.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915973048,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,19.0,19.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915973048,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu,5.0,190.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948402040,9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Volania do siete O2,1.0,5.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948402040,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948102233,17.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Obnova dát,1.0,1.0,Money,8.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948102233,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania na čísla so špec. sadzbou,1.0,554.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948102233,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,20.0,20.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948102233,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,37.0,2253.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948102233,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,5.0,1778.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948102233,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,20047611904.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948102233,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,94.0,7062.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948102233,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,5.0,5.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948102233,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,45.0,6379.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905594254,31.6841,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 50GB,2024-11-01,2024-11-30,Money,15.9,20%,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,1.0,375.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905594254,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,110.0,16036.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905594254,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,3.0,213.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905594254,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS v roamingu,4.0,4.0,occurrence,1.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905594254,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,2.0,2.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905594254,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,21.0,21.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905594254,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do zahraničia,1.0,1.0,occurrence,0.08,20%
+,,,,,,,,,,,,,,,,,,,,,,421905594254,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu,23.0,2638.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905594254,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,13.0,636.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905594254,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu,9.0,1596.0,Second,10.64,20%
+,,,,,,,,,,,,,,,,,,,,,,421905594254,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),10.0,5146555392.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905594254,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),13.0,4686241792.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905594254,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,26.0,26.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905594254,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS v roamingu,6.0,6.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905594254,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu prijaté,23.0,1916.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905594254,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,61.0,4309.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905594254,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu prijaté,6.0,567.0,Second,3.7801,20%
+,,,,,,,,,,,,,,,,,,,,,,421905594254,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu mimo EÚ (MB),2.0,20480.0,Byte,0.004,20%
+,,,,,,,,,,,,,,,,,,,,,,421905594254,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS v roamingu,1.0,1.0,occurrence,0.25,20%
+,,,,,,,,,,,,,,,,,,,,,,421915333333,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,1.0,1.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915333333,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2,31.0,1280.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915333333,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,95.0,2923.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915333333,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,1.0,1.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915333333,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),25.0,1796096.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915333333,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,1.0,26.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915333333,,,,,,,,,,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,1.0,78.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907024010,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,48.0,26404.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907024010,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,171312128.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907024010,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,45.0,4485.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907024010,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,10.0,1526.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907024010,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,4.0,373.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948961465,9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,5004416000.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948961465,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948049282,3.812,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-19,2024-11-30,Money,3.8,20%,,NOVEM IT s.r.o.,Volania v roamingu,2.0,350.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948049282,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-19,2024-11-30,Money,0.012,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),11.0,2618528768.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948049282,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,32.0,3428.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948049282,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,27.0,3447.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948049282,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,25.0,25.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948049282,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,27.0,1922.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948049282,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,30.0,2257.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948049282,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,26.0,26.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948049282,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,85.0,9494.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948049282,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,112.0,14155.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948049282,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),19.0,4922774528.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948049282,,,,,,,,,,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,7.0,930.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948049282,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,1.0,408.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948049282,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,10.0,10.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948049282,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,1.0,11.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948049282,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),2.0,6103040.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948049282,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,16.0,16.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948049282,,,,,,,,,,,NOVEM IT s.r.o.,Volania do zahraničia - Zóna 1,10.0,1376.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907961191,12.85,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Volania do siete O2,12.0,435.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907961191,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania v roamingu prijaté,5.0,688.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907961191,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu,8.0,2778.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907961191,,,,,,,,,,,NOVEM IT s.r.o.,Dobry anjel | SMS ZBIERKA | Jednorazová platba | 840,1.0,33200.0,Money,3.32,0%
+,,,,,,,,,,,,,,,,,,,,,,421907961191,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,48.0,5867.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907961191,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,18.0,1505.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907961191,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,16.0,16.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907961191,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),27.0,1231016960.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907961191,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),7.0,1510081536.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907961191,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS v roamingu,2.0,2.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907033412,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,37.0,2501.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907033412,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,1.0,66.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907033412,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,14.0,3927.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907033412,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,21.0,4582.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907033412,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,1.0,1.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421910666366,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,39.0,4517.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421910666366,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2,11.0,974.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421910666366,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,23.0,23.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421910666366,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,4.0,1299.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421910666366,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,850448384.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421910666366,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,6.0,349.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421910666366,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,28.0,28.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905345225,9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Volania do siete O2,84.0,9293.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905345225,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,236.0,28761.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905345225,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,92.0,11415.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905345225,,,,,,,,,,,NOVEM IT s.r.o.,Info SMS | Info SMS | Jednorazová platba | 7779,3.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905345225,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,7.0,246.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905345225,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS v roamingu,2.0,2.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905345225,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu prijaté,27.0,2298.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905345225,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),27.0,5659507712.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905345225,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,55.0,55.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905345225,,,,,,,,,,,NOVEM IT s.r.o.,Volania v roamingu,18.0,2401.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905345225,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),9.0,1993175040.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421905345225,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,42.0,42.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948024648,9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,5.0,736.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948024648,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,1.0,5.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948024648,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),26.0,1941483520.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948024648,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),1.0,37888.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948024648,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,2.0,2.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948024648,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,3.0,338.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948024648,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,6.0,6.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948024648,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,1.0,30.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911402011,9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,1552.0,1552.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911402011,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),4.0,159744.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911402011,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do zahraničia,2.0,2.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911402011,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,488.0,488.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421911402011,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,653.0,60061.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421944234252,9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,4.0,4.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421944234252,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2,33.0,3405.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421944234252,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,10655735808.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421944234252,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,2.0,2.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421944234252,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,16.0,952.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421944234252,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,45.0,2195.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421944234252,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,1.0,3.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907828838,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,1505029120.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907828838,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,9.0,9.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907828838,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,2.0,660.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907828838,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,46.0,3468.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907828838,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,14.0,402.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,"421911315912, Róbert Recska ",9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,1.0,59.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,"421911315912, Róbert Recska ",,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,2.0,23.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,"421911315912, Róbert Recska ",,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS v roamingu,1.0,1.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,"421911315912, Róbert Recska ",,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,37.0,5265.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,"421911315912, Róbert Recska ",,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,12742220800.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,"421911315912, Róbert Recska ",,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,1.0,17.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,"421911315912, Róbert Recska ",,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v roamingu EÚ (MB),7.0,216357888.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907433325,12.28,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,3.0,3.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907433325,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),23.0,2506280960.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907433325,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS v roamingu,7.0,7.0,occurrence,1.75,20%
+,,,,,,,,,,,,,,,,,,,,,,421907433325,,,,,,,,,,,NOVEM IT s.r.o.,Správa cestovného ruchu Senec s.r.o. | Parkovné | Jednorazová platba | 2200,1.0,10000.0,Money,1.0,0%
+,,,,,,,,,,,,,,,,,,,,,,421907433325,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,37.0,1683.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907433325,,,,,,,,,,,NOVEM IT s.r.o.,BPS PARK a.s. | Parkovné Bratislava | Jednorazová platba | 2200,1.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907433325,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,12.0,1441.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907433325,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,6.0,6.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907433325,,,,,,,,,,,NOVEM IT s.r.o.,Služby mobilnej zábavy partnerov poskytovateľa | 2200,1.0,0.0,Money,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421907433325,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,19.0,1169.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918828888,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Volania do siete O2,6.0,661.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918828888,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,4.0,4.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918828888,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,38.0,1682.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918828888,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,108.0,10450.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918828888,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,472741888.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421918828888,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,6.0,6.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903253978,9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,14.0,14.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903253978,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,26.0,1161.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903253978,,,,,,,,,,,NOVEM IT s.r.o.,Volania na čísla so špec. sadzbou,1.0,615.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903253978,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,3396696064.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903253978,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2,26.0,3402.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903253978,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,3.0,384.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903253978,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do siete O2,2.0,2.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421903253978,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,32.0,4213.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948699973,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,29271040.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948699973,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948298973,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,15116288.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948298973,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421944644355,0.1802,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),2.0,51200.0,Byte,0.0002,20%
+,,,,,,,,,,,,,,,,,,,,,,421944644355,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421910666266,0.7335,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,1.0,46.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421910666266,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),22.0,102451200.0,Byte,0.4885,20%
+,,,,,,,,,,,,,,,,,,,,,,421910666266,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,1.0,78.0,Second,0.065,20%
+,,,,,,,,,,,,,,,,,,,,,,421948312962,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,1686528.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948312962,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421910666466,9.53,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 20GB,2024-11-01,2024-11-30,Money,9.5,20%,,NOVEM IT s.r.o.,Volania do siete O2,2.0,271.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421910666466,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),4.0,181301248.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421910666466,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,7.0,7.0,occurrence,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421910666466,,,,,,,,,,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,24.0,2275.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421910666466,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),27.0,21474836480.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421910666466,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,12.0,885.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222923,15.93,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 50GB,2024-11-01,2024-11-30,Money,15.9,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,16203398144.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222923,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421915447432,2.2588,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,12.0,1578.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421915447432,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Volania do siete O2,1.0,147.0,Second,0.1225,20%
+,,,,,,,,,,,,,,,,,,,,,,421915447432,,,,,,,,,,,NOVEM IT s.r.o.,Odoslané SMS do ostatných sietí SR,5.0,5.0,occurrence,0.25,20%
+,,,,,,,,,,,,,,,,,,,,,,421915447432,,,,,,,,,,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,52142080.0,Byte,0.2487,20%
+,,,,,,,,,,,,,,,,,,,,,,421915447432,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,10.0,1749.0,Second,1.4576,20%
+,,,,,,,,,,,,,,,,,,,,,,421948293515,0.93,NOVEM IT s.r.o.,recurring_arrears,"e-Net fér 0,5GB",2024-11-01,2024-11-30,Money,0.9,20%,,NOVEM IT s.r.o.,Volania do siete O2 v rámci VPN,1.0,33.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948293515,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948222924,0.93,NOVEM IT s.r.o.,recurring_arrears,"e-Net fér 0,5GB",2024-11-01,2024-11-30,Money,0.9,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),16.0,17408.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222924,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948347030,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),29.0,28754944.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948347030,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948222919,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,2.0,78.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222919,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,NOVEM IT s.r.o.,Prenesené dáta v SR (MB),30.0,83636224.0,Byte,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421948222919,,,,,,,,,,,NOVEM IT s.r.o.,Volania do ostatných sietí SR,14.0,2269.0,Second,0.0,20%
+,,,,,,,,,,,,,,,,,,,,,,421949342949,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421949342949,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,Fees without SDP,0.0,NOVEM IT s.r.o.,recurring_arrears,VPN_NOVEM IT,2024-11-01,2024-11-30,Money,0.0,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,Fees without SDP,,NOVEM IT s.r.o.,recurring_arrears,VPN_NOVEM IT,2024-11-01,2024-11-30,Money,0.0,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948222920,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948222920,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421908525333,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421908525333,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421917495247,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421917495247,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421940499488,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421940499488,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421940946913,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421940946913,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421940946914,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421940946914,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421940946915,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421940946915,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421940946918,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421940946918,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421944330974,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421944330974,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948099870,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948099870,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948123046,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948123046,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948212406,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948212406,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948251288,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948251288,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948254202,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948254202,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948255842,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948255842,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948274477,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948274477,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948298307,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948298307,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948304181,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948304181,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948376020,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948376020,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948411239,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948411239,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948458588,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948458588,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948607473,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948607473,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948664819,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948664819,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948737150,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948737150,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948857714,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948857714,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421940948200,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421940948200,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948222925,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948222925,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948650059,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948650059,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421905703043,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421905703043,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948596887,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948596887,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948689951,3.03,NOVEM IT s.r.o.,recurring_arrears,"e-Net 150minút 0,5GB",2024-11-01,2024-11-30,Money,3.0,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948689951,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948955396,0.93,NOVEM IT s.r.o.,recurring_arrears,"e-Net fér 0,5GB",2024-11-01,2024-11-30,Money,0.9,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948955396,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421908778014,0.93,NOVEM IT s.r.o.,recurring_arrears,"e-Net fér 0,5GB",2024-11-01,2024-11-30,Money,0.9,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421908778014,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421907695136,0.93,NOVEM IT s.r.o.,recurring_arrears,"e-Net fér 0,5GB",2024-11-01,2024-11-30,Money,0.9,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421907695136,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421949014605,0.93,NOVEM IT s.r.o.,recurring_arrears,"e-Net fér 0,5GB",2024-11-01,2024-11-30,Money,0.9,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421949014605,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421918129560,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421918129560,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948200322,8.629999999999999,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 6GB,2024-11-01,2024-11-30,Money,8.6,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948200322,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948222904,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948222904,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948222903,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948222903,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948222902,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948222902,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421949014603,4.33,NOVEM IT s.r.o.,recurring_arrears,e-Net fér 6GB,2024-11-01,2024-11-30,Money,4.3,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421949014603,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948222907,4.73,NOVEM IT s.r.o.,recurring_arrears,e-Net fér 10GB,2024-11-01,2024-11-30,Money,4.7,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948222907,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948222905,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948222905,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421911846371,2.732,NOVEM IT s.r.o.,recurring_arrears,e-Net 250minut 6GB,2024-11-19,2024-11-30,Money,2.72,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421911846371,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-19,2024-11-30,Money,0.012,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421911846371,3.498,NOVEM IT s.r.o.,recurring_arrears,e-Net 150minut 6GB,2024-11-01,2024-11-19,Money,3.48,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421911846371,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-19,Money,0.018,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421949014604,5.719,NOVEM IT s.r.o.,recurring_arrears,e-Net fér 30GB,2024-11-01,2024-11-20,Money,5.7,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421949014604,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-20,Money,0.019,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948049282,7.1579999999999995,NOVEM IT s.r.o.,recurring_arrears,e-Net nekonečno 30GB,2024-11-01,2024-11-19,Money,7.14,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421948049282,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-19,Money,0.018,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421940046755,0.18,NOVEM IT s.r.o.,recurring_arrears,e-Net Fér bez dát,2024-11-01,2024-11-30,Money,0.15,20%,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,421940046755,,NOVEM IT s.r.o.,recurring_arrears,Mesačný poplatok VPN,2024-11-01,2024-11-30,Money,0.03,20%,,,,,,,,

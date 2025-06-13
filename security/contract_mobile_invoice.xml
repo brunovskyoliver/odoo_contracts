@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- filepath: /var/lib/odoo/addons/contract/security/contract_mobile_invoice.xml -->
+<odoo>
+    <record id="contract_mobile_invoice_comp_rule" model="ir.rule">
+        <field name="name">Contract Mobile Invoice multi-company</field>
+        <field name="model_id" ref="model_contract_mobile_invoice"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+
+    <record id="contract_mobile_invoice_line_comp_rule" model="ir.rule">
+        <field name="name">Contract Mobile Invoice Line multi-company</field>
+        <field name="model_id" ref="model_contract_mobile_invoice_line"/>
+        <field name="domain_force">['|', ('invoice_id.company_id', '=', False), ('invoice_id.company_id', 'in', company_ids)]</field>
+    </record>
+
+    <record id="contract_mobile_usage_report_comp_rule" model="ir.rule">
+        <field name="name">Contract Mobile Usage Report multi-company</field>
+        <field name="model_id" ref="model_contract_mobile_usage_report"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+
+    <record id="contract_mobile_usage_report_line_comp_rule" model="ir.rule">
+        <field name="name">Contract Mobile Usage Report Line multi-company</field>
+        <field name="model_id" ref="model_contract_mobile_usage_report_line"/>
+        <field name="domain_force">['|', ('report_id.company_id', '=', False), ('report_id.company_id', 'in', company_ids)]</field>
+    </record>
+</odoo>
