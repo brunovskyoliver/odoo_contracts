@@ -113,9 +113,8 @@ class ContractMobileInvoice(models.Model):
             for phone_number, data in grouped:
                 if pd.isna(phone_number):
                     continue
-                    
-                phone_number = str(phone_number).lstrip('00')
-                
+                # Clean phone number to keep only numeric characters
+                phone_number = self._clean_phone_number(phone_number)
                 # Skip non-Slovak numbers
                 if not phone_number.startswith('421'):
                     continue
@@ -281,26 +280,20 @@ class ContractMobileInvoice(models.Model):
                 if 'MSISDN' in col:
                     msisdn_col = col
                     break
-                    
             if not msisdn_col:
                 raise UserError(_("Could not find MSISDN column in O2 CSV file"))
-                
             # Forward fill the phone numbers (fill missing values with the last valid value)
             df_raw[msisdn_col] = df_raw[msisdn_col].fillna(method='ffill')
-            
             # Group by phone number
             grouped = df_raw.groupby(msisdn_col)
-            
             for phone_number, data in grouped:
                 if pd.isna(phone_number):
                     continue
-                    
-                phone_number = str(phone_number).lstrip('00')
-                
+                # Clean phone number to keep only numeric characters
+                phone_number = self._clean_phone_number(phone_number)
                 # Skip non-Slovak numbers
                 if not phone_number.startswith('421'):
                     continue
-                
                 # Get the basic plan amount from SubscriberTotalNETAmount
                 basic_plan_amount = self._safe_convert_to_float(data['Subscribers__Subscriber__SubscriberTotalNETAmount'].iloc[0])
                 
@@ -482,6 +475,16 @@ class ContractMobileInvoice(models.Model):
                 except ValueError as e:
                     _logger.error(f"Failed to convert value '{value_str}' to float: {str(e)}")
                     return 0.0
+
+    @api.model
+    def _clean_phone_number(self, phone_number):
+        """Remove all non-numeric characters from a phone number and strip leading '00'"""
+        if not phone_number:
+            return ''
+        # Remove all non-numeric characters
+        cleaned_number = re.sub(r'\D', '', str(phone_number))
+        # Strip leading '00'
+        return cleaned_number.lstrip('00')
 
 
 class ContractMobileInvoiceLine(models.Model):

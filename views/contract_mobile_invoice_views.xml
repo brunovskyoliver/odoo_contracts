@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- filepath: /var/lib/odoo/addons/contract/views/contract_mobile_invoice_views.xml -->
 <odoo>
+    <!-- Add this action BEFORE the form view -->
+    <record id="action_contract_mobile_invoice_line" model="ir.actions.act_window">
+        <field name="name">Riadky faktúry</field>
+        <field name="res_model">contract.mobile.invoice.line</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('invoice_id', '=', active_id)]</field>
+        <field name="context">{'default_invoice_id': active_id}</field>
+    </record>
+
     <!-- Mobile Invoice Form View -->
     <record id="contract_mobile_invoice_view_form" model="ir.ui.view">
         <field name="name">contract.mobile.invoice.form</field>
@@ -18,6 +27,13 @@
                         <h1>
                             <field name="name" placeholder="Reference"/>
                         </h1>
+                    </div>
+                    <div class="oe_button_box" name="button_box">
+                        <button type="action"
+                                name="%(action_contract_mobile_invoice_line)d"
+                                string="Zobraziť všetky riadky faktúry"
+                                icon="fa-list"
+                                class="oe_stat_button"/>
                     </div>
                     <group>
                         <group>
@@ -350,4 +366,38 @@
               parent="menu_contract_mobile_invoice_root" 
               action="action_contract_mobile_invoice_import" 
               sequence="30"/>
+
+    <!-- Mobile Invoice Line Search View -->
+    <record id="contract_mobile_invoice_line_view_search" model="ir.ui.view">
+        <field name="name">contract.mobile.invoice.line.search</field>
+        <field name="model">contract.mobile.invoice.line</field>
+        <field name="arch" type="xml">
+            <search string="Vyhľadať riadky faktúry">
+                <field name="phone_number" string="Telefónne číslo"/>
+                <field name="partner_id" string="Partner"/>
+                <field name="service_name" string="Služba"/>
+                <field name="service_type" string="Typ"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Mobile Invoice Line List View -->
+    <record id="contract_mobile_invoice_line_list_view" model="ir.ui.view">
+        <field name="name">contract.mobile.invoice.line.list</field>
+        <field name="model">contract.mobile.invoice.line</field>
+        <field name="arch" type="xml">
+            <list string="Riadky faktúry">
+                <field name="phone_number" string="Telefónne číslo"/>
+                <field name="mobile_service_id" string="Mobilná služba"/>
+                <field name="partner_id" string="Partner"/>
+                <field name="service_name" string="Služba"/>
+                <field name="service_type" string="Typ"/>
+                <field name="amount" string="Suma"/>
+                <field name="quantity" string="Množstvo"/>
+                <field name="unit" string="Jednotka"/>
+                <field name="total" string="Celkom"/>
+                <field name="is_excess_usage" string="Nadspotreba"/>
+            </list>
+        </field>
+    </record>
 </odoo>

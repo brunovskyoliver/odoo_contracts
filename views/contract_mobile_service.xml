@@ -59,24 +59,24 @@
         <field name="name">contract.mobile.service.search</field>
         <field name="model">contract.mobile.service</field>
         <field name="arch" type="xml">
-            <search string="Search Mobile Services">
-                <field name="name"/>
-                <field name="phone_number"/>
-                <field name="operator"/>
-                <field name="partner_id"/>
-                <field name="contract_id"/>
-                <field name="inventory_id"/>
-                <filter string="Active" name="active" domain="[('is_active', '=', True)]"/>
-                <filter string="Inactive" name="inactive" domain="[('is_active', '=', False)]"/>
+            <search string="Vyhľadať mobilné služby">
+                <field name="name" string="Názov"/>
+                <field name="phone_number" string="Telefónne číslo"/>
+                <field name="operator" string="Operátor"/>
+                <field name="partner_id" string="Partner"/>
+                <field name="contract_id" string="Zmluva"/>
+                <field name="inventory_id" string="Inventár"/>
+                <filter string="Aktívne" name="active" domain="[('is_active', '=', True)]"/>
+                <filter string="Neaktívne" name="inactive" domain="[('is_active', '=', False)]"/>
                 <separator/>
                 <filter string="Telekom" name="telekom" domain="[('operator', '=', 'telekom')]"/>
                 <filter string="O2" name="o2" domain="[('operator', '=', 'o2')]"/>
-                <group expand="0" string="Group By">
+                <group expand="0" string="Zoskupiť podľa">
                     <filter string="Partner" name="partner_id" context="{'group_by': 'partner_id'}"/>
-                    <filter string="Contract" name="contract_id" context="{'group_by': 'contract_id'}"/>
-                    <filter string="Inventory" name="inventory_id" context="{'group_by': 'inventory_id'}"/>
-                    <filter string="Operator" name="operator" context="{'group_by': 'operator'}"/>
-                    <filter string="Active" name="is_active" context="{'group_by': 'is_active'}"/>
+                    <filter string="Zmluva" name="contract_id" context="{'group_by': 'contract_id'}"/>
+                    <filter string="Inventár" name="inventory_id" context="{'group_by': 'inventory_id'}"/>
+                    <filter string="Operátor" name="operator" context="{'group_by': 'operator'}"/>
+                    <filter string="Aktívne" name="is_active" context="{'group_by': 'is_active'}"/>
                 </group>
             </search>
         </field>
