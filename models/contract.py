@@ -631,6 +631,17 @@ class ContractContract(models.Model):
             invoice_vals["invoice_line_ids"] = []
             for line in contract_lines:
                 invoice_line_vals = line._prepare_invoice_line()
+                # HARDCODE: Only force price_unit to x_zlavnena_cena for discount lines if x_datum_viazanosti_produktu is in the future
+                from datetime import date as _date
+                today = _date.today()
+                if (
+                    invoice_line_vals
+                    and 'zľava' in (line.name or '').lower()
+                    and line.x_zlavnena_cena != 0
+                    and line.x_datum_viazanosti_produktu
+                    and str(line.x_datum_viazanosti_produktu) >= str(today)
+                ):
+                    invoice_line_vals['price_unit'] = line.x_zlavnena_cena
                 if invoice_line_vals:
                     # Allow extension modules to return an empty dictionary for
                     # nullifying line. We should then cleanup certain values.
