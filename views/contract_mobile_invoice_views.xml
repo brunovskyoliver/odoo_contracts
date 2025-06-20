@@ -65,6 +65,7 @@
                                     <field name="quantity" string="Množstvo"/>
                                     <field name="unit" string="Jednotka"/>
                                     <field name="total" sum="Celkom" string="Celkom"/>
+                                    <field name="vat" string="DPH"/>
                                     <field name="is_excess_usage" string="Nadspotreba"/>
                                 </list>
                             </field>
@@ -137,6 +138,7 @@
                             <field name="quantity"/>
                             <field name="unit"/>
                             <field name="total"/>
+                            <field name="vat"/>
                             <field name="is_excess_usage"/>
                         </group>
                     </group>

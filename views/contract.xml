@@ -220,11 +220,11 @@
                                         column_invisible="True"
                                     />
                                     <field name="name" widget="section_and_note_text" />
-                                    <field
+                                    <!-- <field
                                         name="analytic_distribution"
                                         widget="analytic_distribution"
                                         groups="analytic.group_analytic_accounting"
-                                    />
+                                    /> -->
                                     <field name="quantity" />
                                     <field name="uom_id" />
                                     <field
@@ -264,10 +264,10 @@
                                     />
                                     <field name="date_start" column_invisible="True" />
                                     <field name="date_end" />
-                                    <field
+                                    <!-- <field
                                         name="last_date_invoiced"
                                         groups="base.group_no_one"
-                                    />
+                                    /> -->
                                     <field
                                         name="create_invoice_visibility"
                                         column_invisible="True"
@@ -324,11 +324,11 @@
                                     <field name="sequence" widget="handle" />
                                     <field name="product_id" />
                                     <field name="name" widget="section_and_note_text" />
-                                    <field
+                                    <!-- <field
                                         name="analytic_distribution"
                                         widget="analytic_distribution"
                                         groups="analytic.group_analytic_accounting"
-                                    />
+                                    /> -->
                                     <field name="quantity" />
                                     <field name="uom_id" />
                                     <field
@@ -365,10 +365,10 @@
                                     <field name="date_start" required="1" />
                                     <field name="date_end" />
                                     <field name="recurring_next_date" required="1" />
-                                    <field
+                                    <!-- <field
                                         name="last_date_invoiced"
                                         groups="base.group_no_one"
-                                    />
+                                    /> -->
                                     <field
                                         name="create_invoice_visibility"
                                         column_invisible="True"

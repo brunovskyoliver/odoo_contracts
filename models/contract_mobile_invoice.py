@@ -345,6 +345,7 @@ class ContractMobileInvoice(models.Model):
                             'service_type': service_type,
                             'amount': amount,
                             'total': amount,
+                            'vat': vat,
                             'is_excess_usage': True,
                         })
                 
@@ -518,7 +519,7 @@ class ContractMobileInvoiceLine(models.Model):
     unit = fields.Char(string="Unit")
     total = fields.Float(string="Total", digits=(16, 2))
     is_excess_usage = fields.Boolean(string="Is Excess Usage", default=False)
-    
+    vat = fields.Char(string="DPH") # TODO: Add VAT to the invoice line
     mobile_service_id = fields.Many2one(
         comodel_name="contract.mobile.service",
         string="Mobile Service",
