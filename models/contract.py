@@ -192,13 +192,20 @@ class ContractContract(models.Model):
             self._modification_mail_send()
         else:
             res = super().write(vals)
-        # If the main x_datum_viazanost is changed, update all product lines
+        # If the main x_datum_viazanost is changed, update all contract lines
         if 'x_datum_viazanost' in vals:
             for contract in self:
-                for line in contract.contract_line_ids:
-                    # Only update if the line's value matches the old contract value or is empty
-                    if not line.x_datum_viazanosti_produktu or line.x_datum_viazanosti_produktu == contract.x_datum_viazanost:
-                        line.x_datum_viazanosti_produktu = vals['x_datum_viazanost']
+                contract.contract_line_ids.write({'x_datum_viazanosti_produktu': vals['x_datum_viazanost']})
+        # If date_start is changed, update all contract lines
+        if 'date_start' in vals:
+            for contract in self:
+                contract.contract_line_ids.write({'date_start': vals['date_start']})
+        # Only propagate recurring_next_date to all lines if line_recurrence is False
+        if 'recurring_next_date' in vals:
+            for contract in self:
+                if not contract.line_recurrence:
+                    for line in contract.contract_line_ids:
+                        line.recurring_next_date = vals['recurring_next_date']
         return res
 
     @api.model
@@ -468,7 +475,9 @@ class ContractContract(models.Model):
             # Remove template link field
             vals.pop("contract_template_id", False)
             vals["date_start"] = fields.Date.context_today(contract_line)
-            vals["recurring_next_date"] = fields.Date.context_today(contract_line)
+            # Only set recurring_next_date if not already set
+            if not vals.get("recurring_next_date"):
+                vals["recurring_next_date"] = fields.Date.context_today(contract_line)
             new_lines += contract_line_model.new(vals)
         new_lines._onchange_is_auto_renew()
         return new_lines
