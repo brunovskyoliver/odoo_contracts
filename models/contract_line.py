@@ -1334,4 +1334,15 @@ class ContractLine(models.Model):
                     # Use with_context to avoid triggering recursion
                     line.with_context(skip_mobile_service_description_update=True).name = f"{product_name}: {phone_numbers}"
 
+    @api.model
+    def create(self, vals):
+        # If x_datum_viazanosti_produktu is not set, inherit from contract
+        if not vals.get('x_datum_viazanosti_produktu') and vals.get('contract_id'):
+            contract = self.env['contract.contract'].browse(vals['contract_id'])
+            # Try to get x_datum_viazanosti from contract, fallback to None
+            x_datum_viazanosti = getattr(contract, 'x_datum_viazanost', None)
+            if x_datum_viazanosti:
+                vals['x_datum_viazanosti_produktu'] = x_datum_viazanosti
+        return super().create(vals)
+
 

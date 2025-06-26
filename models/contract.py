@@ -192,8 +192,13 @@ class ContractContract(models.Model):
             self._modification_mail_send()
         else:
             res = super().write(vals)
-        # We're no longer using the contract-level datum_viazanost
-        # Each contract line has its own x_datum_viazanosti_produktu field now
+        # If the main x_datum_viazanost is changed, update all product lines
+        if 'x_datum_viazanost' in vals:
+            for contract in self:
+                for line in contract.contract_line_ids:
+                    # Only update if the line's value matches the old contract value or is empty
+                    if not line.x_datum_viazanosti_produktu or line.x_datum_viazanosti_produktu == contract.x_datum_viazanost:
+                        line.x_datum_viazanosti_produktu = vals['x_datum_viazanost']
         return res
 
     @api.model
