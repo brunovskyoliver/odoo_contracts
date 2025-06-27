@@ -164,6 +164,18 @@ class ContractContract(models.Model):
         store=True,
     )
     
+    x_contract_type = fields.Selection(
+        selection=[
+            ('Prenájom', 'Prenájom'),
+            ('Služby', 'Služby'),
+            ('Mobilky', 'Mobilky'),
+        ],
+        string="Typ zmluvy",
+        default='Služby',
+        required=True,
+        tracking=True,
+    )
+    
     @api.depends('contract_line_ids.in_inventory', 'contract_line_ids')
     def _compute_has_inventory_products(self):
         for contract in self:
@@ -821,8 +833,8 @@ class ContractContract(models.Model):
             {
                 "is_terminated": False,
                 "terminate_reason_id": False,
-                "terminate_comment": False,
                 "terminate_date": False,
+                "terminate_comment": False,
             }
         )
 
@@ -830,3 +842,7 @@ class ContractContract(models.Model):
     def _compute_total_subtotal(self):
         for contract in self:
             contract.total_subtotal = sum(contract.contract_line_ids.mapped('price_subtotal'))
+
+
+    # def action_update_mobile_recurring_dates(self):
+    #     return None

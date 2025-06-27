@@ -491,6 +491,10 @@ class ContractLine(models.Model):
     @api.constrains("recurring_next_date", "date_start")
     def _check_recurring_next_date_start_date(self):
         for line in self:
+            # Skip validation if called from mobile invoice settings
+            if self.env.context.get('skip_date_check'):
+                continue
+                
             if (
                 line.display_type in ("line_section", "line_note")
                 or not line.recurring_next_date

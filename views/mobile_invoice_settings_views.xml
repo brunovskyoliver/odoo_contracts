@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Form View -->
+    <record id="view_mobile_invoice_settings_form" model="ir.ui.view">
+        <field name="name">contract.mobile.invoice.settings.form</field>
+        <field name="model">contract.mobile.invoice.settings</field>
+        <field name="arch" type="xml">
+            <form string="Mobile Invoice Settings">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="invoice_date"/>
+                        </group>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_update_contract_dates" 
+                            string="Update Dates" 
+                            type="object" 
+                            class="btn-primary"/>
+                    <button string="Cancel" 
+                            class="btn-secondary" 
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_mobile_invoice_settings" model="ir.actions.act_window">
+        <field name="name">Mobile Invoice Settings</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">contract.mobile.invoice.settings</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Menu Item -->
+    <menuitem id="menu_mobile_invoice_settings"
+              name="Mobile Invoice Settings"
+              parent="contract.menu_contract_root"
+              action="action_mobile_invoice_settings"
+              sequence="50"/>
+</odoo>

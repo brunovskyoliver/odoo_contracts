@@ -48,6 +48,7 @@
         "views/res_partner_view.xml",
         "views/res_config_settings.xml",
         "views/contract_terminate_reason.xml",
+        "views/mobile_invoice_settings_views.xml",
         "views/contract_portal_templates.xml",
         "views/contract_inventory.xml",
         "views/contract_line_inventory.xml",

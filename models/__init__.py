@@ -17,3 +17,4 @@ from . import contract_terminate_reason
 from . import contract_inventory
 from . import contract_mobile_service
 from . import contract_mobile_invoice
+from . import mobile_invoice_settings
