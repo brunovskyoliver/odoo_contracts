@@ -433,9 +433,89 @@ class ContractMobileInvoice(models.Model):
     # Legacy methods removed - only using implementations with parameters
     
     def action_done(self):
-        """Mark invoice as done"""
+        """Mark invoice as done and process excess usage"""
+        self.ensure_one()
+        
+        # First mark as done
         self.write({'state': 'done'})
-    
+        
+        # Get all invoice lines with excess usage, limited to specific partner for testing
+        excess_usage_by_partner = {}
+        test_partner_id = 1228  # Testing with specific partner
+        
+        for line in self.invoice_line_ids.filtered(
+            lambda l: l.is_excess_usage and 
+            l.partner_id and 
+            l.partner_id.id == test_partner_id
+        ):
+            if line.partner_id.id not in excess_usage_by_partner:
+                excess_usage_by_partner[line.partner_id.id] = {
+                    'total': 0.0,
+                    'partner': line.partner_id,
+                }
+            excess_usage_by_partner[line.partner_id.id]['total'] += line.total
+
+        _logger.info(f"Processing excess usage for partner ID {test_partner_id}")
+        
+        # Process each partner's excess usage
+        for partner_data in excess_usage_by_partner.values():
+            if partner_data['total'] <= 0:
+                continue
+                
+            _logger.info(f"Found excess usage total: {partner_data['total']} for partner {partner_data['partner'].name}")
+            
+            # Find the mobilky contract for this partner
+            contract = self.env['contract.contract'].search([
+                ('partner_id', '=', partner_data['partner'].id),
+                ('x_contract_type', '=', 'Mobilky')
+            ], limit=1)
+            
+            if not contract:
+                _logger.info(f"No active Mobilky contract found for partner {partner_data['partner'].name}")
+                continue
+                
+            _logger.info(f"Found contract: {contract.name}")
+            
+            # Check if there's already a line for excess usage
+            product = self.env['product.product'].search([
+                ('display_name', '=', 'Vyúčtovanie paušálnych služieb a spotreby HLAS')
+            ], limit=1)
+            
+            if not product:
+                _logger.error("Could not find product 'Vyúčtovanie paušálnych služieb a spotreby HLAS'")
+                continue
+                
+            existing_line = contract.contract_line_ids.filtered(
+                lambda l: l.product_id == product and 
+                l.recurring_next_date == contract.recurring_next_date
+            )
+            
+            if existing_line:
+                _logger.info(f"Updating existing excess usage line with new amount: {partner_data['total']}")
+                existing_line.write({
+                    'price_unit': partner_data['total'],
+                    'x_zlavnena_cena': partner_data['total']
+                })
+            else:
+                _logger.info(f"Creating new excess usage line with amount: {partner_data['total']}")
+                # Create new contract line for excess usage
+                self.env['contract.line'].with_context(skip_date_check=True).create({
+                    'contract_id': contract.id,
+                    'product_id': product.id,
+                    'name': 'Vyúčtovanie paušálnych služieb a spotreby HLAS',
+                    'quantity': 1,
+                    'price_unit': partner_data['total'],
+                    'recurring_rule_type': 'monthly',
+                    'recurring_interval': 1,
+                    "uom_id": 1,
+                    "x_zlavnena_cena": partner_data['total'],
+                    'date_start': contract.recurring_next_date,
+                    'recurring_next_date': contract.recurring_next_date,
+                    'is_auto_renew': False,
+                })
+                
+        return True
+
     def action_reset_to_draft(self):
         """Reset invoice to draft"""
         self.write({'state': 'draft'})
