@@ -9,4 +9,14 @@
         <field name="interval_number">1</field>
         <field name="interval_type">days</field>
     </record>
+
+    <record model="ir.cron" id="contract_mobile_reset_excess_usage">
+        <field name="name">Reset Mobile Contract Excess Usage Lines</field>
+        <field name="model_id" ref="model_contract_mobile_invoice" />
+        <field name="state">code</field>
+        <field name="code">model.reset_excess_usage_lines()</field>
+        <field name="user_id" ref="base.user_root" />
+        <field name="interval_number">1</field>
+        <field name="interval_type">months</field>
+    </record>
 </odoo>

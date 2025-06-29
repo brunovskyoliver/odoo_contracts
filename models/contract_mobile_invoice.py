@@ -8,6 +8,8 @@ import pandas as pd
 import io
 import re
 import logging
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 _logger = logging.getLogger(__name__)
 
@@ -441,7 +443,7 @@ class ContractMobileInvoice(models.Model):
         
         # Get all invoice lines with excess usage, limited to specific partner for testing
         excess_usage_by_partner = {}
-        test_partner_id = 1228  # Testing with specific partner
+        test_partner_id = 1179  # Testing with specific partner
         
         for line in self.invoice_line_ids.filtered(
             lambda l: l.is_excess_usage and 
@@ -485,16 +487,22 @@ class ContractMobileInvoice(models.Model):
                 _logger.error("Could not find product 'Vyúčtovanie paušálnych služieb a spotreby HLAS'")
                 continue
                 
+            # Find the excess usage line (there should be only one per contract)
             existing_line = contract.contract_line_ids.filtered(
-                lambda l: l.product_id == product and 
-                l.recurring_next_date == contract.recurring_next_date
+                lambda l: l.product_id == product
             )
             
             if existing_line:
-                _logger.info(f"Updating existing excess usage line with new amount: {partner_data['total']}")
+                # Always add to existing amount (reset is handled by cron job)
+                new_total = existing_line.price_unit + partner_data['total']
+                _logger.info(f"Updating existing excess usage line - current: {existing_line.price_unit}, adding: {partner_data['total']}, new total: {new_total}")
+                
+                # Update the line with new dates and amount
                 existing_line.write({
-                    'price_unit': partner_data['total'],
-                    'x_zlavnena_cena': partner_data['total']
+                    'price_unit': new_total,
+                    'x_zlavnena_cena': new_total,
+                    'date_start': contract.recurring_next_date,
+                    'recurring_next_date': contract.recurring_next_date
                 })
             else:
                 _logger.info(f"Creating new excess usage line with amount: {partner_data['total']}")
@@ -566,6 +574,39 @@ class ContractMobileInvoice(models.Model):
         cleaned_number = re.sub(r'\D', '', str(phone_number))
         # Strip leading '00'
         return cleaned_number.lstrip('00')
+    
+    @api.model
+    def reset_excess_usage_lines(self):
+        """Reset all excess usage contract lines on the 1st of each month"""
+        _logger.info("Starting monthly reset of excess usage contract lines")
+        
+        # Find the product for excess usage
+        product = self.env['product.product'].search([
+            ('display_name', '=', 'Vyúčtovanie paušálnych služieb a spotreby HLAS')
+        ], limit=1)
+        
+        if not product:
+            _logger.error("Could not find product 'Vyúčtovanie paušálnych služieb a spotreby HLAS'")
+            return
+            
+        # Find all contract lines with this product
+        contract_lines = self.env['contract.line'].search([
+            ('product_id', '=', product.id)
+        ])
+        
+        reset_count = 0
+        for line in contract_lines:
+            try:
+                # Reset the line amount to 0
+                line.write({
+                    'price_unit': 0.0,
+                    'x_zlavnena_cena': 0.0
+                })
+                reset_count += 1
+            except Exception as e:
+                _logger.error(f"Error resetting contract line {line.id}: {str(e)}")
+                
+        _logger.info(f"Successfully reset {reset_count} excess usage contract lines")
 
 
 class ContractMobileInvoiceLine(models.Model):
