@@ -9,7 +9,9 @@
                 <sheet>
                     <group>
                         <group>
-                            <field name="invoice_date"/>
+                            <field name="invoice_date" 
+                                   required="context_action == 'update_dates'"/>
+                            <field name="context_action" invisible="1"/>
                         </group>
                     </group>
                 </sheet>
@@ -17,7 +19,13 @@
                     <button name="action_update_contract_dates" 
                             string="Update Dates" 
                             type="object" 
-                            class="btn-primary"/>
+                            class="btn-primary"
+                            context="{'context_action': 'update_dates'}"/>
+                    <button name="action_reset_excess_usage_lines" 
+                            string="Premazat nadspotreby v zmluvach" 
+                            type="object" 
+                            class="btn-primary"
+                            context="{'context_action': 'reset_excess'}"/>
                     <button string="Cancel" 
                             class="btn-secondary" 
                             special="cancel"/>

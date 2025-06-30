@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_move_form_inherit_storage" model="ir.ui.view">
+        <field name="name">account.move.form.inherit.storage</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <button name="action_post" position="after">
+                <button 
+                    name="action_create_stock_moves" 
+                    type="object" 
+                    string="Create Stock Receipt"
+                    invisible="move_type != 'in_invoice' or has_stock_moves"
+                    groups="stock.group_stock_user"
+                    class="oe_highlight"/>
+                <button 
+                    name="action_view_pickings" 
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-truck"
+                    invisible="picking_count == 0">
+                    <field name="picking_count" widget="statinfo" string="Receipts"/>
+                </button>
+            </button>
+            <xpath expr="//group[@id='header_right_group']" position="inside">
+                <field name="stock_state" 
+                       invisible="move_type != 'in_invoice'"
+                       widget="badge"
+                       decoration-info="stock_state == 'pending'"
+                       decoration-warning="stock_state == 'partial'"
+                       decoration-success="stock_state == 'done'"
+                       decoration-danger="stock_state == 'cancelled'"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

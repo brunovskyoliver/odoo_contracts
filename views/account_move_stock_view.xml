@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_move_form_stock_inherit" model="ir.ui.view">
+        <field name="name">account.move.form.stock.inherit</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button name="action_view_pickings" 
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-truck"
+                        invisible="picking_count == 0">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value"><field name="picking_count"/></span>
+                        <span class="o_stat_text">Prijemky</span>
+                    </div>
+                </button>
+                <button name="action_view_stock_moves"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-cubes"
+                        invisible="not has_stock_moves">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_text">Presuny</span>
+                    </div>
+                </button>
+            </div>
+            <xpath expr="//header" position="inside">
+                <button name="action_create_stock_moves"
+                        string="Naskladnit"
+                        type="object"
+                        class="btn-primary"
+                        invisible="move_type != 'in_invoice' or has_stock_moves or state != 'posted'"
+                        groups="stock.group_stock_user"/>
+                <field name="invoice_line_ids" invisible="1"/>
+            </xpath>
+            <field name="payment_reference" position="after">
+                <field name="stock_state" 
+                       widget="badge"
+                       invisible="move_type != 'in_invoice'"
+                       decoration-info="stock_state == 'pending'"
+                       decoration-warning="stock_state == 'partial'"
+                       decoration-success="stock_state == 'done'"
+                       decoration-muted="stock_state == 'no_stock'"/>
+            </field>
+        </field>
+    </record>
+</odoo>

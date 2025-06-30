@@ -18,3 +18,5 @@ from . import contract_inventory
 from . import contract_mobile_service
 from . import contract_mobile_invoice
 from . import mobile_invoice_settings
+from . import stock_move
+from . import account_move_line
