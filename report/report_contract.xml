@@ -4,6 +4,12 @@
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="o">
                 <t t-call="web.external_layout">
+                <style>
+                .keep_together {
+                    page-break-inside: avoid;
+                    page-break-after: auto;
+                }
+                </style>
                     <div class="page">
                         <!-- Main header first -->
                         <h2 class="text-center" t-if="o.x_contract_type == 'Prenájom'">Zmluva o nájme číslo <span t-field="o.code"></span></h2>
@@ -14,20 +20,23 @@
                         <!-- Partner info after the header -->
                         <div class="row mt-3">
                             <div class="col-6">
+                                <strong t-if="o.x_contract_type == 'Prenájom'">Prenajímateľ</strong>
+                                <strong t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">Poskytovateľ</strong>
+                                <div>
+                                    NOVEM IT s.r.o.<br/>
+                                    Lichnerova 35<br/>
+                                    903 01 Senec<br/>
+                                    IČO: 50282859<br/>
+                                    IČ DPH: SK2120427078<br/>
+                                    Zápis v obch. reg. Mestského súdu Bratislava III, oddiel Sro,vl. č. 115271/B
+                                </div>
+                            </div>
+                            <div class="col-6 text-right">
                                 <strong t-if="o.x_contract_type == 'Prenájom'">Nájomca</strong>
                                 <strong t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">Objednávateľ</strong>
                                 <div t-field="o.partner_id" t-options="{&quot;widget&quot;: &quot;contact&quot;, &quot;fields&quot;: [&quot;address&quot;, &quot;name&quot;, &quot;phone&quot;, &quot;mobile&quot;, &quot;fax&quot;, &quot;email&quot;], &quot;no_marker&quot;: true, &quot;phone_icons&quot;: true}"></div>
-                                <!-- <p t-if="o.partner_id.vat">DIČ: <span t-field="o.partner_id.vat"></span></p> -->
                             </div>
                         </div>
-
-
-
-                        <div class="mt-3 text-right"><br/><strong t-if="o.x_contract_type == 'Prenájom'">Prenajímateľ</strong><strong t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">Poskytovateľ</strong>
-
-                            <span><br/>NOVEM IT s.r.o. 
-                            <br></br> Lichnerova 35<br></br> 903 01 Senec<br></br> IČO: 50282859 <br></br> IČ DPH: SK2120427078 <br></br> Zápis v obch. reg. Mestského súdu Bratislava III, oddiel Sro,vl. č. 115271/B <!-- <span t-if="o.x_contract_type == 'Prenájom'">(„Prenajímateľ") a Nájomcom (ďalej len „Zmluva").</span> <span t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">(„Poskytovateľ") a Objednávateľom (ďalej len „Zmluva").</span> <-->
-                            </span> </div>
             
             
             <style>p { margin-bottom: 2px !important; }</style>
@@ -152,6 +161,7 @@
             </table>
           </div>
         </div>
+      <div class="keep_together">
         <div class="row" id="total" name="total">
           <div class="col-auto ml-auto">
             <br></br>
@@ -180,6 +190,7 @@
         <div>
         <p>Všetky ceny vyššie sú uvedené bez DPH.</p>
         </div>
+      </div>
         <div style="page-break-before: always; margin-bottom:0px;">
           <!-- <div class="row mt-4" id="note" t-if="o.note">
                         <div>
