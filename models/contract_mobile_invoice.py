@@ -127,7 +127,7 @@ class ContractMobileInvoice(models.Model):
                 for _, row in tbiznis_services.iterrows():
                     service_name = row['Charges__BudgetCentre__ProductFamily__Charge__@Desc']
                     price = self._safe_convert_to_float(row['Charges__BudgetCentre__ProductFamily__Charge__@Price'])
-                    vat_rate = row['Charges__BudgetCentre__ProductFamily__Charge__@VatRate']
+                    vat_rate = str(row['Charges__BudgetCentre__ProductFamily__Charge__@VatRate']) + "%"
                     
                     if pd.notna(service_name):
                         # Map T-Biznis service names to NOVEM names
@@ -150,6 +150,7 @@ class ContractMobileInvoice(models.Model):
                             'amount': price,
                             'total': price,
                             'is_excess_usage': False,
+                            'vat': vat_rate,
                         })
                 
                 # Process paid services (excluding T-Biznis)
@@ -161,8 +162,8 @@ class ContractMobileInvoice(models.Model):
                 for _, row in paid_services.iterrows():
                     service_name = row['Charges__BudgetCentre__ProductFamily__Charge__@Desc']
                     price = self._safe_convert_to_float(row['Charges__BudgetCentre__ProductFamily__Charge__@Price'])
-                    vat_rate = row['Charges__BudgetCentre__ProductFamily__Charge__@VatRate']
-                    
+                    vat_rate = str(row['Charges__BudgetCentre__ProductFamily__Charge__@VatRate']) + "%"
+
                     if pd.notna(service_name):
                         service_type = 'other'
                         if 'data' in service_name.lower():
@@ -183,6 +184,7 @@ class ContractMobileInvoice(models.Model):
                             'amount': price,
                             'total': price,
                             'is_excess_usage': True,
+                            'vat': vat_rate,
                         })
                 
                 # Process SMS usage
@@ -443,7 +445,7 @@ class ContractMobileInvoice(models.Model):
         
         # Get all invoice lines with excess usage, limited to specific partner for testing
         excess_usage_by_partner = {}
-        test_partner_id = 1179  # Testing with specific partner
+        test_partner_id = 1074  # Testing with specific partner
         
         for line in self.invoice_line_ids.filtered(
             lambda l: l.is_excess_usage and 
@@ -452,19 +454,26 @@ class ContractMobileInvoice(models.Model):
         ):
             if line.partner_id.id not in excess_usage_by_partner:
                 excess_usage_by_partner[line.partner_id.id] = {
-                    'total': 0.0,
+                    'total_23': 0.0,  # For 23% VAT
+                    'total_0': 0.0,   # For 0% VAT
                     'partner': line.partner_id,
                 }
-            excess_usage_by_partner[line.partner_id.id]['total'] += line.total
+            
+            # Sum amounts based on VAT rate
+            if line.vat == '23%':
+                excess_usage_by_partner[line.partner_id.id]['total_23'] += line.total
+            else:  # Assume 0% for all other cases
+                excess_usage_by_partner[line.partner_id.id]['total_0'] += line.total
 
         _logger.info(f"Processing excess usage for partner ID {test_partner_id}")
         
         # Process each partner's excess usage
         for partner_data in excess_usage_by_partner.values():
-            if partner_data['total'] <= 0:
+            # Skip if no excess usage in either VAT rate
+            if partner_data['total_23'] <= 0 and partner_data['total_0'] <= 0:
                 continue
                 
-            _logger.info(f"Found excess usage total: {partner_data['total']} for partner {partner_data['partner'].name}")
+            _logger.info(f"Found excess usage totals - 23% VAT: {partner_data['total_23']}, 0% VAT: {partner_data['total_0']} for partner {partner_data['partner'].name}")
             
             # Find the mobilky contract for this partner
             contract = self.env['contract.contract'].search([
@@ -478,49 +487,84 @@ class ContractMobileInvoice(models.Model):
                 
             _logger.info(f"Found contract: {contract.name}")
             
-            # Check if there's already a line for excess usage
-            product = self.env['product.product'].search([
-                ('display_name', '=', 'Vyúčtovanie paušálnych služieb a spotreby HLAS')
+            # Get products for both VAT rates
+            product_23 = self.env['product.product'].search([
+                ('display_name', '=', 'Vyúčtovanie paušálnych služieb a spotreby HLAS 23%')
             ], limit=1)
             
-            if not product:
-                _logger.error("Could not find product 'Vyúčtovanie paušálnych služieb a spotreby HLAS'")
-                continue
-                
-            # Find the excess usage line (there should be only one per contract)
-            existing_line = contract.contract_line_ids.filtered(
-                lambda l: l.product_id == product
-            )
+            product_0 = self.env['product.product'].search([
+                ('display_name', '=', 'Vyúčtovanie paušálnych služieb a spotreby HLAS 0%')
+            ], limit=1)
             
-            if existing_line:
-                # Always add to existing amount (reset is handled by cron job)
-                new_total = existing_line.price_unit + partner_data['total']
-                _logger.info(f"Updating existing excess usage line - current: {existing_line.price_unit}, adding: {partner_data['total']}, new total: {new_total}")
+            if not (product_23 and product_0):
+                _logger.error("Could not find both Vyúčtovanie products (23% and 0%)")
+                continue
+            
+            # Handle 23% VAT line
+            if partner_data['total_23'] > 0:
+                existing_line_23 = contract.contract_line_ids.filtered(
+                    lambda l: l.product_id == product_23
+                )
                 
-                # Update the line with new dates and amount
-                existing_line.write({
-                    'price_unit': new_total,
-                    'x_zlavnena_cena': new_total,
-                    'date_start': contract.recurring_next_date,
-                    'recurring_next_date': contract.recurring_next_date
-                })
-            else:
-                _logger.info(f"Creating new excess usage line with amount: {partner_data['total']}")
-                # Create new contract line for excess usage
-                self.env['contract.line'].with_context(skip_date_check=True).create({
-                    'contract_id': contract.id,
-                    'product_id': product.id,
-                    'name': 'Vyúčtovanie paušálnych služieb a spotreby HLAS',
-                    'quantity': 1,
-                    'price_unit': partner_data['total'],
-                    'recurring_rule_type': 'monthly',
-                    'recurring_interval': 1,
-                    "uom_id": 1,
-                    "x_zlavnena_cena": partner_data['total'],
-                    'date_start': contract.recurring_next_date,
-                    'recurring_next_date': contract.recurring_next_date,
-                    'is_auto_renew': False,
-                })
+                if existing_line_23:
+                    new_total = existing_line_23.price_unit + partner_data['total_23']
+                    _logger.info(f"Updating existing 23% VAT line - current: {existing_line_23.price_unit}, adding: {partner_data['total_23']}, new total: {new_total}")
+                    
+                    existing_line_23.write({
+                        'price_unit': new_total,  # Adjust for 23% VAT
+                        'x_zlavnena_cena': new_total,  # Adjust for 23% VAT
+                        'date_start': contract.recurring_next_date,
+                        'recurring_next_date': contract.recurring_next_date
+                    })
+                else:
+                    _logger.info(f"Creating new 23% VAT line with amount: {partner_data['total_23']}")
+                    self.env['contract.line'].with_context(skip_date_check=True).create({
+                        'contract_id': contract.id,
+                        'product_id': product_23.id,
+                        'name': 'Vyúčtovanie paušálnych služieb a spotreby HLAS 23%',
+                        'quantity': 1,
+                        'price_unit': partner_data['total_23'],  # Adjust for 23% VAT
+                        'recurring_rule_type': 'monthly',
+                        'recurring_interval': 1,
+                        "uom_id": 1,
+                        "x_zlavnena_cena": partner_data['total_23'],  # Adjust for 23% VAT
+                        'date_start': contract.recurring_next_date,
+                        'recurring_next_date': contract.recurring_next_date,
+                        'is_auto_renew': False,
+                    })
+            
+            # Handle 0% VAT line
+            if partner_data['total_0'] > 0:
+                existing_line_0 = contract.contract_line_ids.filtered(
+                    lambda l: l.product_id == product_0
+                )
+                
+                if existing_line_0:
+                    new_total = existing_line_0.price_unit + partner_data['total_0']
+                    _logger.info(f"Updating existing 0% VAT line - current: {existing_line_0.price_unit}, adding: {partner_data['total_0']}, new total: {new_total}")
+                    
+                    existing_line_0.write({
+                        'price_unit': new_total,
+                        'x_zlavnena_cena': new_total,
+                        'date_start': contract.recurring_next_date,
+                        'recurring_next_date': contract.recurring_next_date
+                    })
+                else:
+                    _logger.info(f"Creating new 0% VAT line with amount: {partner_data['total_0']}")
+                    self.env['contract.line'].with_context(skip_date_check=True).create({
+                        'contract_id': contract.id,
+                        'product_id': product_0.id,
+                        'name': 'Vyúčtovanie paušálnych služieb a spotreby HLAS 0%',
+                        'quantity': 1,
+                        'price_unit': partner_data['total_0'],
+                        'recurring_rule_type': 'monthly',
+                        'recurring_interval': 1,
+                        "uom_id": 1,
+                        "x_zlavnena_cena": partner_data['total_0'],
+                        'date_start': contract.recurring_next_date,
+                        'recurring_next_date': contract.recurring_next_date,
+                        'is_auto_renew': False,
+                    })
                 
         return True
 

@@ -92,25 +92,33 @@ class MobileInvoiceSettings(models.TransientModel):
         return {'type': 'ir.actions.client', 'tag': 'reload'}
 
     def action_reset_excess_usage_lines(self):
-        """Reset all excess usage contract lines"""
         _logger.info("Starting monthly reset of excess usage contract lines")
         
         # Find the product for excess usage
-        product = self.env['product.product'].search([
-            ('display_name', '=', 'Vyúčtovanie paušálnych služieb a spotreby HLAS')
+        product_0 = self.env['product.product'].search([
+            ('display_name', '=', 'Vyúčtovanie paušálnych služieb a spotreby HLAS 0%')
         ], limit=1)
-        
-        if not product:
-            _logger.error("Could not find product 'Vyúčtovanie paušálnych služieb a spotreby HLAS'")
+        product_23 = self.env['product.product'].search([
+            ('display_name', '=', 'Vyúčtovanie paušálnych služieb a spotreby HLAS 23%')
+        ], limit=1)
+
+        if not product_0:
+            _logger.error("Could not find product 'Vyúčtovanie paušálnych služieb a spotreby HLAS 0%'")
             return
-            
+        if not product_23:
+            _logger.error("Could not find product 'Vyúčtovanie paušálnych služieb a spotreby HLAS 23%'")
+            return            
         # Find all contract lines with this product
-        contract_lines = self.env['contract.line'].search([
-            ('product_id', '=', product.id)
+        contract_lines_0 = self.env['contract.line'].search([
+            ('product_id', '=', product_0.id)
         ])
-        
+        contract_lines_23 = self.env['contract.line'].search([
+            ('product_id', '=', product_23.id)
+        ])
+
+
         reset_count = 0
-        for line in contract_lines:
+        for line in contract_lines_0 + contract_lines_23:
             try:
                 # Reset the line amount to 0
                 line.write({
