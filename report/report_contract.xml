@@ -7,7 +7,7 @@
                     <div class="page">
                         <!-- Main header first -->
                         <h2 class="text-center" t-if="o.x_contract_type == 'Prenájom'">Zmluva o nájme číslo <span t-field="o.code"></span></h2>
-                        <h2 class="text-center" t-if="o.x_contract_type == 'Služby'">Zmluva o poskytovaní služieb číslo <span t-field="o.code"></span></h2>
+                        <h2 class="text-center" t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">Zmluva o poskytovaní služieb číslo <span t-field="o.code"></span></h2>
 
                         <div class="mt-3 text-center">
                             <span>uzavretá podľa zákona č.269 ods.2 Obchodného zákonníka, zákona č. 513/1991 Zb. v znení neskorších predpisov medzi </span></div> 
@@ -15,7 +15,7 @@
                         <div class="row mt-3">
                             <div class="col-6">
                                 <strong t-if="o.x_contract_type == 'Prenájom'">Nájomca</strong>
-                                <strong t-if="o.x_contract_type == 'Služby'">Objednávateľ</strong>
+                                <strong t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">Objednávateľ</strong>
                                 <div t-field="o.partner_id" t-options="{&quot;widget&quot;: &quot;contact&quot;, &quot;fields&quot;: [&quot;address&quot;, &quot;name&quot;, &quot;phone&quot;, &quot;mobile&quot;, &quot;fax&quot;, &quot;email&quot;], &quot;no_marker&quot;: true, &quot;phone_icons&quot;: true}"></div>
                                 <!-- <p t-if="o.partner_id.vat">DIČ: <span t-field="o.partner_id.vat"></span></p> -->
                             </div>
@@ -23,10 +23,10 @@
 
 
 
-                        <div class="mt-3 text-right"><br/><strong t-if="o.x_contract_type == 'Prenájom'">Prenajímateľ</strong><strong t-if="o.x_contract_type == 'Služby'">Poskytovateľ</strong>
+                        <div class="mt-3 text-right"><br/><strong t-if="o.x_contract_type == 'Prenájom'">Prenajímateľ</strong><strong t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">Poskytovateľ</strong>
 
                             <span><br/>NOVEM IT s.r.o. 
-                            <br></br> Lichnerova 35<br></br> 903 01 Senec<br></br> IČO: 50282859 <br></br> IČ DPH: SK2120427078 <br></br> Zápis v obch. reg. Mestského súdu Bratislava III, oddiel Sro,vl. č. 115271/B <!-- <span t-if="o.x_contract_type == 'Prenájom'">(„Prenajímateľ") a Nájomcom (ďalej len „Zmluva").</span> <span t-if="o.x_contract_type == 'Služby'">(„Poskytovateľ") a Objednávateľom (ďalej len „Zmluva").</span> <-->
+                            <br></br> Lichnerova 35<br></br> 903 01 Senec<br></br> IČO: 50282859 <br></br> IČ DPH: SK2120427078 <br></br> Zápis v obch. reg. Mestského súdu Bratislava III, oddiel Sro,vl. č. 115271/B <!-- <span t-if="o.x_contract_type == 'Prenájom'">(„Prenajímateľ") a Nájomcom (ďalej len „Zmluva").</span> <span t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">(„Poskytovateľ") a Objednávateľom (ďalej len „Zmluva").</span> <-->
                             </span> </div>
             
             
@@ -41,7 +41,7 @@
               <p id="services_info">
                 <br></br>
                 <h2 t-if="o.x_contract_type == 'Prenájom'">Poskytnuté zariadenia do prenájmu</h2>
-                <h2 t-if="o.x_contract_type == 'Služby'">Objednané služby</h2>
+                <h2 t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">Objednané služby</h2>
               </p>
             </div>
             <table class="table table-sm">
@@ -159,7 +159,7 @@
               <tr class="border-black o_subtotal o_total">
                 <td style="font-size:20px;padding-right:20px;">
                   <strong t-if="o.x_contract_type == 'Prenájom'">Cena nájomného za mesiac</strong>
-                  <strong t-if="o.x_contract_type == 'Služby'">Cena objednaný služieb za mesiac</strong>
+                  <strong t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">Cena objednaný služieb za mesiac</strong>
                 </td>
                 <td style="vertical-align: middle;">
                   <span t-esc="total" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: o.currency_id}"></span>
@@ -208,7 +208,7 @@
               <p>Vzhľadom na vyššie uvedené uzavreli zmluvné strany túto zmluvu, aby na jej základe zabezpečili realizáciu vyššie uvedených záujmov Nájomcu a upravili vzájomné práva a povinnosti s tým súvisiace.</p>
             </li>
           </ul>
-          <ul class="para" style="text-align: justify;text-justify: inter-word;font-size:10px;" t-if="o.x_contract_type == 'Služby'">
+          <ul class="para" style="text-align: justify;text-justify: inter-word;font-size:10px;" t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">
             <li>
               <p>Poskytovateľ je právnická osoba riadne založená a existujúca podľa právneho poriadku Slovenskej republiky, ktorá disponuje potrebnými skúsenosťami, personálnym a materiálno-technickým vybavením, prostredníctvom ktorého je schopná kvalitne a afektívne poskytovať alebo zabezpečovať služby v rozsahu predmetu svojho podnikania.</p>
             </li>
@@ -224,7 +224,7 @@
               <p>Touto zmluvou sa Prenajímateľ zaväzuje prenechať Nájomcovi do dočasného odplatného užívania (nájmu) hnuteľné veci, ktorých zoznam je uvedený v tejto zmluve v časti „Poskytnuté zariadenia do prenájmu“ (ďalej ako „predmet nájmu“ alebo ako „hardvérové a softvérové vybavenie“) a Nájomca sa zaväzuje platiť za to Prenajímateľovi dohodnuté nájomné a iné platby vo výške a za podmienok dojednaných v tejto zmluve.</p>
             </li>
           </ul>
-          <ul class="para" style="text-align: justify;   text-justify: inter-word;font-size:10px;" t-if="o.x_contract_type == 'Služby'">
+          <ul class="para" style="text-align: justify;   text-justify: inter-word;font-size:10px;" t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">
             <li>
               <p>Touto zmluvou sa Poskytovateľ zaväzuje poskytovať pre Objednávateľa služby v rozsahu uvedenom v tejto zmluve v sekcii Objednané služby (ďalej len „Objednané služby“) a Objednávateľ sa zaväzuje zaplatiť za to Poskytovateľovi dohodnutú odmenu vo výške a spôsobom dojednaným ďalej v tejto zmluve. Ak sa v tejto zmluve používa pojem “Služby” v akomkoľvek gramatickom tvare a čísle, majú sa tým podľa povahy veci samej na mysli buď všetky služby vymenované na prvej strane v sekcii objednané služby, alebo len niektoré z nich prípadne iba niektorá z nich.</p>
             </li>
@@ -270,10 +270,10 @@
               <p>V otázkach nájmu, ktoré nie sú výslovne upravené v tejto zmluve platí právna úprava podnikateľského nájmu hnuteľných vecí podľa § 721 a súvisiacich Občianskeho zákonníka a ostatných všeobecne záväzných právnych predpisov Slovenskej republiky.</p>
             </li>
           </ul>
-          <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Služby'">
+          <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">
             <h3 style="padding: 8px;color:white;">III. Poskytovanie Služieb a súčinnosť Objednávateľa</h3>
           </div>
-          <ul class="para" style="text-align: justify;text-justify:inter-word;font-size:10px;" t-if="o.x_contract_type == 'Služby'">
+          <ul class="para" style="text-align: justify;text-justify:inter-word;font-size:10px;" t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">
             <li>
               <p>Poskytovateľ sa zaväzuje poskytovať Objednávateľovi Objednané služby autonómne a samostatne ak to je vzhľadom na povahu veci možné a tiež na základe monitoringu alebo hlásení Objednávateľa o vyskytnutých poruchách alebo problémových situáciách, ktoré majú byť riešené v rámci Služieb.</p>
             </li>
@@ -392,7 +392,7 @@
           <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Prenájom'">
             <h3 style="padding: 8px;color:white;">V. Záväzok mlčanlivosti</h3>
           </div>
-          <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Služby'">
+          <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">
             <h3 style="padding: 8px;color:white;">IV. Záväzok mlčanlivosti</h3>
           </div>
           <ul style="font-size:10px;text-align: justify;text-justify:inter-word;">
@@ -441,7 +441,7 @@
           <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Prenájom'">
             <h3 style="padding: 8px;color:white;">VI. Nájomné a poplatok za inštaláciu</h3>
           </div>
-          <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Služby'">
+          <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">
             <h3 style="padding: 8px;color:white;">V. Odplata</h3>
           </div>
           <!-- Najomne a poplatok -->
@@ -481,7 +481,7 @@
             </li>
           </ul>
           <!-- ODPLATA - Sluzby -->
-          <ul style="font-size:10px;text-align: justify;text-justify:inter-word;" t-if="o.x_contract_type == 'Služby'">
+          <ul style="font-size:10px;text-align: justify;text-justify:inter-word;" t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">
             <li>
               <p>Objednávateľ sa zaväzuje zaplatiť Poskytovateľovi za poskytovanie Služieb podľa tejto zmluvy odplatu vo výške uvedenej na prvej strane tejto zmluvy v sekcii Objednané služby. Ceny uvedené v bodoch 1. a 2. tohto článku sú uvedené bez platnej dane z pridanej hodnoty podľa platnej a účinnej právnej úpravy Slovenskej republiky</p>
             </li>
@@ -527,7 +527,7 @@
           <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Prenájom'">
             <h3 style="padding: 8px;color:white;">VII. Doručovanie</h3>
           </div>
-          <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Služby'">
+          <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">
             <h3 style="padding: 8px;color:white;">VI. Doručovanie</h3>
           </div>
           <ul style="font-size:10px;text-align: justify;text-justify:inter-word;">
@@ -570,7 +570,7 @@
           <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Prenájom'">
             <h3 style="padding: 8px;color:white;">VIII. Spoločné a záverečné ustanovenia</h3>
           </div>
-          <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Služby'">
+          <div class="text-center" style="background-color:#568DA9;width:100%;" t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">
             <h3 style="padding: 8px;color:white;">VII. Spoločné a záverečné ustanovenia</h3>
           </div>
           <ul style="font-size:10px;text-align: justify;text-justify:inter-word;">
@@ -636,7 +636,7 @@
             <t t-if="o.x_contract_type == 'Prenájom'">
                 Podpis Prenajímateľ
             </t>
-            <t t-if="o.x_contract_type == 'Služby'">
+            <t t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">
                 Podpis Poskytovateľ
             </t>
         </p>
@@ -648,7 +648,7 @@
             <t t-if="o.x_contract_type == 'Prenájom'">
                 Podpis Nájomca
             </t>
-            <t t-if="o.x_contract_type == 'Služby'">
+            <t t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">
                 Podpis Objednávateľ
             </t>
         </p>
