@@ -13,6 +13,12 @@ class AccountMove(models.Model):
     # We keep this field for migration purpose
     old_contract_id = fields.Many2one("contract.contract")
 
+    # Add default for taxable_supply_date
+    taxable_supply_date = fields.Date(
+        string='Dátum zdanitelného plnenia',
+        default=fields.Date.context_today,
+    )
+
     # Stock integration fields
     has_stock_moves = fields.Boolean(
         string="Has Stock Moves",
