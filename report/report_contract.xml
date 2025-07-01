@@ -169,7 +169,7 @@
               <tr class="border-black o_subtotal o_total">
                 <td style="font-size:20px;padding-right:20px;">
                   <strong t-if="o.x_contract_type == 'Prenájom'">Cena nájomného za mesiac</strong>
-                  <strong t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">Cena objednaný služieb za mesiac</strong>
+                  <strong t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">Cena objednaných služieb za mesiac</strong>
                 </td>
                 <td style="vertical-align: middle;">
                   <span t-esc="total" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: o.currency_id}"></span>
