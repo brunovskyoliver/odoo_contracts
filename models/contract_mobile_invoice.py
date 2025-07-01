@@ -3,15 +3,103 @@
 
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
-import base64
-import pandas as pd
-import io
-import re
-import logging
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+import os
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
+from openpyxl.drawing.image import Image
+import pandas as pd
+import re
+import io
+import base64
+import logging
 
 _logger = logging.getLogger(__name__)
+
+def insert_image(sheet, image_path, cell):
+    """Insert an image into the specified cell of the sheet."""
+    try:
+        # Load the image
+        img = Image(image_path)
+        
+        # Adjust the size of the image if needed
+        img.width, img.height = 200, 100
+        
+        # Extract column letter and row number from cell reference
+        col_letter = ''.join(filter(str.isalpha, cell))
+        row_num = int(''.join(filter(str.isdigit, cell)))
+        
+        # Get column width in pixels (1 unit = 7 pixels)
+        col_width = sheet.column_dimensions[col_letter].width
+        col_width_px = col_width * 7
+        
+        # Calculate offsets to center the image
+        x_offset = (col_width_px - img.width) / 2
+        
+        # Adjust row height to fit the image
+        row_height = img.height * 0.75  # Convert to points (Excel units)
+        sheet.row_dimensions[row_num].height = row_height
+        
+        # Calculate y_offset to center vertically
+        y_offset = (row_height - img.height * 0.75) / 2
+        
+        # Add the image with calculated offsets
+        img.anchor = cell
+        img.left = x_offset
+        img.top = y_offset
+        
+        sheet.add_image(img)
+        
+    except Exception as e:
+        _logger.error(f"Error inserting image: {e}")
+
+def format_duration(seconds):
+    """Format seconds into HH:MM:SS format."""
+    try:
+        seconds = float(seconds)
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = int(seconds % 60)
+        return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+    except ValueError:
+        return "00:00:00"
+
+def format_data_usage(bytes_or_mb):
+    """Format bytes or MB into appropriate unit (MB/GB)."""
+    try:
+        # Convert the input to float and handle MB conversion
+        value = float(bytes_or_mb)
+        mb = value / (1024 * 1024) if value > 1024 * 1024 else value
+        
+        # Format as GB if over 1024 MB, otherwise as MB
+        if mb > 1024:
+            return f"{mb/1024:.2f} GB"
+        else:
+            return f"{mb:.2f} MB"
+    except ValueError:
+        return "0 MB"
+
+def get_output_folder(customer_info: tuple, base_dir: str = "output") -> str:
+    """Determine the appropriate output folder based on customer info."""
+    customer_type, name = customer_info
+    
+    # Create base output directory if it doesn't exist
+    os.makedirs(base_dir, exist_ok=True)
+    
+    # Create companies and individuals directories
+    companies_dir = os.path.join(base_dir, "companies")
+    individuals_dir = os.path.join(base_dir, "individuals")
+    os.makedirs(companies_dir, exist_ok=True)
+    os.makedirs(individuals_dir, exist_ok=True)
+    
+    if customer_type == 'company':
+        company_dir = os.path.join(companies_dir, name)
+        os.makedirs(company_dir, exist_ok=True)
+        return company_dir
+    else:  # 'individual' or 'unknown'
+        return individuals_dir
 
 
 class ContractMobileInvoice(models.Model):
@@ -131,17 +219,7 @@ class ContractMobileInvoice(models.Model):
                     
                     if pd.notna(service_name):
                         # Map T-Biznis service names to NOVEM names
-                        service_name = service_name.replace("T-Biznis Flex Variant 1", "NOVEM nekonečno 6GB")
-                        service_name = service_name.replace("T-Biznis Flex Variant 10", "NOVEM nekonečno 10GB")
-                        service_name = service_name.replace("T-Biznis Flex Variant 11", "NOVEM nekonečno 30GB")
-                        service_name = service_name.replace("T-Biznis Flex Variant 2", "NOVEM Fér bez dát")
-                        service_name = service_name.replace("T-Biznis Flex Variant 3", "NOVEM nekonečno 20GB")
-                        service_name = service_name.replace("T-Biznis Flex Variant 4", "NOVEM nekonečno 50GB")
-                        service_name = service_name.replace("T-Biznis Flex Variant 5", "NOVEM 250 0,5GB")
-                        service_name = service_name.replace("T-Biznis Flex Variant 6", "NOVEM nekonečno 0,5GB")
-                        service_name = service_name.replace("T-Biznis Flex Variant 7", "NOVEM 250 30 GB")
-                        service_name = service_name.replace("T-Biznis Flex Variant 8", "NOVEM 250 10 GB")
-                        service_name = service_name.replace("T-Biznis Flex Variant 9", "NOVEM nekonečno bez dát")
+                        service_name = format_plan_name(service_name)
                         
                         result.append({
                             'phone_number': phone_number,
@@ -775,11 +853,14 @@ class ContractMobileUsageReport(models.Model):
             
             try:
                 # Get invoice lines
-                invoice_lines = self.invoice_id.invoice_line_ids
+                invoice_lines = self.invoice_id.invoice_line_ids.filtered(
+                    lambda l: l.partner_id == self.partner_id
+                )
                 
                 # Group lines by phone number
                 phone_groups = {}
                 for line in invoice_lines:
+                    # Initialize phone group if not exists
                     if line.phone_number not in phone_groups:
                         phone_groups[line.phone_number] = {
                             'mobile_service_id': line.mobile_service_id.id if line.mobile_service_id else False,
@@ -791,96 +872,244 @@ class ContractMobileUsageReport(models.Model):
                             'excess_data_usage': 0.0,
                             'excess_voice_usage': 0.0,
                             'excess_sms_usage': 0.0,
+                            'is_company': line.partner_id.is_company if line.partner_id else False,
                         }
-                        
-                    # Update group data based on line service type
-                    if line.service_type == 'basic':
-                        phone_groups[line.phone_number]['basic_plan'] += (line.service_name or '') + ' '
-                        phone_groups[line.phone_number]['basic_plan_cost'] += line.total
-                    elif line.is_excess_usage:
-                        phone_groups[line.phone_number]['excess_usage_cost'] += line.total
-                        
-                        # Track specific usage types
-                        if line.service_type == 'data':
-                            phone_groups[line.phone_number]['excess_data_usage'] += line.quantity or 0.0
-                        elif line.service_type == 'voice':
-                            phone_groups[line.phone_number]['excess_voice_usage'] += line.quantity or 0.0
-                        elif line.service_type == 'sms':
-                            phone_groups[line.phone_number]['excess_sms_usage'] += line.quantity or 0.0
-                            
-                    # Update total cost
-                    phone_groups[line.phone_number]['total_cost'] += line.total
-                
-                # Create report lines
-                report_lines = []
-                for phone_number, data in phone_groups.items():
-                    # Calculate values
-                    total_cost = data['basic_plan_cost'] + data['excess_usage_cost']
                     
-                    report_lines.append((0, 0, {
+                    # Update group data based on line type
+                    data = phone_groups[line.phone_number]
+                    if line.service_type == 'basic':
+                        data['basic_plan'] = line.service_name
+                        data['basic_plan_cost'] = line.total
+                    elif line.service_type == 'data':
+                        data['excess_data_usage'] += line.quantity
+                    elif line.service_type == 'voice':
+                        data['excess_voice_usage'] += line.quantity
+                    elif line.service_type in ['sms', 'mms']:
+                        data['excess_sms_usage'] += line.quantity
+                    
+                    if line.is_excess_usage:
+                        data['excess_usage_cost'] += line.total
+                    data['total_cost'] += line.total
+                
+                # Process each phone number
+                for phone_number, data in phone_groups.items():
+                    # Create report line
+                    self.env['contract.mobile.usage.report.line'].create({
+                        'report_id': self.id,
                         'phone_number': phone_number,
                         'mobile_service_id': data['mobile_service_id'],
                         'partner_name': data['partner_name'],
-                        'basic_plan': data['basic_plan'].strip(),
+                        'basic_plan': data['basic_plan'],
                         'basic_plan_cost': data['basic_plan_cost'],
                         'excess_usage_cost': data['excess_usage_cost'],
-                        'total_cost': total_cost,
+                        'total_cost': data['total_cost'],
                         'excess_data_usage': data['excess_data_usage'],
                         'excess_voice_usage': data['excess_voice_usage'],
                         'excess_sms_usage': data['excess_sms_usage'],
-                    }))
+                    })
                 
                 # Generate Excel report
-                report_file, report_filename = self._generate_excel_report(phone_groups)
-                
-                # Update report with lines and file
-                self.write({
-                    'report_line_ids': report_lines,
-                    'report_file': report_file,
-                    'report_filename': report_filename,
-                    'state': 'done',
-                })
+                report_content = self._generate_excel_report(phone_groups)
+                if report_content:
+                    self.write({
+                        'report_file': report_content,
+                        'report_filename': f"{self.name}_{self.date}.xlsx",
+                        'state': 'done'
+                    })
                 
                 return True
                 
             except Exception as e:
                 _logger.error(f"Error generating report: {str(e)}")
                 raise UserError(_("Error generating report: %s") % str(e))
-                
+        
         return False
-    
+
     def _generate_excel_report(self, phone_groups):
-        """Generate an Excel report file"""
-        # This would typically use a library like xlsxwriter or openpyxl
-        # For now, we'll create a simple CSV file using pandas
-        
-        # Create a DataFrame from the phone groups data
-        data = []
-        for phone_number, info in phone_groups.items():
-            data.append({
-                'Phone Number': phone_number,
-                'Basic Plan': info['basic_plan'],
-                'Basic Plan Cost': info['basic_plan_cost'],
-                'Excess Usage Cost': info['excess_usage_cost'],
-                'Total Cost': info['total_cost'],
-                'Excess Data Usage': info['excess_data_usage'],
-                'Excess Voice Usage': info['excess_voice_usage'],
-                'Excess SMS Usage': info['excess_sms_usage'],
-            })
+        """Generate an Excel report file for each partner, containing all their phone numbers.
+        Uses the same formatting and sections as nadspotreba.py."""
+        # Get all invoice lines for the partner
+        invoice_lines = self.invoice_id.invoice_line_ids.filtered(
+            lambda l: l.partner_id == self.partner_id
+        )
+        try:
+            base_path = os.path.dirname(os.path.abspath(__file__))
+            novem_logo = os.path.join(base_path, '..', 'novem.png')
             
-        df = pd.DataFrame(data)
-        
-        # Create CSV in memory
-        output = io.StringIO()
-        df.to_csv(output, index=False)
-        
-        # Convert to base64
-        report_content = base64.b64encode(output.getvalue().encode('utf-8'))
-        report_filename = f"usage_report_{self.partner_id.name}_{self.date}.csv"
-        
-        return report_content, report_filename
+            # Group phone numbers by partner
+            partner_groups = {}
+            for phone_number, data in phone_groups.items():
+                # Format phone number consistently
+                formatted_phone = format_phone_number(phone_number)
+                partner_name = data.get('partner_name', 'Unknown')
+                partner_type = 'company' if data.get('is_company') else 'individual'
+                
+                key = (partner_type, partner_name)
+                if key not in partner_groups:
+                    partner_groups[key] = []
+                # Store the formatted phone number
+                data['formatted_phone'] = formatted_phone
+                _logger.info(f"Processing phone number: {formatted_phone} for partner: {partner_name} ({partner_type})")
+                # Format basic plan name
+                data['formatted_plan'] = format_plan_name(data.get('basic_plan', ''))
+                partner_groups[key].append((formatted_phone, data))
 
+            # Continue with workbook creation...
+            wb = Workbook()
+            ws = wb.active
+            
+            # Add NOVEM logo if exists
+            if os.path.exists(novem_logo):
+                insert_image(ws, novem_logo, "A1")
+            
+            current_row = 5  # Start after logo
+            
+            thin_border = Border(
+                left=Side(style='thin'),
+                right=Side(style='thin'),
+                top=Side(style='thin'),
+                bottom=Side(style='thin')
+            )
 
+            # Process each partner's data
+            for partner_info, partner_data in partner_groups.items():
+                for phone_number, data in sorted(partner_data):  # Sort by phone number
+                    # Header section
+                    ws.cell(row=current_row, column=1, value="Rozpis spotreby pre telefónne číslo:").font = Font(bold=True, color="438EAC")
+                    ws.cell(row=current_row, column=2, value=data['formatted_phone'])  # Use formatted phone number
+                    current_row += 1
+
+                    # Basic plan section
+                    _logger.info(f"Adding basic plan: {data['formatted_plan']}")
+                    ws.cell(row=current_row, column=1, value=data['formatted_plan'])  # Use formatted plan name
+                    current_row += 2
+                    
+                    # Rozpis účtovaných poplatkov
+                    # Get all excessive usage lines for this phone number
+                    excessive_lines = [line for line in invoice_lines if 
+                                    line.phone_number == phone_number and 
+                                    line.is_excess_usage and 
+                                    line.total > 0]
+                    
+                    if excessive_lines:
+                        ws.cell(row=current_row, column=1, value="Rozpis účtovaných poplatkov:").font = Font(bold=True)
+                        ws.cell(row=current_row, column=2, value="DPH").font = Font(bold=True)
+                        ws.cell(row=current_row, column=3, value="Suma v EUR bez DPH").font = Font(bold=True)
+                        for cell in [ws.cell(row=current_row, column=i) for i in range(1, 4)]:
+                            cell.border = thin_border
+                        current_row += 1
+
+                        # List each excessive usage line separately
+                        for line in excessive_lines:
+                            ws.cell(row=current_row, column=1, value=line.service_name)
+                            ws.cell(row=current_row, column=2, value=line.vat if line.vat else "0%")
+                            x = f"{float(line.total):.4f}".replace('.', ',')
+                            cell = ws.cell(row=current_row, column=3, value=x)
+                            cell.number_format = '0.0000'
+                            for cell in [ws.cell(row=current_row, column=i) for i in range(1, 4)]:
+                                cell.border = thin_border
+                            current_row += 1
+                        current_row += 1
+
+                    # Rozpis SMS / MMS
+                    # Get SMS/MMS, voice, and data usage lines for this phone number
+                    sms_lines = [line for line in invoice_lines if 
+                              line.phone_number == phone_number and 
+                              line.service_type in ['sms', 'mms']]
+                    voice_lines = [line for line in invoice_lines if 
+                                line.phone_number == phone_number and 
+                                line.service_type == 'voice']
+                    data_lines = [line for line in invoice_lines if 
+                               line.phone_number == phone_number and 
+                               line.service_type == 'data']
+
+                    # Rozpis SMS / MMS
+                    if sms_lines:
+                        ws.cell(row=current_row, column=1, value="Rozpis SMS / MMS:").font = Font(bold=True)
+                        ws.cell(row=current_row, column=2, value="Počet kusov").font = Font(bold=True)
+                        for cell in [ws.cell(row=current_row, column=i) for i in range(1, 3)]:
+                            cell.border = thin_border
+                        current_row += 1
+                        
+                        for line in sms_lines:
+                            ws.cell(row=current_row, column=1, value=line.service_name)
+                            ws.cell(row=current_row, column=2, value=f"{int(line.quantity)} ks")
+                            for cell in [ws.cell(row=current_row, column=i) for i in range(1, 3)]:
+                                cell.border = thin_border
+                            current_row += 1
+                        current_row += 1
+
+                    # Rozpis volaní
+                    if voice_lines:
+                        ws.cell(row=current_row, column=1, value="Rozpis volaní:").font = Font(bold=True)
+                        ws.cell(row=current_row, column=2, value="Trvanie hovorov").font = Font(bold=True)
+                        for cell in [ws.cell(row=current_row, column=i) for i in range(1, 3)]:
+                            cell.border = thin_border
+                        current_row += 1
+                        
+                        for line in voice_lines:
+                            ws.cell(row=current_row, column=1, value=line.service_name)
+                            duration = format_duration(line.quantity)
+                            ws.cell(row=current_row, column=2, value=duration)
+                            for cell in [ws.cell(row=current_row, column=i) for i in range(1, 3)]:
+                                cell.border = thin_border
+                            current_row += 1
+                        current_row += 1
+
+                    # Rozpis dát
+                    if data_lines:
+                        ws.cell(row=current_row, column=1, value="Rozpis dát:").font = Font(bold=True)
+                        ws.cell(row=current_row, column=2, value="Spotreba dát").font = Font(bold=True)
+                        for cell in [ws.cell(row=current_row, column=i) for i in range(1, 3)]:
+                            cell.border = thin_border
+                        current_row += 1
+                        
+                        for line in data_lines:
+                            ws.cell(row=current_row, column=1, value=line.service_name)
+                            formatted_usage = format_data_usage(line.quantity)
+                            ws.cell(row=current_row, column=2, value=formatted_usage)
+                            for cell in [ws.cell(row=current_row, column=i) for i in range(1, 3)]:
+                                cell.border = thin_border
+                            current_row += 1
+                        current_row += 1
+
+                    # Total section - only excess charges, not basic plan
+                    excess_total = sum(line.total for line in invoice_lines if 
+                                    line.phone_number == phone_number and 
+                                    line.is_excess_usage and 
+                                    line.service_type != 'basic')
+                    
+                    ws.cell(row=current_row, column=1, value=f"Faktúrovaná suma nad paušál bez DPH:").font = Font(bold=True)
+                    x = f"{float(excess_total):.4f}".replace('.', ',')
+                    cell = ws.cell(row=current_row, column=2, value=x)
+                    cell.number_format = '0.0000'
+                    for cell in [ws.cell(row=current_row, column=i) for i in range(1, 3)]:
+                        cell.border = thin_border
+                    current_row += 3  # Extra space between phone numbers
+
+                # Adjust column widths
+                for col in ws.columns:
+                    max_length = 0
+                    column = get_column_letter(col[0].column)
+                    for cell in col:
+                        try:
+                            if cell.value:
+                                max_length = max(max_length, len(str(cell.value)))
+                        except:
+                            pass
+                    adjusted_width = min(max_length + 2, 100)
+                    ws.column_dimensions[column].width = adjusted_width
+
+                # Save workbook to memory
+                output = io.BytesIO()
+                wb.save(output)
+                output.seek(0)
+                report_content = base64.b64encode(output.getvalue())
+                return report_content # Return the first report since we're generating for a specific partner
+
+        except Exception as e:
+            _logger.error(f"Error generating Excel report: {str(e)}")
+            return False
 class ContractMobileUsageReportLine(models.Model):
     _name = "contract.mobile.usage.report.line"
     _description = "Mobile Usage Report Line"
@@ -890,6 +1119,7 @@ class ContractMobileUsageReportLine(models.Model):
         string="Report",
         required=True,
         ondelete='cascade',
+        index=True,
     )
     phone_number = fields.Char(string="Phone Number", required=True)
     mobile_service_id = fields.Many2one(
@@ -904,3 +1134,75 @@ class ContractMobileUsageReportLine(models.Model):
     excess_data_usage = fields.Float(string="Excess Data Usage", digits=(16, 6))
     excess_voice_usage = fields.Float(string="Excess Voice Usage", digits=(16, 6))
     excess_sms_usage = fields.Float(string="Excess SMS Usage", digits=(16, 0))
+
+
+def format_duration(seconds):
+    """Format duration in seconds to HH:MM:SS"""
+    try:
+        seconds = float(seconds)
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = int(seconds % 60)
+        return f"{hours:02}:{minutes:02}:{secs:02}"
+    except Exception as e:
+        _logger.error(f"Error formatting duration: {str(e)}")
+        return "00:00:00"
+
+# Note: Using the format_data_usage function defined at the top of the file
+def format_data_usage_redundant(volume_mb):
+    """This function is deprecated. Use the format_data_usage function at the top of the file instead."""
+    return format_data_usage(volume_mb)
+
+def format_phone_number(number):
+    """Format phone number to 421xxxxxxxxx format"""
+    if not number:
+        return ''
+    # Remove all non-numeric characters
+    cleaned = re.sub(r'\D', '', str(number))
+    # Remove leading '00'
+    cleaned = cleaned.lstrip('00')
+    # If number starts with '0', replace it with '421'
+    if cleaned.startswith('0'):
+        cleaned = '421' + cleaned[1:]
+    # If number doesn't start with '421', add it
+    if not cleaned.startswith('421'):
+        cleaned = '421' + cleaned
+    return cleaned
+
+def format_plan_name(text):
+    """Convert T-Biznis plan names to NOVEM equivalents"""
+    if not text:
+        return ''
+        
+    replacements = {
+        "T-Biznis Flex - Variant 1": "NOVEM nekonečno 6GB",
+        "T-Biznis Flex - Variant 10": "NOVEM nekonečno 10GB",
+        "T-Biznis Flex - Variant 11": "NOVEM nekonečno 30GB",
+        "T-Biznis Flex - Variant 2": "NOVEM Fér bez dát",
+        "T-Biznis Flex - Variant 3": "NOVEM nekonečno 20GB",
+        "T-Biznis Flex - Variant 4": "NOVEM nekonečno 50GB",
+        "T-Biznis Flex - Variant 5": "NOVEM 250 0,5GB",
+        "T-Biznis Flex - Variant 6": "NOVEM nekonečno 0,5GB",
+        "T-Biznis Flex - Variant 7": "NOVEM 250 30 GB",
+        "T-Biznis Flex - Variant 8": "NOVEM 250 10 GB",
+        "T-Biznis Flex - Variant 9": "NOVEM nekonečno bez dát"
+    }
+    
+    # First, try exact match to avoid partial replacements
+    result = text.strip()
+    if result in replacements:
+        return replacements[result]
+    
+    # If no exact match, try partial match but ensure full word matching
+    for old, new in replacements.items():
+        if old in result:
+            result = result.replace(old, new)
+            # Clean up any trailing digits that might have been left
+            result = re.sub(r'(\d+GB)\d+', r'\1', result)
+    
+    if "e-Net" in result:
+        result = result.replace("e-Net", "NOVEM")
+        result = result.replace("minút ", "")
+        result = result.replace("minut ", "")
+    
+    return result
