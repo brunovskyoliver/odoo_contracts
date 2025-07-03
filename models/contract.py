@@ -872,6 +872,8 @@ class ContractContract(models.Model):
             # Get the latest mobile usage report
             latest_report = self.mobile_usage_report_ids.sorted(lambda r: r.create_date, reverse=True)[0]
             # Create the attachment on the invoice
+            if not latest_report.name.lower().endswith('.xlsx'):
+                latest_report.name += '.xlsx'
             new_attachment = self.env['ir.attachment'].create({
                 'name': latest_report.name,
                 'type': 'binary',
