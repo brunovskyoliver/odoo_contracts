@@ -239,6 +239,26 @@ class AccountMove(models.Model):
             'context': {'create': False},
         }
 
+    def action_create_new_product(self):
+        """Override standard product creation from invoice line to set defaults"""
+        ctx = dict(self.env.context)
+        if self.move_type == 'in_invoice':
+            # Set defaults for products created from supplier invoice
+            ctx.update({
+                'default_property_account_income_id': 207,  # "601000 Tržby za vlastné výrobky"
+                'is_storable': True,  # Always make products storable
+
+            })
+        return {
+            'name': _('Create Product'),
+            'res_model': 'product.product',
+            'view_mode': 'form',
+            'view_id': False,
+            'target': 'new',
+            'type': 'ir.actions.act_window',
+            'context': ctx,
+        }
+
 
 class AccountMoveLine(models.Model):
     _inherit = 'account.move.line'

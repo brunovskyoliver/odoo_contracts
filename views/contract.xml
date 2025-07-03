@@ -226,11 +226,11 @@
                                         groups="analytic.group_analytic_accounting"
                                     /> -->
                                     <field name="quantity" />
-                                    <field name="uom_id" />
+                                    <!-- <field name="uom_id" />
                                     <field
                                         name="automatic_price"
                                         column_invisible="parent.contract_type == 'purchase'"
-                                    />
+                                    /> -->
                                     <field
                                         name="price_unit"
                                         readonly="automatic_price"
@@ -330,11 +330,11 @@
                                         groups="analytic.group_analytic_accounting"
                                     /> -->
                                     <field name="quantity" />
-                                    <field name="uom_id" />
-                                    <field
+                                    <!-- <field name="uom_id" /> -->
+                                    <!-- <field
                                         name="automatic_price"
                                         column_invisible="parent.contract_type == 'purchase'"
-                                    />
+                                    /> -->
                                     <field
                                         name="price_unit"
                                         readonly="automatic_price"
