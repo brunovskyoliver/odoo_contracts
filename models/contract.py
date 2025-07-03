@@ -734,6 +734,13 @@ class ContractContract(models.Model):
         moves = self.env["account.move"].create(invoices_values)
         self._add_contract_origin(moves)
         self._invoice_followers(moves)
+        
+        # For each contract, copy its mobile usage reports to its corresponding invoice
+        for contract in self:
+            contract_moves = moves & contract._get_related_invoices()
+            for move in contract_moves:
+                contract._copy_mobile_usage_reports_to_invoice(move)
+        
         self._compute_recurring_next_date()
         # Post the invoices automatically
         moves.action_post()
@@ -857,3 +864,22 @@ class ContractContract(models.Model):
             'url': '/web/content/%s?download=true' % self.id,
             'target': 'self',
         }
+    
+    def _copy_mobile_usage_reports_to_invoice(self, invoice):
+        """Copy latest mobile usage report from contract to invoice if this is a Mobilky contract and set as main attachment"""
+        self.ensure_one()
+        if self.x_contract_type == 'Mobilky' and self.mobile_usage_report_ids:
+            # Get the latest mobile usage report
+            latest_report = self.mobile_usage_report_ids.sorted(lambda r: r.create_date, reverse=True)[0]
+            # Create the attachment on the invoice
+            new_attachment = self.env['ir.attachment'].create({
+                'name': latest_report.name,
+                'type': 'binary',
+                'datas': latest_report.datas,
+                'res_model': 'account.move',
+                'res_id': invoice.id,
+                'mimetype': latest_report.mimetype,
+                'description': f"Mobile Usage Report copied from contract {self.name}"
+            })
+            # Set it as the main attachment so it's included in mail notifications
+            invoice.message_main_attachment_id = new_attachment
