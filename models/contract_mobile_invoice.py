@@ -814,13 +814,13 @@ class ContractMobileUsageReport(models.Model):
         required=True,
         tracking=True,
     )
-    invoice_id = fields.Many2one(
+    invoice_ids = fields.Many2many(
         comodel_name="contract.mobile.invoice",
-        string="Invoice",
+        string="Invoices",
         required=True,
         tracking=True,
     )
-    operator = fields.Selection(related="invoice_id.operator", string="Operator", store=True)
+    # Removed operator_ids field and compute method as operator grouping is no longer needed
     report_line_ids = fields.One2many(
         comodel_name="contract.mobile.usage.report.line",
         inverse_name="report_id",
@@ -844,16 +844,18 @@ class ContractMobileUsageReport(models.Model):
     report_filename = fields.Char(string="Report File Name")
     
     def action_generate_report(self):
-        """Generate usage reports for all partners with mobile services"""
+        """Generate usage reports for all partners with mobile services across multiple invoices"""
         self.ensure_one()
         
-        if not self.invoice_id:
-            raise UserError(_("No invoice selected for report generation"))
+        if not self.invoice_ids:
+            raise UserError(_("No invoices selected for report generation"))
             
         try:
-            # Get all partners with invoice lines
-            partner_ids = self.invoice_id.invoice_line_ids.mapped('partner_id')
-            _logger.info(f"Found {len(partner_ids)} partners with mobile services")
+            # Get all partners with invoice lines across all invoices
+            partner_ids = self.env['res.partner']
+            for invoice in self.invoice_ids:
+                partner_ids |= invoice.invoice_line_ids.mapped('partner_id')
+            _logger.info(f"Found {len(partner_ids)} unique partners with mobile services")
             
             for partner in partner_ids:
                 try:
@@ -869,28 +871,41 @@ class ContractMobileUsageReport(models.Model):
 
                     _logger.info(f"Processing report for partner: {partner.name}")
                     
+                    # Delete existing reports for this contract
+                    existing_reports = self.env['ir.attachment'].search([
+                        ('res_model', '=', 'contract.contract'),
+                        ('res_id', '=', contract.id),
+                        ('mimetype', '=', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                    ])
+                    if existing_reports:
+                        _logger.info(f"Deleting {len(existing_reports)} existing reports for contract {contract.name}")
+                        existing_reports.unlink()
+                    
                     # Create report record for this partner
                     report = self.create({
                         'name': f"{self.name}_{partner.name}",
                         'date': self.date,
                         'partner_id': partner.id,
-                        'invoice_id': self.invoice_id.id,
+                        'invoice_ids': [(6, 0, self.invoice_ids.ids)],
                         'company_id': self.company_id.id,
                     })
                     
-                    # Get invoice lines for this partner
-                    invoice_lines = self.invoice_id.invoice_line_ids.filtered(
-                        lambda l: l.partner_id == partner
-                    )
+                    # Get invoice lines for this partner across all invoices
+                    invoice_lines = self.env['contract.mobile.invoice.line']
+                    for invoice in self.invoice_ids:
+                        invoice_lines |= invoice.invoice_line_ids.filtered(
+                            lambda l: l.partner_id == partner
+                        )
                     
                     # Group lines by phone number
                     phone_groups = {}
                     for line in invoice_lines:
-                        # Initialize phone group if not exists
-                        if line.phone_number not in phone_groups:
-                            phone_groups[line.phone_number] = {
+                        phone_key = line.phone_number
+                        if phone_key not in phone_groups:
+                            phone_groups[phone_key] = {
                                 'mobile_service_id': line.mobile_service_id.id if line.mobile_service_id else False,
                                 'partner_name': partner.name,
+                                'phone_number': line.phone_number,
                                 'basic_plan': '',
                                 'basic_plan_cost': 0.0,
                                 'excess_usage_cost': 0.0,
@@ -944,17 +959,18 @@ class ContractMobileUsageReport(models.Model):
                             'state': 'done'
                         })
                         
-                        # Attach the report to the contract
+                        # Create new attachment for the contract
                         attachment = self.env['ir.attachment'].create({
                             'name': report.report_filename,
                             'type': 'binary',
                             'datas': report_content,
                             'res_model': 'contract.contract',
                             'res_id': contract.id,
-                            'mimetype': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                            'mimetype': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            'description': f"Mobile Usage Report generated on {fields.Date.today()}"
                         })
                         
-                        _logger.info(f"Successfully generated and attached report for partner {partner.name}")
+                        _logger.info(f"Successfully generated and attached new report for partner {partner.name}")
                     
                 except Exception as e:
                     _logger.error(f"Error processing partner {partner.name}: {str(e)}")
@@ -971,10 +987,12 @@ class ContractMobileUsageReport(models.Model):
     def _generate_excel_report(self, phone_groups):
         """Generate an Excel report file for each partner, containing all their phone numbers.
         Uses the same formatting and sections as nadspotreba.py."""
-        # Get all invoice lines for the partner
-        invoice_lines = self.invoice_id.invoice_line_ids.filtered(
-            lambda l: l.partner_id == self.partner_id
-        )
+        # Get all invoice lines for the partner across all invoices
+        invoice_lines = self.env['contract.mobile.invoice.line']
+        for invoice in self.invoice_ids:
+            invoice_lines |= invoice.invoice_line_ids.filtered(
+                lambda l: l.partner_id == self.partner_id
+            )
         try:
             base_path = os.path.dirname(os.path.abspath(__file__))
             novem_logo = os.path.join(base_path, '..', 'novem.png')
@@ -1245,7 +1263,7 @@ def format_plan_name(text):
     
     if "e-Net" in result:
         result = result.replace("e-Net", "NOVEM")
-        result = result.replace("minút ", "")
-        result = result.replace("minut ", "")
+        result = result.replace("minút", "")
+        result = result.replace("minut", "")
     
     return result

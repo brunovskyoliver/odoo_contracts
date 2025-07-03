@@ -169,8 +169,7 @@
                             <field name="partner_id"/>
                         </group>
                         <group>
-                            <field name="invoice_id"/>
-                            <field name="operator"/>
+                            <field name="invoice_ids" widget="many2many_tags"/>
                             <field name="company_id" groups="base.group_multi_company"/>
                         </group>
                     </group>
@@ -212,7 +211,7 @@
                 <field name="name"/>
                 <field name="date"/>
                 <field name="partner_id"/>
-                <field name="operator"/>
+                <field name="invoice_ids" widget="many2many_tags"/>
                 <field name="state"/>
             </list>
         </field>
@@ -227,13 +226,12 @@
                 <field name="name"/>
                 <field name="date"/>
                 <field name="partner_id"/>
-                <field name="operator"/>
+                <field name="invoice_ids"/>
                 <separator/>
                 <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
                 <filter string="Done" name="done" domain="[('state', '=', 'done')]"/>
                 <group expand="0" string="Group By">
                     <filter string="Partner" name="group_by_partner" context="{'group_by': 'partner_id'}"/>
-                    <filter string="Operator" name="group_by_operator" context="{'group_by': 'operator'}"/>
                     <filter string="Date" name="group_by_date" context="{'group_by': 'date'}"/>
                 </group>
             </search>
