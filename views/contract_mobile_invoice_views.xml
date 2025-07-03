@@ -123,7 +123,7 @@
         <field name="name">contract.mobile.invoice.line.form</field>
         <field name="model">contract.mobile.invoice.line</field>
         <field name="arch" type="xml">
-            <form string="Mobile Invoice Line">
+            <form string="Riadok mobilnej faktúry">
                 <sheet>
                     <group>
                         <group>
@@ -152,15 +152,15 @@
         <field name="name">contract.mobile.usage.report.form</field>
         <field name="model">contract.mobile.usage.report</field>
         <field name="arch" type="xml">
-            <form string="Mobile Usage Report">
+            <form string="Report spotreby">
                 <header>
-                    <button name="action_generate_report" string="Generate Report" type="object" class="oe_highlight" invisible="state != 'draft'"/>
+                    <button name="action_generate_report" string="Generovať report" type="object" class="oe_highlight" invisible="state != 'draft'"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,done"/>
                 </header>
                 <sheet>
                     <div class="oe_title">
                         <h1>
-                            <field name="name" placeholder="Name"/>
+                            <field name="name" placeholder="Názov reportu"/>
                         </h1>
                     </div>
                     <group>
@@ -173,12 +173,12 @@
                             <field name="company_id" groups="base.group_multi_company"/>
                         </group>
                     </group>
-                    <group string="Report File" invisible="state != 'done'">
+                    <group string="Súbor reportu" invisible="state != 'done'">
                         <field name="report_file" filename="report_filename"/>
                         <field name="report_filename" invisible="1"/>
                     </group>
                     <notebook>
-                        <page string="Report Lines" name="report_lines">
+                        <page string="Riadky" name="report_lines">
                             <field name="report_line_ids">
                                 <list>
                                     <field name="phone_number"/>
@@ -207,7 +207,7 @@
         <field name="name">contract.mobile.usage.report.list</field>
         <field name="model">contract.mobile.usage.report</field>
         <field name="arch" type="xml">
-            <list string="Mobile Usage Reports">
+            <list string="Reporty spotreby">
                 <field name="name"/>
                 <field name="date"/>
                 <field name="partner_id"/>
@@ -243,7 +243,7 @@
         <field name="name">contract.mobile.invoice.import.form</field>
         <field name="model">contract.mobile.invoice.import</field>
         <field name="arch" type="xml">
-            <form string="Import Mobile Invoice">
+            <form string="Importovať mobilnú faktúru">
                 <sheet>
                     <group>
                         <group>
@@ -264,8 +264,8 @@
                     </group>
                 </sheet>
                 <footer>
-                    <button name="action_import" string="Import" type="object" class="btn-primary"/>
-                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                    <button name="action_import" string="Importovať" type="object" class="btn-primary"/>
+                    <button string="Zrušiť" class="btn-secondary" special="cancel"/>
                 </footer>
             </form>
         </field>
@@ -276,7 +276,7 @@
         <field name="name">contract.mobile.generate.report.form</field>
         <field name="model">contract.mobile.generate.report</field>
         <field name="arch" type="xml">
-            <form string="Generate Usage Report">
+            <form string="Generovať report spotreby">
                 <sheet>
                     <group>
                         <group>
@@ -290,8 +290,8 @@
                     </group>
                 </sheet>
                 <footer>
-                    <button name="action_generate" string="Generate" type="object" class="btn-primary"/>
-                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                    <button name="action_generate" string="Generovať" type="object" class="btn-primary"/>
+                    <button string="Zrušiť" class="btn-secondary" special="cancel"/>
                 </footer>
             </form>
         </field>
@@ -299,7 +299,7 @@
 
     <!-- Action for Mobile Invoice -->
     <record id="action_contract_mobile_invoice" model="ir.actions.act_window">
-        <field name="name">Mobile Invoices</field>
+        <field name="name">Mobilné faktúry</field>
         <field name="res_model">contract.mobile.invoice</field>
         <field name="view_mode">list,form</field>
         <field name="help" type="html">
@@ -314,7 +314,7 @@
 
     <!-- Action for Mobile Usage Report -->
     <record id="action_contract_mobile_usage_report" model="ir.actions.act_window">
-        <field name="name">Usage Reports</field>
+        <field name="name">Spotreby</field>
         <field name="res_model">contract.mobile.usage.report</field>
         <field name="view_mode">list,form</field>
         <field name="help" type="html">
@@ -329,7 +329,7 @@
 
     <!-- Action for Mobile Invoice Import Wizard -->
     <record id="action_contract_mobile_invoice_import" model="ir.actions.act_window">
-        <field name="name">Import Mobile Invoice</field>
+        <field name="name">Importovať mobilnú faktúru</field>
         <field name="res_model">contract.mobile.invoice.import</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>
@@ -337,7 +337,7 @@
 
     <!-- Action for Mobile Usage Report Generation Wizard -->
     <record id="action_contract_mobile_generate_report" model="ir.actions.act_window">
-        <field name="name">Generate Usage Report</field>
+        <field name="name">Generovať report spotreby</field>
         <field name="res_model">contract.mobile.generate.report</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>
@@ -345,24 +345,24 @@
 
     <!-- Menu Items -->
     <menuitem id="menu_contract_mobile_invoice_root" 
-              name="Mobile Invoices" 
+              name="Mobilné faktúry" 
               parent="contract.menu_contract_root" 
               sequence="20"/>
               
     <menuitem id="menu_contract_mobile_invoice" 
-              name="Invoices" 
+              name="Faktúry" 
               parent="menu_contract_mobile_invoice_root" 
               action="action_contract_mobile_invoice" 
               sequence="10"/>
               
     <menuitem id="menu_contract_mobile_usage_report" 
-              name="Usage Reports" 
+              name="Reporty spotreby" 
               parent="menu_contract_mobile_invoice_root" 
               action="action_contract_mobile_usage_report" 
               sequence="20"/>
 
     <menuitem id="menu_contract_mobile_invoice_import" 
-              name="Import Invoice" 
+              name="Importovať faktúru" 
               parent="menu_contract_mobile_invoice_root" 
               action="action_contract_mobile_invoice_import" 
               sequence="30"/>

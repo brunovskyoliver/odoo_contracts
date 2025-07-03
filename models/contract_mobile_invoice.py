@@ -3,7 +3,7 @@
 
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import os
 from openpyxl import Workbook
@@ -521,14 +521,11 @@ class ContractMobileInvoice(models.Model):
         # First mark as done
         self.write({'state': 'done'})
         
-        # Get all invoice lines with excess usage, limited to specific partner for testing
+        # Get all invoice lines with excess usage for all partners
         excess_usage_by_partner = {}
-        test_partner_id = 1074  # Testing with specific partner
         
         for line in self.invoice_line_ids.filtered(
-            lambda l: l.is_excess_usage and 
-            l.partner_id and 
-            l.partner_id.id == test_partner_id
+            lambda l: l.is_excess_usage and l.partner_id
         ):
             if line.partner_id.id not in excess_usage_by_partner:
                 excess_usage_by_partner[line.partner_id.id] = {
@@ -543,7 +540,7 @@ class ContractMobileInvoice(models.Model):
             else:  # Assume 0% for all other cases
                 excess_usage_by_partner[line.partner_id.id]['total_0'] += line.total
 
-        _logger.info(f"Processing excess usage for partner ID {test_partner_id}")
+        _logger.info("Processing excess usage for all partners")
         
         # Process each partner's excess usage
         for partner_data in excess_usage_by_partner.values():
@@ -699,25 +696,33 @@ class ContractMobileInvoice(models.Model):
     
     @api.model
     def reset_excess_usage_lines(self):
-        """Reset all excess usage contract lines on the 1st of each month"""
         _logger.info("Starting monthly reset of excess usage contract lines")
         
         # Find the product for excess usage
-        product = self.env['product.product'].search([
-            ('display_name', '=', 'Vyúčtovanie paušálnych služieb a spotreby HLAS')
+        product_0 = self.env['product.product'].search([
+            ('display_name', '=', 'Vyúčtovanie paušálnych služieb a spotreby HLAS 0%')
         ], limit=1)
-        
-        if not product:
-            _logger.error("Could not find product 'Vyúčtovanie paušálnych služieb a spotreby HLAS'")
+        product_23 = self.env['product.product'].search([
+            ('display_name', '=', 'Vyúčtovanie paušálnych služieb a spotreby HLAS 23%')
+        ], limit=1)
+
+        if not product_0:
+            _logger.error("Could not find product 'Vyúčtovanie paušálnych služieb a spotreby HLAS 0%'")
             return
-            
+        if not product_23:
+            _logger.error("Could not find product 'Vyúčtovanie paušálnych služieb a spotreby HLAS 23%'")
+            return            
         # Find all contract lines with this product
-        contract_lines = self.env['contract.line'].search([
-            ('product_id', '=', product.id)
+        contract_lines_0 = self.env['contract.line'].search([
+            ('product_id', '=', product_0.id)
         ])
-        
+        contract_lines_23 = self.env['contract.line'].search([
+            ('product_id', '=', product_23.id)
+        ])
+
+
         reset_count = 0
-        for line in contract_lines:
+        for line in contract_lines_0 + contract_lines_23:
             try:
                 # Reset the line amount to 0
                 line.write({
@@ -729,7 +734,6 @@ class ContractMobileInvoice(models.Model):
                 _logger.error(f"Error resetting contract line {line.id}: {str(e)}")
                 
         _logger.info(f"Successfully reset {reset_count} excess usage contract lines")
-
 
 class ContractMobileInvoiceLine(models.Model):
     _name = "contract.mobile.invoice.line"
@@ -961,13 +965,13 @@ class ContractMobileUsageReport(models.Model):
                         
                         # Create new attachment for the contract
                         attachment = self.env['ir.attachment'].create({
-                            'name': report.report_filename,
+                            'name': f"Výpis spotreby {report.report_filename.split('_')[1]}",
                             'type': 'binary',
                             'datas': report_content,
                             'res_model': 'contract.contract',
                             'res_id': contract.id,
                             'mimetype': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                            'description': f"Mobile Usage Report generated on {fields.Date.today()}"
+                            'description': f"Report generovaný dňa {fields.Datetime.now() + timedelta(hours=2)}"
                         })
                         
                         _logger.info(f"Successfully generated and attached new report for partner {partner.name}")
