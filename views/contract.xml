@@ -503,6 +503,15 @@
                                 </p>
                             </group>
                         </page>
+                        <page string="Mobile Usage Reports" invisible="x_contract_type != 'Mobilky'">
+                            <field name="mobile_usage_report_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="create_date"/>
+                                    <field name="datas" widget="binary" filename="name" string="Download"/>
+                                </list>
+                            </field>
+                        </page>
                     </notebook>
                 </sheet>
                 <div class="oe_chatter">

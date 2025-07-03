@@ -844,85 +844,128 @@ class ContractMobileUsageReport(models.Model):
     report_filename = fields.Char(string="Report File Name")
     
     def action_generate_report(self):
-        """Generate the usage report"""
+        """Generate usage reports for all partners with mobile services"""
         self.ensure_one()
         
-        if self.invoice_id and self.partner_id:
-            # Delete existing report lines
-            self.report_line_ids.unlink()
+        if not self.invoice_id:
+            raise UserError(_("No invoice selected for report generation"))
             
-            try:
-                # Get invoice lines
-                invoice_lines = self.invoice_id.invoice_line_ids.filtered(
-                    lambda l: l.partner_id == self.partner_id
-                )
-                
-                # Group lines by phone number
-                phone_groups = {}
-                for line in invoice_lines:
-                    # Initialize phone group if not exists
-                    if line.phone_number not in phone_groups:
-                        phone_groups[line.phone_number] = {
-                            'mobile_service_id': line.mobile_service_id.id if line.mobile_service_id else False,
-                            'partner_name': line.partner_id.name if line.partner_id else '',
-                            'basic_plan': '',
-                            'basic_plan_cost': 0.0,
-                            'excess_usage_cost': 0.0,
-                            'total_cost': 0.0,
-                            'excess_data_usage': 0.0,
-                            'excess_voice_usage': 0.0,
-                            'excess_sms_usage': 0.0,
-                            'is_company': line.partner_id.is_company if line.partner_id else False,
-                        }
+        try:
+            # Get all partners with invoice lines
+            partner_ids = self.invoice_id.invoice_line_ids.mapped('partner_id')
+            _logger.info(f"Found {len(partner_ids)} partners with mobile services")
+            
+            for partner in partner_ids:
+                try:
+                    # Find the mobilky contract for this partner
+                    contract = self.env['contract.contract'].search([
+                        ('partner_id', '=', partner.id),
+                        ('x_contract_type', '=', 'Mobilky')
+                    ], limit=1)
                     
-                    # Update group data based on line type
-                    data = phone_groups[line.phone_number]
-                    if line.service_type == 'basic':
-                        data['basic_plan'] = line.service_name
-                        data['basic_plan_cost'] = line.total
-                    elif line.service_type == 'data':
-                        data['excess_data_usage'] += line.quantity
-                    elif line.service_type == 'voice':
-                        data['excess_voice_usage'] += line.quantity
-                    elif line.service_type in ['sms', 'mms']:
-                        data['excess_sms_usage'] += line.quantity
+                    if not contract:
+                        _logger.warning(f"No Mobilky contract found for partner {partner.name}")
+                        continue
+
+                    _logger.info(f"Processing report for partner: {partner.name}")
                     
-                    if line.is_excess_usage:
-                        data['excess_usage_cost'] += line.total
-                    data['total_cost'] += line.total
-                
-                # Process each phone number
-                for phone_number, data in phone_groups.items():
-                    # Create report line
-                    self.env['contract.mobile.usage.report.line'].create({
-                        'report_id': self.id,
-                        'phone_number': phone_number,
-                        'mobile_service_id': data['mobile_service_id'],
-                        'partner_name': data['partner_name'],
-                        'basic_plan': data['basic_plan'],
-                        'basic_plan_cost': data['basic_plan_cost'],
-                        'excess_usage_cost': data['excess_usage_cost'],
-                        'total_cost': data['total_cost'],
-                        'excess_data_usage': data['excess_data_usage'],
-                        'excess_voice_usage': data['excess_voice_usage'],
-                        'excess_sms_usage': data['excess_sms_usage'],
+                    # Create report record for this partner
+                    report = self.create({
+                        'name': f"{self.name}_{partner.name}",
+                        'date': self.date,
+                        'partner_id': partner.id,
+                        'invoice_id': self.invoice_id.id,
+                        'company_id': self.company_id.id,
                     })
-                
-                # Generate Excel report
-                report_content = self._generate_excel_report(phone_groups)
-                if report_content:
-                    self.write({
-                        'report_file': report_content,
-                        'report_filename': f"{self.name}_{self.date}.xlsx",
-                        'state': 'done'
-                    })
-                
-                return True
-                
-            except Exception as e:
-                _logger.error(f"Error generating report: {str(e)}")
-                raise UserError(_("Error generating report: %s") % str(e))
-        
+                    
+                    # Get invoice lines for this partner
+                    invoice_lines = self.invoice_id.invoice_line_ids.filtered(
+                        lambda l: l.partner_id == partner
+                    )
+                    
+                    # Group lines by phone number
+                    phone_groups = {}
+                    for line in invoice_lines:
+                        # Initialize phone group if not exists
+                        if line.phone_number not in phone_groups:
+                            phone_groups[line.phone_number] = {
+                                'mobile_service_id': line.mobile_service_id.id if line.mobile_service_id else False,
+                                'partner_name': partner.name,
+                                'basic_plan': '',
+                                'basic_plan_cost': 0.0,
+                                'excess_usage_cost': 0.0,
+                                'total_cost': 0.0,
+                                'excess_data_usage': 0.0,
+                                'excess_voice_usage': 0.0,
+                                'excess_sms_usage': 0.0,
+                                'is_company': partner.is_company,
+                            }
+                        
+                        # Update group data based on line type
+                        data = phone_groups[line.phone_number]
+                        if line.service_type == 'basic':
+                            data['basic_plan'] = line.service_name
+                            data['basic_plan_cost'] = line.total
+                        elif line.service_type == 'data':
+                            data['excess_data_usage'] += line.quantity
+                        elif line.service_type == 'voice':
+                            data['excess_voice_usage'] += line.quantity
+                        elif line.service_type in ['sms', 'mms']:
+                            data['excess_sms_usage'] += line.quantity
+                        
+                        if line.is_excess_usage:
+                            data['excess_usage_cost'] += line.total
+                        data['total_cost'] += line.total
+                    
+                    # Process each phone number
+                    for phone_number, data in phone_groups.items():
+                        # Create report line
+                        self.env['contract.mobile.usage.report.line'].create({
+                            'report_id': report.id,
+                            'phone_number': phone_number,
+                            'mobile_service_id': data['mobile_service_id'],
+                            'partner_name': data['partner_name'],
+                            'basic_plan': data['basic_plan'],
+                            'basic_plan_cost': data['basic_plan_cost'],
+                            'excess_usage_cost': data['excess_usage_cost'],
+                            'total_cost': data['total_cost'],
+                            'excess_data_usage': data['excess_data_usage'],
+                            'excess_voice_usage': data['excess_voice_usage'],
+                            'excess_sms_usage': data['excess_sms_usage'],
+                        })
+                    
+                    # Generate Excel report
+                    report_content = report._generate_excel_report(phone_groups)
+                    if report_content:
+                        # Update report record with file
+                        report.write({
+                            'report_file': report_content,
+                            'report_filename': f"{report.name}_{report.date}.xlsx",
+                            'state': 'done'
+                        })
+                        
+                        # Attach the report to the contract
+                        attachment = self.env['ir.attachment'].create({
+                            'name': report.report_filename,
+                            'type': 'binary',
+                            'datas': report_content,
+                            'res_model': 'contract.contract',
+                            'res_id': contract.id,
+                            'mimetype': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                        })
+                        
+                        _logger.info(f"Successfully generated and attached report for partner {partner.name}")
+                    
+                except Exception as e:
+                    _logger.error(f"Error processing partner {partner.name}: {str(e)}")
+                    continue
+            
+            return True
+            
+        except Exception as e:
+            _logger.error(f"Error generating reports: {str(e)}")
+            raise UserError(_("Error generating reports: %s") % str(e))
+            
         return False
 
     def _generate_excel_report(self, phone_groups):

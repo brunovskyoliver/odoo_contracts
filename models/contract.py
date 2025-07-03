@@ -42,6 +42,13 @@ class ContractContract(models.Model):
         copy=False,
         default=lambda self: _('New'),
     )
+    
+    mobile_usage_report_ids = fields.One2many(
+        comodel_name='ir.attachment',
+        inverse_name='res_id',
+        domain=[('res_model', '=', 'contract.contract'), ('mimetype', '=', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')],
+        string='Mobile Usage Reports',
+    )
 
     group_id = fields.Many2one(
         string="Group",
@@ -842,7 +849,11 @@ class ContractContract(models.Model):
     def _compute_total_subtotal(self):
         for contract in self:
             contract.total_subtotal = sum(contract.contract_line_ids.mapped('price_subtotal'))
-
-
-    # def action_update_mobile_recurring_dates(self):
-    #     return None
+            
+    def action_get_attachment_tree_view(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_url',
+            'url': '/web/content/%s?download=true' % self.id,
+            'target': 'self',
+        }
