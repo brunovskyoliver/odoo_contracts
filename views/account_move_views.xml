@@ -45,4 +45,32 @@
             </xpath>
         </field>
     </record>
+    <record id="view_move_form_inherit_contract_rounded" model="ir.ui.view">
+        <field name="name">account.move.form.inherit.contract.rounded</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <!-- Replace the original amounts with rounded ones -->
+            <xpath expr="//field[@name='amount_untaxed']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='amount_tax']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='amount_total']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            
+            <!-- Add our rounded amounts -->
+            <xpath expr="//field[@name='amount_untaxed']" position="after">
+                <field name="amount_untaxed_rounded" string="Untaxed Amount"/>
+            </xpath>
+            <xpath expr="//field[@name='amount_tax']" position="after">
+                <field name="amount_tax_rounded" string="Tax"/>
+            </xpath>
+            <xpath expr="//field[@name='amount_total']" position="after">
+                <field name="amount_total_rounded" string="Total" class="oe_subtotal_footer_separator"/>
+            </xpath>
+        </field>
+    </record>
 </odoo>

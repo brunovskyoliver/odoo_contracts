@@ -50,6 +50,22 @@ class AccountMove(models.Model):
         ('no_stock', 'No Stock Required'),
     ], string="Stock Status", compute='_compute_stock_state', store=True)
 
+    amount_untaxed_rounded = fields.Monetary(
+        string='Untaxed Amount (Rounded)',
+        compute='_compute_rounded_amounts',
+        store=True,
+    )
+    amount_tax_rounded = fields.Monetary(
+        string='Tax (Rounded)',
+        compute='_compute_rounded_amounts',
+        store=True,
+    )
+    amount_total_rounded = fields.Monetary(
+        string='Total (Rounded)',
+        compute='_compute_rounded_amounts',
+        store=True,
+    )
+
     def action_create_stock_moves(self):
         """Create stock moves for invoice lines to main storage"""
         self.ensure_one()
@@ -258,6 +274,103 @@ class AccountMove(models.Model):
             'type': 'ir.actions.act_window',
             'context': ctx,
         }
+
+    @api.depends('line_ids.amount_currency', 'line_ids.tax_base_amount', 'line_ids.tax_line_id', 'partner_id', 'currency_id', 'amount_total', 'amount_untaxed')
+    def _compute_tax_totals(self):
+        """Override to round amounts to 2 decimals after tax calculation"""
+        # First call the original method to calculate taxes
+        super()._compute_tax_totals()
+        
+        # Then round all the amounts to 2 decimals
+        for move in self:
+            if move.tax_totals:
+                # Round amounts in tax_totals
+                if 'amount_untaxed' in move.tax_totals:
+                    move.tax_totals['amount_untaxed'] = round(move.tax_totals['amount_untaxed'], 2)
+                if 'amount_total' in move.tax_totals:
+                    move.tax_totals['amount_total'] = round(move.tax_totals['amount_total'], 2)
+                
+                # Round tax group amounts
+                if 'groups_by_subtotal' in move.tax_totals:
+                    for groups in move.tax_totals['groups_by_subtotal'].values():
+                        for group in groups:
+                            if 'tax_group_amount' in group:
+                                group['tax_group_amount'] = round(group['tax_group_amount'], 2)
+                            if 'tax_group_base_amount' in group:
+                                group['tax_group_base_amount'] = round(group['tax_group_base_amount'], 2)
+                
+                # Round the amounts on the move record itself
+                move.amount_untaxed = round(move.amount_untaxed, 2)
+                move.amount_tax = round(move.amount_tax, 2)
+                move.amount_total = round(move.amount_total, 2)
+                move.amount_residual = round(move.amount_residual, 2)
+                
+                # Round the signed amounts as well
+                move.amount_untaxed_signed = round(move.amount_untaxed_signed, 2)
+                move.amount_tax_signed = round(move.amount_tax_signed, 2)
+                move.amount_total_signed = round(move.amount_total_signed, 2)
+                move.amount_residual_signed = round(move.amount_residual_signed, 2)
+
+    def _compute_payments_widget_to_reconcile_info(self):
+        """Override to round the amounts shown in the payments widget"""
+        super()._compute_payments_widget_to_reconcile_info()
+        for move in self:
+            if move.invoice_outstanding_credits_debits_widget:
+                for line in move.invoice_outstanding_credits_debits_widget['content']:
+                    line['amount'] = round(line['amount'], 2)
+                    if 'amount_currency' in line:
+                        line['amount_currency'] = round(line['amount_currency'], 2)
+
+    def _get_reconciled_info_JSON_values(self):
+        """Override to round the amounts in reconciliation info"""
+        vals = super()._get_reconciled_info_JSON_values()
+        for val in vals:
+            val['amount'] = round(val['amount'], 2)
+            if 'amount_currency' in val:
+                val['amount_currency'] = round(val['amount_currency'], 2)
+        return vals
+
+    def _compute_amount(self):
+        """Override to ensure amounts are rounded in amount computation"""
+        super()._compute_amount()
+        for move in self:
+            if move.move_type not in ['entry', 'out_receipt', 'in_receipt']:
+                move.amount_untaxed = round(move.amount_untaxed, 2)
+                move.amount_tax = round(move.amount_tax, 2)
+                move.amount_total = round(move.amount_total, 2)
+                move.amount_residual = round(move.amount_residual, 2)
+                move.amount_untaxed_signed = round(move.amount_untaxed_signed, 2)
+                move.amount_tax_signed = round(move.amount_tax_signed, 2)
+                move.amount_total_signed = round(move.amount_total_signed, 2)
+                move.amount_residual_signed = round(move.amount_residual_signed, 2)
+
+    @api.depends('amount_total')
+    def _compute_amount_total_words(self):
+        """Override to use rounded amount in words computation"""
+        for move in self:
+            move.amount_total_words = move.currency_id.amount_to_text(round(move.amount_total, 2))
+
+    def _recompute_dynamic_lines(self, recompute_all_taxes=False, recompute_tax_base_amount=False):
+        """Override to ensure line amounts are rounded during recomputation"""
+        res = super()._recompute_dynamic_lines(recompute_all_taxes=recompute_all_taxes, 
+                                             recompute_tax_base_amount=recompute_tax_base_amount)
+        
+        for line in self.line_ids:
+            if line.display_type == 'product':
+                line.amount_currency = round(line.amount_currency, 2)
+                line.debit = round(line.debit, 2)
+                line.credit = round(line.credit, 2)
+                line.balance = round(line.balance, 2)
+        
+        return res
+
+    @api.depends('amount_untaxed', 'amount_tax', 'amount_total')
+    def _compute_rounded_amounts(self):
+        """Compute rounded amounts for display"""
+        for move in self:
+            move.amount_untaxed_rounded = round(move.amount_untaxed, 2)
+            move.amount_tax_rounded = round(move.amount_tax, 2)
+            move.amount_total_rounded = round(move.amount_total, 2)
 
 
 class AccountMoveLine(models.Model):
