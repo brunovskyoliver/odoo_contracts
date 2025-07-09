@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_account_followup_followup_line_form_inherit" model="ir.ui.view">
+            <field name="name">account_followup.followup.line.form.inherit</field>
+            <field name="model">account_followup.followup.line</field>
+            <field name="inherit_id" ref="account_followup.view_account_followup_followup_line_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//group[@name='options']" position="inside">
+                    <field name="server_action_id" 
+                           invisible="not auto_execute"
+                           domain="[('model_id.model', '=', 'account.move')]"/>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>
