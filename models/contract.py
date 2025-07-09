@@ -642,6 +642,13 @@ class ContractContract(models.Model):
             previous = line
         return lines2invoice.sorted()
 
+    def _round_price_to_two_places(self, price):
+        """Round price to two decimal places, preserving 4-decimal format with zeros"""
+        if price is not False and price is not None:
+            # Round to 2 decimals but keep 4-decimal format
+            return round(float(price), 2)
+        return price
+
     def _prepare_recurring_invoices_values(self, date_ref=False):
         """
         This method builds the list of invoices values to create, based on
@@ -673,7 +680,10 @@ class ContractContract(models.Model):
                     and line.x_datum_viazanosti_produktu
                     and line.x_datum_viazanosti_produktu >= today
                 ):
-                    invoice_line_vals['price_unit'] = line.x_zlavnena_cena
+                    invoice_line_vals['price_unit'] = self._round_price_to_two_places(line.x_zlavnena_cena)
+                elif invoice_line_vals and 'price_unit' in invoice_line_vals:
+                    invoice_line_vals['price_unit'] = self._round_price_to_two_places(invoice_line_vals['price_unit'])
+                    
                 if invoice_line_vals:
                     # Allow extension modules to return an empty dictionary for
                     # nullifying line. We should then cleanup certain values.
