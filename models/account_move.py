@@ -67,121 +67,81 @@ class AccountMove(models.Model):
     )
 
     def action_create_stock_moves(self):
-        """Create stock moves for invoice lines to main storage"""
+        """Open wizard to select storage location"""
         self.ensure_one()
         
         if self.move_type != 'in_invoice':
             raise UserError(_("Stock moves can only be created for supplier invoices."))
             
-        # Get NOVEM IT warehouse and its stock location
-        warehouse = self.env['stock.warehouse'].search([
-            ('name', '=', 'NOVEM IT, s.r.o.'),
-            ('company_id', '=', self.company_id.id)
-        ], limit=1)
+        return {
+            'name': _('Select Storage Location'),
+            'type': 'ir.actions.act_window',
+            'res_model': 'stock.location.select.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {'default_invoice_id': self.id},
+        }
         
+    def create_stock_moves(self):
+        """Create stock moves for invoice lines"""
+        self.ensure_one()
+        warehouse = self.env['stock.warehouse'].browse(self._context.get('selected_warehouse_id'))
         if not warehouse:
-            raise UserError(_("Warehouse 'NOVEM IT, s.r.o.' not found."))
-            
-        storage_location = warehouse.lot_stock_id
-        if not storage_location:
-            raise UserError(_("Stock location not found in warehouse 'NOVEM IT, s.r.o.'."))
+            raise UserError(_("Please select a storage location"))
             
         supplier_location = self.env.ref('stock.stock_location_suppliers')
         picking_type = warehouse.in_type_id
         
-        if not picking_type:
-            raise UserError(_("No incoming operation type found for warehouse 'NOVEM IT, s.r.o.'."))
-        
-        moves_to_create = []
-        for line in self.invoice_line_ids:
-            # Skip lines without products
-            if not line.product_id and not line.name:
-                continue
-                
-            # If product doesn't exist, create it
-            product = line.product_id
-            if not product:
-                # Create product from the invoice line
-                product = self.env['product.product'].create({
-                    'name': line.name,
-                    'type': 'product',  # Storable product
-                    'detailed_type': 'product',
-                    'categ_id': self.env.ref('product.product_category_all').id,
-                    'standard_price': line.price_unit,
-                    'list_price': line.price_unit,
-                    'uom_id': line.product_uom_id.id or self.env.ref('uom.product_uom_unit').id,
-                    'uom_po_id': line.product_uom_id.id or self.env.ref('uom.product_uom_unit').id,
-                    'invoice_policy': 'order',
-                    'purchase_method': 'purchase',
-                })
-                # Update the invoice line with the new product
-                line.product_id = product.id
-            
-            # Create stock move with direct link to invoice line
-            move_vals = {
-                'name': f"{self.name}: {line.name or product.name}",
-                'product_id': product.id,
-                'product_uom': line.product_uom_id.id or product.uom_id.id,
-                'product_uom_qty': line.quantity,
-                'price_unit': line.price_unit,
-                'location_id': supplier_location.id,
-                'location_dest_id': storage_location.id,
-                'picking_type_id': picking_type.id,
-                'company_id': self.company_id.id,
-                'invoice_line_id': line.id,  # Link to the specific invoice line
-                'origin': self.name,
-                'state': 'draft',
-                'purchase_line_id': False,  # Ensure no conflict with purchase orders
-            }
-            moves_to_create.append(move_vals)
-            
-        if not moves_to_create:
-            raise UserError(_("No valid products found to create stock moves."))
-            
-        # Create stock moves
-        stock_moves = self.env['stock.move'].create(moves_to_create)
-        
-        # Create picking for the moves
+        # Create the picking
         picking = self.env['stock.picking'].create({
             'picking_type_id': picking_type.id,
             'location_id': supplier_location.id,
-            'location_dest_id': storage_location.id,
+            'location_dest_id': warehouse.lot_stock_id.id,
             'origin': self.name,
-            'move_ids': [(6, 0, stock_moves.ids)],
             'partner_id': self.partner_id.id,
             'company_id': self.company_id.id,
-            'move_type': 'direct',  # This is for the picking's move type, not related to invoice move_type
         })
         
-        # Confirm all moves
-        stock_moves.write({'picking_id': picking.id})
+        for line in self.invoice_line_ids.filtered(lambda l: l.product_id or l.name):
+            # Create product if needed
+            if not line.product_id:
+                line.product_id = self.env['product.product'].create({
+                    'name': line.name,
+                    'type': 'product',
+                    'standard_price': line.price_unit,
+                    'list_price': line.price_unit,
+                    'uom_id': line.product_uom_id.id or self.env.ref('uom.product_uom_unit').id,
+                })
+                
+            # Create stock move
+            self.env['stock.move'].create({
+                'name': line.name or line.product_id.name,
+                'product_id': line.product_id.id,
+                'product_uom': line.product_uom_id.id or line.product_id.uom_id.id,
+                'product_uom_qty': line.quantity,
+                'price_unit': line.price_unit,
+                'picking_id': picking.id,
+                'location_id': supplier_location.id,
+                'location_dest_id': warehouse.lot_stock_id.id,
+                'invoice_line_id': line.id,
+            })
+            
         picking.action_confirm()
         picking.action_assign()
         
-        # Create move lines with correct quantities and validate
-        move_lines = []
-        for move in stock_moves:
-            move_lines.append(self.env['stock.move.line'].create({
+        # Create move lines and set quantities
+        for move in picking.move_ids:
+            self.env['stock.move.line'].create({
                 'move_id': move.id,
                 'product_id': move.product_id.id,
                 'product_uom_id': move.product_uom.id,
                 'location_id': move.location_id.id,
                 'location_dest_id': move.location_dest_id.id,
                 'picking_id': picking.id,
-                'qty_done': move.product_uom_qty,  # Set the done quantity
-            }))
-        
-        # Mark the picking as done
-        picking.with_context(skip_backorder=True)._action_done()
-        
-        # Add traceability messages
-        picking.message_post(
-            body=_("Created from supplier invoice %s") % self.name,
-            subtype_id=self.env.ref('mail.mt_note').id)
-        self.message_post(
-            body=_("Created stock receipt %s") % picking.name,
-            subtype_id=self.env.ref('mail.mt_note').id)
+                'qty_done': move.product_uom_qty,
+            })
             
+        picking._action_done()
         return True
 
     @api.depends('invoice_line_ids.stock_move_ids')

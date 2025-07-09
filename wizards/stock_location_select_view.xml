@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_stock_location_select_wizard" model="ir.ui.view">
+        <field name="name">stock.location.select.wizard.form</field>
+        <field name="model">stock.location.select.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Select Storage Location">
+                <group>
+                    <field name="warehouse_id" string="Storage Location"/>
+                </group>
+                <footer>
+                    <button string="Confirm" name="action_confirm" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
