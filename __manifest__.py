@@ -21,6 +21,7 @@
     "data": [
         "security/groups.xml",
         "security/account_followup_security.xml",
+        "data/account_followup_actions.xml",
         "views/account_followup_views.xml",
         "security/contract_tag.xml",
         "security/ir.model.access.csv",

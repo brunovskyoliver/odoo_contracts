@@ -4,6 +4,7 @@ from . import contract_recurrency_mixin  # should be first
 from . import abstract_contract
 from . import abstract_contract_line
 from . import account_followup
+from . import account_followup_actions
 from . import contract_template
 from . import contract
 from . import contract_template_line

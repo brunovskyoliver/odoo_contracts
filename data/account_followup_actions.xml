@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Products for the reminder fees -->
+    <record id="product_reminder_fee" model="product.product">
+        <field name="name">1. Spoplatnená upomienka</field>
+        <field name="type">service</field>
+        <field name="invoice_policy">order</field>
+        <field name="list_price">6.00</field>  <!-- Default fee amount -->
+        <field name="standard_price">6.00</field>
+        <field name="default_code">UPOM1</field>
+        <field name="categ_id" ref="product.product_category_all"/>
+    </record>
+
+    <record id="product_reminder_fee_2" model="product.product">
+        <field name="name">2. Spoplatnená upomienka</field>
+        <field name="type">service</field>
+        <field name="invoice_policy">order</field>
+        <field name="list_price">20.00</field>  <!-- Second reminder fee amount -->
+        <field name="standard_price">20.00</field>
+        <field name="default_code">UPOM2</field>
+        <field name="categ_id" ref="product.product_category_all"/>
+    </record>
+
+    <!-- Server Actions for adding reminder fees -->
+    <record id="action_add_reminder_fee" model="ir.actions.server">
+        <field name="name">Add First Reminder Fee (6€)</field>
+        <field name="model_id" ref="account.model_account_move"/>
+        <field name="binding_model_id" ref="account.model_account_move"/>
+        <field name="state">code</field>
+        <field name="code">
+for record in records:
+    record.action_add_reminder_fee()</field>
+    </record>
+
+    <record id="action_add_second_reminder_fee" model="ir.actions.server">
+        <field name="name">Add Second Reminder Fee (20€)</field>
+        <field name="model_id" ref="account.model_account_move"/>
+        <field name="binding_model_id" ref="account.model_account_move"/>
+        <field name="state">code</field>
+        <field name="code">
+for record in records:
+    record.action_add_second_reminder_fee()</field>
+    </record>
+</odoo>
