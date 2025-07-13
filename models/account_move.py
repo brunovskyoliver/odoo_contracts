@@ -85,24 +85,32 @@ class AccountMove(models.Model):
     def create_stock_moves(self):
         """Create stock moves for invoice lines"""
         self.ensure_one()
-        warehouse = self.env['stock.warehouse'].browse(self._context.get('selected_warehouse_id'))
-        if not warehouse:
-            raise UserError(_("Please select a storage location"))
+        default_warehouse = self.env['stock.warehouse'].browse(self._context.get('selected_warehouse_id'))
+        if not default_warehouse:
+            raise UserError(_("Please select a default storage location"))
             
         supplier_location = self.env.ref('stock.stock_location_suppliers')
-        picking_type = warehouse.in_type_id
-        
-        # Create the picking
-        picking = self.env['stock.picking'].create({
-            'picking_type_id': picking_type.id,
-            'location_id': supplier_location.id,
-            'location_dest_id': warehouse.lot_stock_id.id,
-            'origin': self.name,
-            'partner_id': self.partner_id.id,
-            'company_id': self.company_id.id,
-        })
+        pickings_by_warehouse = {}
         
         for line in self.invoice_line_ids.filtered(lambda l: l.product_id or l.name):
+            # Determine warehouse for this line
+            warehouse = line.where_to_move or default_warehouse
+            
+            # Get or create picking for this warehouse
+            if warehouse not in pickings_by_warehouse:
+                picking_type = warehouse.in_type_id
+                picking = self.env['stock.picking'].create({
+                    'picking_type_id': picking_type.id,
+                    'location_id': supplier_location.id,
+                    'location_dest_id': warehouse.lot_stock_id.id,
+                    'origin': self.name,
+                    'partner_id': self.partner_id.id,
+                    'company_id': self.company_id.id,
+                })
+                pickings_by_warehouse[warehouse] = picking
+            else:
+                picking = pickings_by_warehouse[warehouse]
+            
             # Create product if needed
             if not line.product_id:
                 line.product_id = self.env['product.product'].create({
@@ -126,22 +134,24 @@ class AccountMove(models.Model):
                 'invoice_line_id': line.id,
             })
             
-        picking.action_confirm()
-        picking.action_assign()
-        
-        # Create move lines and set quantities
-        for move in picking.move_ids:
-            self.env['stock.move.line'].create({
-                'move_id': move.id,
-                'product_id': move.product_id.id,
-                'product_uom_id': move.product_uom.id,
-                'location_id': move.location_id.id,
-                'location_dest_id': move.location_dest_id.id,
-                'picking_id': picking.id,
-                'qty_done': move.product_uom_qty,
-            })
+        # Process all pickings
+        for picking in pickings_by_warehouse.values():
+            picking.action_confirm()
+            picking.action_assign()
             
-        picking._action_done()
+            # Create move lines and set quantities
+            for move in picking.move_ids:
+                self.env['stock.move.line'].create({
+                    'move_id': move.id,
+                    'product_id': move.product_id.id,
+                    'product_uom_id': move.product_uom.id,
+                    'location_id': move.location_id.id,
+                    'location_dest_id': move.location_dest_id.id,
+                    'picking_id': picking.id,
+                    'qty_done': move.product_uom_qty,
+                })
+                
+            picking._action_done()
         return True
 
     @api.depends('invoice_line_ids.stock_move_ids')
@@ -342,4 +352,10 @@ class AccountMoveLine(models.Model):
         readonly=True,
         index=True,
         help='Contract line that generated this invoice line',
+    )
+    
+    where_to_move = fields.Many2one(
+        'stock.warehouse',
+        string='Sklad',
+        help='Specific warehouse to move this line to. If not set, will use the globally selected warehouse.'
     )

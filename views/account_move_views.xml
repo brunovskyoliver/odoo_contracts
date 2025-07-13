@@ -11,11 +11,30 @@
                 <attribute name="context">{'default_type': 'product'}</attribute>
             </xpath>
 
-            <xpath expr="//field[@name='invoice_line_ids']" position="inside">
+            <!-- <xpath expr="//field[@name='invoice_line_ids']" position="inside">
                 <form>
-                    <field name="product_id" options="{'no_quick_create': True}"/>
+                    <sheet>
+                        <group>
+                            <field name="product_id" options="{'no_quick_create': True}"/>
+                            <field name="name"/>
+                            <label for="quantity"/>
+                            <div class="o_row">
+                                <field name="quantity"/>
+                                <field name="product_uom_id" groups="uom.group_uom"/>
+                                <field name="where_to_move" 
+                                       options="{'no_create': True}" 
+                                       invisible="move_type != 'in_invoice'"
+                                       placeholder="Default Warehouse"/>
+                            </div>
+                            <field name="price_unit"/>
+                            <field name="discount"/>
+                            <field name="tax_ids" widget="many2many_tags"/>
+                            <field name="analytic_distribution" widget="analytic_distribution"/>
+                            <field name="move_type" invisible="1"/>
+                        </group>
+                    </sheet>
                 </form>
-            </xpath>
+            </xpath> -->
 
             <button name="action_post" position="after">
                 <button 
