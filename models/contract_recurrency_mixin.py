@@ -106,6 +106,10 @@ class ContractRecurrencyMixin(models.AbstractModel):
     @api.depends("last_date_invoiced", "date_start", "date_end")
     def _compute_next_period_date_start(self):
         for rec in self:
+            # If we're creating a new line, don't recompute existing ones
+            if self.env.context.get("creating_contract_line") and rec.id:
+                continue
+
             if rec.last_date_invoiced:
                 next_period_date_start = rec.last_date_invoiced + relativedelta(days=1)
             else:
@@ -206,7 +210,7 @@ class ContractRecurrencyMixin(models.AbstractModel):
                     days=recurring_invoicing_offset
                 )
         if max_date_end and next_period_date_end > max_date_end:
-            # end date is past max_date_end: trim it
+            # end date is past max_dateEnd: trim it
             next_period_date_end = max_date_end
         return next_period_date_end
 

@@ -143,27 +143,68 @@ class ContractLine(models.Model):
         "last_date_invoiced",
         "date_start",
         "date_end",
-        "contract_id.last_date_invoiced",
-        "contract_id.contract_line_ids.last_date_invoiced",
     )
     # pylint: disable=missing-return
     def _compute_next_period_date_start(self):
-        """Rectify next period date start if another line in the contract has been
-        already invoiced previously when the recurrence is by contract.
-        """
-        rest = self.filtered(lambda x: x.contract_id.line_recurrence)
-        for rec in self - rest:
-            lines = rec.contract_id.contract_line_ids
-            if not rec.last_date_invoiced and any(lines.mapped("last_date_invoiced")):
-                next_period_date_start = max(
-                    lines.filtered("last_date_invoiced").mapped("last_date_invoiced")
-                ) + relativedelta(days=1)
-                if rec.date_end and next_period_date_start > rec.date_end:
-                    next_period_date_start = False
-                rec.next_period_date_start = next_period_date_start
+        """Compute the start date for the next period"""
+        for rec in self:
+            # Skip if we're in a no_recompute context
+            if self.env.context.get('no_next_period_recompute'):
+                continue
+                
+            if rec.last_date_invoiced:
+                next_period_date_start = rec.last_date_invoiced + relativedelta(days=1)
             else:
-                rest |= rec
-        super(ContractLine, rest)._compute_next_period_date_start()
+                next_period_date_start = rec.date_start
+            if (
+                rec.date_end
+                and next_period_date_start
+                and next_period_date_start > rec.date_end
+            ):
+                next_period_date_start = False
+            rec.next_period_date_start = next_period_date_start
+
+    @api.depends(
+        "next_period_date_start",
+        "recurring_rule_type",
+        "recurring_interval",
+        "date_end",
+    )
+    def _compute_next_period_date_end(self):
+        """Compute the end date for the next period"""
+        for rec in self:
+            # Skip if we're in a no_recompute context
+            if self.env.context.get('no_next_period_recompute'):
+                continue
+                
+            rec.next_period_date_end = self.get_next_period_date_end(
+                rec.next_period_date_start,
+                rec.recurring_rule_type,
+                rec.recurring_interval,
+                max_date_end=rec.date_end,
+                next_invoice_date=rec.recurring_next_date,
+                recurring_invoicing_type=rec.recurring_invoicing_type,
+                recurring_invoicing_offset=rec.recurring_invoicing_offset,
+            )
+
+    @api.depends("next_period_date_start")
+    def _compute_recurring_next_date(self):
+        """Compute the next invoice date"""
+        for rec in self:
+            if not rec.next_period_date_start:
+                continue
+                
+            # Use a context to prevent contract recomputation when updating a single line
+            rec.with_context(skip_contract_recurring_next_date=True).recurring_next_date = (
+                self.get_next_invoice_date(
+                    rec.next_period_date_start,
+                    rec.recurring_invoicing_type,
+                    rec.recurring_invoicing_offset,
+                    rec.recurring_rule_type,
+                    rec.recurring_interval,
+                    max_date_end=rec.date_end,
+                )
+            )
 
     @api.depends("contract_id.date_end", "contract_id.line_recurrence")
     def _compute_date_end(self):
@@ -533,17 +574,7 @@ class ContractLine(models.Model):
                     )
                     % rec.name
                 )
-            if (
-                rec.recurring_next_date
-                and rec.recurring_next_date <= rec.last_date_invoiced
-            ):
-                raise ValidationError(
-                    _(
-                        "You can't have the next invoice date before the date "
-                        "of last invoice for the contract line '%s'"
-                    )
-                    % rec.name
-                )
+            # Removed the recurring_next_date constraint to allow more flexible invoice scheduling
 
     @api.constrains("recurring_next_date")
     def _check_recurring_next_date_recurring_invoices(self):
@@ -1243,7 +1274,35 @@ class ContractLine(models.Model):
                 inventory_lines.write({'state': 'returned'})
                 
     def write(self, vals):
+        # Prevent propagation of recurring_next_date changes if they come from a single line edit
+        skip_recompute = self.env.context.get('no_next_period_recompute', False)
+        skip_contract_update = len(self) == 1 and 'recurring_next_date' in vals
+        
+        if skip_contract_update:
+            self = self.with_context(no_contract_next_date_update=True)
+            
+        # If we're updating specific fields that shouldn't trigger recomputation
+        if any(field in vals for field in [
+            'name', 'quantity', 'price_unit', 'discount',
+            'display_type', 'sequence', 'is_canceled',
+            'in_inventory', 'is_mobile_service'
+        ]):
+            skip_recompute = True
+            
+        # If we're explicitly changing date-related fields, allow recomputation
+        if any(field in vals for field in [
+            'date_start', 'date_end', 'recurring_next_date',
+            'last_date_invoiced', 'recurring_rule_type',
+            'recurring_interval', 'recurring_invoicing_type',
+            'recurring_invoicing_offset'
+        ]):
+            skip_recompute = False
+            
+        if skip_recompute:
+            self = self.with_context(no_next_period_recompute=True)
+            
         result = super().write(vals)
+        
         # Handle inventory changes
         if 'in_inventory' in vals:
             for line in self:
@@ -1265,7 +1324,6 @@ class ContractLine(models.Model):
         # Skip name update if we're already doing it from mobile service update
         # or if 'name' was explicitly passed in vals (direct user update)
         if not self.env.context.get('skip_mobile_service_description_update') and 'name' not in vals:
-            # Update the name with phone numbers for mobile services
             mobile_service_lines = self.filtered('is_mobile_service')
             if mobile_service_lines:
                 mobile_service_lines._compute_mobile_service_description()
@@ -1348,5 +1406,12 @@ class ContractLine(models.Model):
             if x_datum_viazanosti:
                 vals['x_datum_viazanosti_produktu'] = x_datum_viazanosti
         return super().create(vals)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        return super(
+            ContractLine,
+            self.with_context(creating_contract_line=True)
+        ).create(vals_list)
 
 

@@ -204,25 +204,32 @@ class ContractContract(models.Model):
         return records
 
     def write(self, vals):
-        if "modification_ids" in vals:
-            res = super(
-                ContractContract, self.with_context(bypass_modification_send=True)
-            ).write(vals)
+        if vals.get("modification_ids"):
+            res = (
+                self.env["contract.modification"]
+                .browse(vals.get("modification_ids")[0][2])
+                .write(vals)
+            )
             self._modification_mail_send()
         else:
             res = super().write(vals)
+            
         # If the main x_datum_viazanost is changed, update all contract lines
         if 'x_datum_viazanost' in vals:
             for contract in self:
                 contract.contract_line_ids.write({'x_datum_viazanosti_produktu': vals['x_datum_viazanost']})
+                
         # If date_start is changed, update all contract lines
         if 'date_start' in vals:
             for contract in self:
                 contract.contract_line_ids.write({'date_start': vals['date_start']})
+                
         # Only propagate recurring_next_date to all lines if line_recurrence is False
+        # and if it's not coming from a single line update
         if 'recurring_next_date' in vals:
             for contract in self:
-                if not contract.line_recurrence:
+                if (not contract.line_recurrence and 
+                    not self.env.context.get('no_contract_next_date_update')):
                     for line in contract.contract_line_ids:
                         line.recurring_next_date = vals['recurring_next_date']
         return res
@@ -415,6 +422,10 @@ class ContractContract(models.Model):
     # pylint: disable=missing-return
     def _compute_recurring_next_date(self):
         for contract in self:
+            # Skip recomputation if we're updating a single line
+            if self.env.context.get('skip_contract_recurring_next_date'):
+                continue
+                
             recurring_next_date = contract.contract_line_ids.filtered(
                 lambda line: (
                     line.recurring_next_date

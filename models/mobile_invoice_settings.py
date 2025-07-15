@@ -14,7 +14,7 @@ class MobileInvoiceSettings(models.TransientModel):
     def action_update_contract_dates(self):
         contracts = self.env['contract.contract'].search([
             ('x_contract_type', '=', 'Mobilky'),
-            # ('id', '=', 74)
+            ('id', '=', 74)
         ])
         
         _logger.info(f"Found {len(contracts)} mobile contracts to process")
@@ -27,8 +27,8 @@ class MobileInvoiceSettings(models.TransientModel):
         all_contract_lines = self.env['contract.line'].search([
             ('contract_id', 'in', contracts.ids),
             ('recurring_next_date', '!=', False),
-            ('recurring_next_date', '>=', start_of_month),
-            ('recurring_next_date', '<=', end_of_month)
+            # ('recurring_next_date', '>=', start_of_month),
+            # ('recurring_next_date', '<=', end_of_month)
         ])
         
         if not all_contract_lines:
