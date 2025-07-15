@@ -629,13 +629,43 @@
                             <p t-field="o.note"></p>
                             <br/>
         </div>
-<div class="text-center" style="margin-top:10px;">
+<!-- <div class="text-center" style="margin-top:10px;">
     <a href="https://www.novem.sk/nahlasovanie-novem.pdf" 
        target="_blank"
        style="color:#568DA9;text-decoration:underline;">
         POSTUP HLÁSENIA POŽIADAVIEK
     </a>
-</div>
+</div> -->
+<div class="support-notice" style="font-family:Arial, sans-serif; padding:20px; font-size:14px; line-height:1.6;">
+        <div style="text-align:center; margin-bottom:20px;">
+            <h2 style="font-size:22px; margin:0;">POSTUP HLÁSENIA POŽIADAVIEK</h2>
+        </div>
+        <div style="text-align:center; margin:30px 0;">
+        <p style="font-size:16px;">Ak máte akýkoľvek problém s počítačom, internetom či iným IT vybavením,<br/>
+        prenechajte ho kedykoľvek nám – radi pomôžeme.</p>
+        <div style="margin:30px 0;">
+            <strong style="font-size:20px;">ZAVOLAJTE 24 / 7</strong><br/>
+            <span style="font-size:18px;">02 / 20 20 22 22</span><br/>
+            <span>a zanechajte odkaz</span>
+            </div>
+        </div>
+
+        <div style="text-align:center; margin:30px 0;">
+            <strong style="font-size:20px;">POŠLITE MAIL 24 / 7</strong><br/>
+            <a href="mailto:podpora@novem.sk" style="font-size:18px;">podpora@novem.sk</a>
+        </div>
+
+        <div style="text-align:center; margin:30px 0;">
+        <p><strong>Hlásenie môžete realizovať 24/7.</strong> <br/> Do hlásenia okrem stručnej požiadavky prosíme uviesť meno a telefónny kontakt komu sa má technik ozvať, adresu miesta kde treba realizovať servis.</p>
+        
+        <p style="color:#568DA9;"><strong>Servis mimo pracovnú dobu je spoplatnený podľa aktuálneho cenníka.</strong></p>
+
+        </div>
+        <!-- <div style="margin-top:30px; border:2px solid #000; padding:15px;">
+            <strong>V prípade urgentnej požiadavky</strong><br/>
+            <span>odošlite mail s <strong>vysokou prioritou!</strong></span>
+        </div> -->
+    </div>
 
         <!-- Insert this block near the bottom of your report_contract_document template,
      for example, right before the 'Poznámka k zmluve' section

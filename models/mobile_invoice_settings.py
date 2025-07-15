@@ -13,7 +13,8 @@ class MobileInvoiceSettings(models.TransientModel):
 
     def action_update_contract_dates(self):
         contracts = self.env['contract.contract'].search([
-            ('x_contract_type', '=', 'Mobilky')
+            ('x_contract_type', '=', 'Mobilky'),
+            # ('id', '=', 74)
         ])
         
         _logger.info(f"Found {len(contracts)} mobile contracts to process")

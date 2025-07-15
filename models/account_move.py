@@ -5,6 +5,7 @@
 
 from odoo import fields, models, api, _
 from odoo.exceptions import UserError
+from datetime import timedelta
 
 
 class AccountMove(models.Model):
@@ -64,6 +65,14 @@ class AccountMove(models.Model):
         string='Total (Rounded)',
         compute='_compute_rounded_amounts',
         store=True,
+    )
+
+    @api.model
+    def _get_default_invoice_date_due(self):
+        return fields.Date.context_today(self) + timedelta(days=14)
+
+    invoice_date_due = fields.Date(
+        default=_get_default_invoice_date_due,
     )
 
     def action_create_stock_moves(self):
@@ -321,18 +330,43 @@ class AccountMove(models.Model):
             move.amount_total_words = move.currency_id.amount_to_text(round(move.amount_total, 2))
 
     def _recompute_dynamic_lines(self, recompute_all_taxes=False, recompute_tax_base_amount=False):
-        """Override to ensure line amounts are rounded during recomputation"""
-        res = super()._recompute_dynamic_lines(recompute_all_taxes=recompute_all_taxes, 
-                                             recompute_tax_base_amount=recompute_tax_base_amount)
-        
-        for line in self.line_ids:
-            if line.display_type == 'product':
-                line.amount_currency = round(line.amount_currency, 2)
-                line.debit = round(line.debit, 2)
-                line.credit = round(line.credit, 2)
-                line.balance = round(line.balance, 2)
-        
+        res = super()._recompute_dynamic_lines(
+            recompute_all_taxes=recompute_all_taxes,
+            recompute_tax_base_amount=recompute_tax_base_amount,
+        )
+
+        currency = self.currency_id or self.company_id.currency_id
+        precision = currency.decimal_places or 2
+
+        for move in self:
+            if not move.line_ids:
+                continue
+
+            debit_total = sum(line.debit for line in move.line_ids)
+            credit_total = sum(line.credit for line in move.line_ids)
+
+            diff = round(debit_total - credit_total, precision + 2)
+
+            if abs(diff) >= 10**(-precision):
+                if abs(diff) < 0.01:
+                    # Fix the last receivable/payable line
+                    receivable_lines = move.line_ids.filtered(lambda l: l.account_id.internal_type in ('receivable', 'payable') and not l.display_type)
+                    if receivable_lines:
+                        last_line = receivable_lines.sorted(key=lambda l: l.date_maturity or move.invoice_date_due or move.invoice_date)[-1]
+                        if diff > 0:
+                            last_line.credit += diff
+                        else:
+                            last_line.debit += -diff
+                    else:
+                        raise UserError(_("Could not find a receivable/payable line to adjust."))
+                else:
+                    raise UserError(_(
+                        "Move is unbalanced by %.4f EUR.\nDebit: %.4f\nCredit: %.4f"
+                    ) % (diff, debit_total, credit_total))
+
         return res
+
+
 
     @api.depends('amount_untaxed', 'amount_tax', 'amount_total')
     def _compute_rounded_amounts(self):
