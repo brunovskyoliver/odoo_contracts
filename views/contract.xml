@@ -115,6 +115,7 @@
                             <field name="payment_term_id" readonly="is_terminated" />
                             <field name="user_id" readonly="is_terminated" />
                             <field name="inventory_id" options="{'no_create': True, 'no_open': True}" readonly="has_inventory_products"/>
+                            <field name="nadspotreba" invisible="show_nadspotreba" />
                         </group>
                         <group>
                             <field

@@ -48,7 +48,12 @@ class ContractRecurrencyBasicMixin(models.AbstractModel):
         help="Invoice every (Days/Week/Month/Year)",
     )
     date_start = fields.Date()
-    recurring_next_date = fields.Date(string="Dátum najbližsej fakturácie")
+    recurring_next_date = fields.Date(
+        string="Dátum najbližsej fakturácie",
+        readonly=False,
+        copy=True,
+        store=True,
+    )
 
     @api.depends("recurring_invoicing_type", "recurring_rule_type")
     def _compute_recurring_invoicing_offset(self):
@@ -78,7 +83,10 @@ class ContractRecurrencyMixin(models.AbstractModel):
 
     date_start = fields.Date(default=lambda self: fields.Date.context_today(self))
     recurring_next_date = fields.Date(
-        compute="_compute_recurring_next_date", store=True, readonly=False, copy=True
+        string="Dátum najbližsej fakturácie",
+        readonly=False,
+        copy=True,
+        store=True,
     )
     date_end = fields.Date(index=True)
     next_period_date_start = fields.Date(
@@ -90,18 +98,6 @@ class ContractRecurrencyMixin(models.AbstractModel):
         compute="_compute_next_period_date_end",
     )
     last_date_invoiced = fields.Date(readonly=True, copy=False)
-
-    @api.depends("next_period_date_start")
-    def _compute_recurring_next_date(self):
-        for rec in self:
-            rec.recurring_next_date = self.get_next_invoice_date(
-                rec.next_period_date_start,
-                rec.recurring_invoicing_type,
-                rec.recurring_invoicing_offset,
-                rec.recurring_rule_type,
-                rec.recurring_interval,
-                max_date_end=rec.date_end,
-            )
 
     @api.depends("last_date_invoiced", "date_start", "date_end")
     def _compute_next_period_date_start(self):

@@ -554,8 +554,14 @@ class ContractMobileInvoice(models.Model):
             contract = self.env['contract.contract'].search([
                 ('partner_id', '=', partner_data['partner'].id),
                 ('x_contract_type', '=', 'Mobilky')
-            ], limit=1)
-            
+            ])
+            if len(contract) > 1:
+                for c in contract:
+                    if c.nadspotreba:
+                        contract = c
+                        break
+            if len(contract) > 1:
+                raise UserError(_("Found multiple Mobilky contracts for partner {partner_data['partner'].name}"))
             if not contract:
                 _logger.info(f"No active Mobilky contract found for partner {partner_data['partner'].name}")
                 continue

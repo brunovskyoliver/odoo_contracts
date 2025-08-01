@@ -556,14 +556,6 @@ class ContractLine(models.Model):
     )
     def _check_last_date_invoiced(self):
         for rec in self.filtered("last_date_invoiced"):
-            if rec.date_end and rec.date_end < rec.last_date_invoiced:
-                raise ValidationError(
-                    _(
-                        "You can't have the end date before the date of last "
-                        "invoice for the contract line '%s'"
-                    )
-                    % rec.name
-                )
             if not rec.contract_id.line_recurrence:
                 continue
             if rec.date_start and rec.date_start > rec.last_date_invoiced:
@@ -736,15 +728,43 @@ class ContractLine(models.Model):
         return name
 
     def _update_recurring_next_date(self):
-        # FIXME: Change method name according to real updated field
-        # e.g.: _update_last_date_invoiced()
         for rec in self:
-            last_date_invoiced = rec.next_period_date_end
-            rec.write(
-                {
-                    "last_date_invoiced": last_date_invoiced,
-                }
+            # 1. Compute the period just invoiced
+            if rec.last_date_invoiced:
+                period_start = rec.last_date_invoiced + relativedelta(days=1)
+            else:
+                period_start = rec.date_start
+
+            period_end = rec.get_next_period_date_end(
+                period_start,
+                rec.recurring_rule_type,
+                rec.recurring_interval,
+                max_date_end=rec.date_end,
+                next_invoice_date=rec.recurring_next_date,
+                recurring_invoicing_type=rec.recurring_invoicing_type,
+                recurring_invoicing_offset=rec.recurring_invoicing_offset,
             )
+
+            # 2. Set last_date_invoiced to the end of the period just invoiced
+            rec.last_date_invoiced = period_end
+
+            # 3. Compute the next period start
+            next_period_start = period_end + relativedelta(days=1) if period_end else False
+
+            # 4. Compute the next recurring date from the next period start
+            if next_period_start:
+                next_recurring_date = rec.get_next_invoice_date(
+                    next_period_start,
+                    rec.recurring_invoicing_type,
+                    rec.recurring_invoicing_offset,
+                    rec.recurring_rule_type,
+                    rec.recurring_interval,
+                    max_date_end=rec.date_end,
+                )
+            else:
+                next_recurring_date = False
+
+            rec.recurring_next_date = next_recurring_date
 
     def _delay(self, delay_delta):
         """
@@ -1405,6 +1425,11 @@ class ContractLine(models.Model):
             x_datum_viazanosti = getattr(contract, 'x_datum_viazanost', None)
             if x_datum_viazanosti:
                 vals['x_datum_viazanosti_produktu'] = x_datum_viazanosti
+        # If recurring_next_date is not set, inherit from contract
+        if not vals.get('recurring_next_date') and vals.get('contract_id'):
+            contract = self.env['contract.contract'].browse(vals['contract_id'])
+            if contract and contract.recurring_next_date:
+                vals['recurring_next_date'] = contract.recurring_next_date
         return super().create(vals)
 
     @api.model_create_multi

@@ -170,7 +170,18 @@ class ContractContract(models.Model):
         compute="_compute_has_inventory_products",
         store=True,
     )
-    
+    nadspotreba = fields.Boolean(string="Nadspotreba", default=False, store=True)
+
+    show_nadspotreba = fields.Boolean(compute="_compute_show_nadspotreba")
+
+    def _compute_show_nadspotreba(self):
+        for rec in self:
+            contract_count = self.env['contract.contract'].search_count([
+                ('partner_id', '=', rec.partner_id.id),
+                ('x_contract_type', '=', 'Mobilky')
+            ])
+            rec.show_nadspotreba = contract_count == 1
+
     x_contract_type = fields.Selection(
         selection=[
             ('Prenájom', 'Prenájom'),
