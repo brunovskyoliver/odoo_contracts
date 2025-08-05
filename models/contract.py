@@ -555,6 +555,8 @@ class ContractContract(models.Model):
         invoice_type = (
             "in_invoice" if self.contract_type == "purchase" else "out_invoice"
         )
+        from datetime import timedelta
+        due_date = fields.Date.from_string(date_invoice) + timedelta(days=14)
         vals = {
             "move_type": invoice_type,
             "company_id": self.company_id.id,
@@ -562,17 +564,12 @@ class ContractContract(models.Model):
             "ref": self.code,
             "currency_id": self.currency_id.id,
             "invoice_date": date_invoice,
+            "invoice_date_due": due_date,
             "taxable_supply_date": date_invoice,  # Setting taxable_supply_date to match invoice_date
             "journal_id": journal.id,
             "invoice_origin": self.name,
             "invoice_line_ids": [],
         }
-        if self.payment_term_id:
-            vals.update(
-                {
-                    "invoice_payment_term_id": self.payment_term_id.id,
-                }
-            )
         if self.fiscal_position_id:
             vals.update(
                 {
