@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Email template for 2-month commitment expiration notification -->
+        <record id="email_template_commitment_2month" model="mail.template">
+            <field name="name">Contract: 2-Month Commitment Expiration Notice</field>
+            <field name="model_id" ref="model_contract_contract"/>
+            <field name="subject">Upozornenie na končiacu viazanosť (2 mesiace) - {{ object.name }}</field>
+            <field name="email_from">novem@novem.sk</field>
+            <field name="email_to">{{ object.partner_id.email_formatted }}</field>
+            <field name="body_html" type="html">
+<div style="margin: 0px; padding: 0px;">
+    <p style="margin: 0px; padding: 0px; font-size: 13px;">
+        Vážený zákazník,
+        <br/><br/>
+        dovoľujeme si Vás upozorniť, že o 2 mesiace končí viazanosť Vašej zmluvy <strong><t t-out="object.name"/></strong>.
+        <br/><br/>
+        Detaily zmluvy:<br/>
+        - Číslo zmluvy: <t t-out="object.code"/><br/>
+        - Dátum konca viazanosti: <t t-out="object.x_datum_viazanost" t-options='{"widget": "date"}'/><br/>
+        <br/><br/>
+        Pre obnovenie viazanosti a zachovanie výhodných podmienok nás, prosím, kontaktujte.
+        <br/><br/>
+        S pozdravom,<br/>
+        <strong>NOVEM-IT, s.r.o. | Lichnerova 35 | 903 01 Senec</strong>
+    </p>
+</div>
+            </field>
+            <field name="lang">{{ object.partner_id.lang }}</field>
+            <field name="auto_delete" eval="True"/>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Email template for 2-month commitment expiration notification -->
+        <record id="email_template_commitment_2months" model="mail.template">
+            <field name="name">Contract: 2-Month Commitment Expiration Notice</field>
+            <field name="model_id" ref="model_contract_contract"/>
+            <field name="subject">Upozornenie na končiacu viazanosť (2 mesiace) - ${object.name}</field>
+            <field name="email_from">${user.email_formatted}</field>
+            <field name="email_to">${object.partner_id.email_formatted}</field>
+            <field name="body_html" type="html"><![CDATA[
+<div style="margin: 0px; padding: 0px; font-size: 13px;">
+    <p>
+        Vážený zákazník,<br/><br/>
+        dovoľujeme si Vás upozorniť, že o 2 mesiace končí viazanosť Vašej zmluvy <strong><t t-out="object.name"/></strong>.<br/><br/>
+        Detaily zmluvy:<br/>
+        - Číslo zmluvy: <t t-out="object.code"/><br/>
+        - Dátum konca viazanosti: <t t-out="format_date(object.env, object.x_datum_viazanost)"/><br/><br/>
+        Pre obnovenie viazanosti a zachovanie výhodných podmienok nás, prosím, kontaktujte.<br/><br/>
+        S pozdravom,<br/>
+        <t t-out="user.name"/>
+    </p>
+</div>
+            ]]></field>
+            <field name="lang">${object.partner_id.lang}</field>
+            <field name="auto_delete" eval="True"/>
+        </record>
+
+        <!-- Email template for 1-month commitment expiration notification -->
+        <record id="email_template_commitment_1months" model="mail.template">
+            <field name="name">Contract: 1-Month Commitment Expiration Notice</field>
+            <field name="model_id" ref="model_contract_contract"/>
+            <field name="subject">DÔLEŽITÉ: Upozornenie na končiacu viazanosť (1 mesiac) - ${object.name}</field>
+            <field name="email_from">${user.email_formatted}</field>
+            <field name="email_to">${object.partner_id.email_formatted}</field>
+            <field name="body_html" type="html"><![CDATA[
+<div style="margin: 0px; padding: 0px; font-size: 13px;">
+    <p>
+        Vážený zákazník,<br/><br/>
+        dovoľujeme si Vás upozorniť, že už len 1 mesiac zostáva do konca viazanosti Vašej zmluvy <strong><t t-out="object.name"/></strong>.<br/><br/>
+        Detaily zmluvy:<br/>
+        - Číslo zmluvy: <t t-out="object.code"/><br/>
+        - Dátum konca viazanosti: <t t-out="format_date(object.env, object.x_datum_viazanost)"/><br/><br/>
+        Ak máte záujem o zachovanie výhodných podmienok, prosím, kontaktujte nás čo najskôr.<br/><br/>
+        S pozdravom,<br/>
+        <t t-out="user.name"/>
+    </p>
+</div>
+            ]]></field>
+            <field name="lang">${object.partner_id.lang}</field>
+            <field name="auto_delete" eval="True"/>
+        </record>
+    </data>
+</odoo>

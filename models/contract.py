@@ -14,6 +14,7 @@ from odoo import Command, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.osv import expression
 from odoo.tools.translate import _
+from dateutil.relativedelta import relativedelta
 
 _logger = logging.getLogger(__name__)
 
@@ -192,6 +193,18 @@ class ContractContract(models.Model):
         default='Služby',
         required=True,
         tracking=True,
+    )
+    
+    x_datum_viazanosti_notification_2month = fields.Boolean(
+        string="2-mesačná notifikácia odoslaná",
+        default=False,
+        help="Označuje, či bola odoslaná notifikácia 2 mesiace pred koncom viazanosti",
+    )
+    
+    x_datum_viazanosti_notification_1month = fields.Boolean(
+        string="1-mesačná notifikácia odoslaná",
+        default=False,
+        help="Označuje, či bola odoslaná notifikácia 1 mesiac pred koncom viazanosti",
     )
     
     @api.depends('contract_line_ids.in_inventory', 'contract_line_ids')
@@ -830,6 +843,53 @@ class ContractContract(models.Model):
     @api.model
     def cron_recurring_create_invoice(self, date_ref=None):
         return self._cron_recurring_create(date_ref, create_type="invoice")
+        
+    def _send_commitment_expiration_notification(self, notification_type='2month'):
+        """Send notification email about commitment expiration"""
+        self.ensure_one()
+        template_ref = 'contract.email_template_commitment_' + notification_type
+        template = self.env.ref(template_ref, raise_if_not_found=False)
+        if not template:
+            return False
+            
+        template.send_mail(self.id, force_send=True)
+        if notification_type == '2month':
+            self.x_datum_viazanosti_notification_2month = True
+        elif notification_type == '1month':
+            self.x_datum_viazanosti_notification_1month = True
+        return True
+        
+    @api.model
+    def cron_check_commitment_expiration(self):
+        """Check contracts for approaching commitment end dates and send notifications"""
+        today = fields.Date.context_today(self)
+        two_months_later = today + relativedelta(months=2)
+        one_month_later = today + relativedelta(months=1)
+        
+        # Find contracts with commitment date within 2 months that haven't received 2-month notification
+        contracts_2month = self.search([
+            ('x_datum_viazanost', '!=', False),
+            ('x_datum_viazanost', '<=', two_months_later),
+            ('x_datum_viazanost', '>=', today),
+            ('x_datum_viazanosti_notification_2month', '=', False),
+            ('is_terminated', '=', False),
+        ])
+        
+        # Find contracts with commitment date within 1 month that haven't received 1-month notification
+        contracts_1month = self.search([
+            ('x_datum_viazanost', '!=', False),
+            ('x_datum_viazanost', '<=', one_month_later),
+            ('x_datum_viazanost', '>=', today),
+            ('x_datum_viazanosti_notification_1month', '=', False),
+            ('is_terminated', '=', False),
+        ])
+        
+        # Send notifications
+        for contract in contracts_2month:
+            contract._send_commitment_expiration_notification(notification_type='2month')
+            
+        for contract in contracts_1month:
+            contract._send_commitment_expiration_notification(notification_type='1month')
 
     def action_terminate_contract(self):
         self.ensure_one()

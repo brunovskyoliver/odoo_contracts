@@ -591,7 +591,7 @@ class ContractMobileInvoice(models.Model):
                     new_total = existing_line_23.price_unit + partner_data['total_23']
                     _logger.info(f"Updating existing 23% VAT line - current: {existing_line_23.price_unit}, adding: {partner_data['total_23']}, new total: {new_total}")
                     
-                    existing_line_23.write({
+                    existing_line_23.with_context(skip_date_check=True).write({
                         'price_unit': new_total,  # Adjust for 23% VAT
                         'x_zlavnena_cena': new_total,  # Adjust for 23% VAT
                         'date_start': contract.recurring_next_date,
@@ -624,7 +624,7 @@ class ContractMobileInvoice(models.Model):
                     new_total = existing_line_0.price_unit + partner_data['total_0']
                     _logger.info(f"Updating existing 0% VAT line - current: {existing_line_0.price_unit}, adding: {partner_data['total_0']}, new total: {new_total}")
                     
-                    existing_line_0.write({
+                    existing_line_0.with_context(skip_date_check=True).write({
                         'price_unit': new_total,
                         'x_zlavnena_cena': new_total,
                         'date_start': contract.recurring_next_date,

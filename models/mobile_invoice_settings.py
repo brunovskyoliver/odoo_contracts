@@ -93,9 +93,9 @@ class MobileInvoiceSettings(models.TransientModel):
         return {'type': 'ir.actions.client', 'tag': 'reload'}
 
     def action_reset_excess_usage_lines(self):
-        _logger.info("Starting monthly reset of excess usage contract lines")
+        _logger.info("Starting monthly removal of excess usage contract lines")
         
-        # Find the product for excess usage
+        # Find the products for excess usage
         product_0 = self.env['product.product'].search([
             ('display_name', '=', 'Vyúčtovanie paušálnych služieb a spotreby HLAS 0%')
         ], limit=1)
@@ -103,31 +103,31 @@ class MobileInvoiceSettings(models.TransientModel):
             ('display_name', '=', 'Vyúčtovanie paušálnych služieb a spotreby HLAS 23%')
         ], limit=1)
 
-        if not product_0:
-            _logger.error("Could not find product 'Vyúčtovanie paušálnych služieb a spotreby HLAS 0%'")
+        if not product_0 and not product_23:
+            _logger.error("Could not find Vyúčtovanie products")
             return
-        if not product_23:
-            _logger.error("Could not find product 'Vyúčtovanie paušálnych služieb a spotreby HLAS 23%'")
-            return            
-        # Find all contract lines with this product
-        contract_lines_0 = self.env['contract.line'].search([
-            ('product_id', '=', product_0.id)
-        ])
-        contract_lines_23 = self.env['contract.line'].search([
-            ('product_id', '=', product_23.id)
-        ])
 
+        # Find all contract lines with these products
+        domain = []
+        if product_0:
+            domain.append(('product_id', '=', product_0.id))
+        if product_23:
+            if domain:
+                domain = ['|'] + domain + [('product_id', '=', product_23.id)]
+            else:
+                domain = [('product_id', '=', product_23.id)]
 
-        reset_count = 0
-        for line in contract_lines_0 + contract_lines_23:
-            try:
-                # Reset the line amount to 0
-                line.write({
-                    'price_unit': 0.0,
-                    'x_zlavnena_cena': 0.0
-                })
-                reset_count += 1
-            except Exception as e:
-                _logger.error(f"Error resetting contract line {line.id}: {str(e)}")
-                
-        _logger.info(f"Successfully reset {reset_count} excess usage contract lines")
+        contract_lines = self.env['contract.line'].search(domain)
+        
+        if not contract_lines:
+            _logger.info("No excess usage contract lines found to remove")
+            return
+
+        removed_count = len(contract_lines)
+        try:
+            # Remove all matching contract lines
+            contract_lines.unlink()
+            _logger.info(f"Successfully removed {removed_count} excess usage contract lines")
+        except Exception as e:
+            _logger.error(f"Error removing excess usage contract lines: {str(e)}")
+            raise
