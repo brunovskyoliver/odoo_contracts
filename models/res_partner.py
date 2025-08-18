@@ -9,14 +9,26 @@ from odoo import fields, models, api
 class ResPartner(models.Model):
     _inherit = "res.partner"
 
+    x_hours_warning_sent = fields.Boolean(string="Hours Warning Sent", default=False)
 
     @api.onchange('x_annual_available_hours')
     def _onchange_annual_available_hours(self):
         if self.company_type == 'company' and self.x_annual_free_hours:
             threshold = self.x_annual_free_hours * 0.2  # 20% of free hours
-            if self.x_annual_available_hours <= threshold:
-                template = self.env.ref('contract.email_template_hours_warning')
+            
+            if self.x_annual_available_hours <= 0 and not self.x_hours_warning_sent:
+                # Hours completely ran out - send final alert
+                template = self.env.ref('contract.email_template_hours_depleted')
                 template.send_mail(self.id, force_send=True)
+                self.x_hours_warning_sent = True
+            elif self.x_annual_available_hours <= threshold and not self.x_hours_warning_sent:
+                # First time reaching 20% threshold - send initial alert
+                template = self.env.ref('contract.email_template_hours_low_warning')
+                template.send_mail(self.id, force_send=True)
+                self.x_hours_warning_sent = True
+            elif self.x_annual_available_hours > threshold:
+                # Reset the flag when hours go above threshold (e.g., after renewal)
+                self.x_hours_warning_sent = False
 
     sale_contract_count = fields.Integer(
         string="Sale Contracts",

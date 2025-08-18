@@ -1,29 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <record id="email_template_hours_warning" model="mail.template">
-            <field name="name">Available Hours Warning</field>
+        <!-- Template for 20% warning -->
+        <record id="email_template_hours_low_warning" model="mail.template">
+            <field name="name">Available Hours Low Warning (20%)</field>
             <field name="model_id" ref="base.model_res_partner"/>
-            <field name="subject">Warning: Available Hours Running Low</field>
-            <field name="email_from">{{ user.email_formatted }}</field>
-            <field name="partner_to">{{ object.id }}</field>
+            <field name="subject">Upozornenie na nízku dostupnosť servisov (20%)</field>
+            <field name="email_from">novem@novem.sk</field>
+            <field name="email_to">{{ object.email }}</field>
+            <field name="lang">{{ object.lang }}</field>
+
+            <field name="body_html" type="html">
+                <div style="margin: 0px; padding: 0px;">
+                    <p style="margin: 0px; padding: 0px; font-size: 13px;">
+                        Dobrý deň <t t-out="object.name"/>,
+                        <br/><br/>
+                        Chceli by sme Vás informovať, že ste práve vyčerpali väčšinu predplatených servisných zásahov pre tento kalendárny rok. 
+                        <br/><br/>
+                        Aktuálny počet zostávajúcich servisov pre tento rok: <t t-out="object.x_annual_available_hours"/>
+                        <br/>
+                        Zmluvne dohodnutý rozsah servisov pre tento rok: <t t-out="object.x_annual_free_hours"/>
+                        <br/><br/>
+                        V prípade záujmu nás kontaktujte vo veci možného rozšírenia balíka služieb.
+                        <br/><br/>
+                        Servisy nad zazmluvnený rozsah sú účtované podľa platného cenníka.
+                        <br/><br/>
+                        Ďakujeme za využívanie našich služieb a ostávame s pozdravom.<br/>
+                        <strong>podpora@novem.sk  |  02 20 20 22 22</strong>
+                        <strong>NOVEM-IT, s.r.o. | Lichnerova 35 | 903 01 Senec</strong>
+                    </p>
+                </div>
+            </field>
+        </record>
+
+        <!-- Template for depleted hours -->
+        <record id="email_template_hours_depleted" model="mail.template">
+            <field name="name">Available Hours Depleted</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="subject">Upozornenie na vyčerpanie dostupných servisov</field>
+            <field name="email_from">novem@novem.sk</field>
+            <field name="email_to">{{ object.email }}</field>
             <field name="lang">{{ object.lang }}</field>
             <field name="body_html" type="html">
                 <div style="margin: 0px; padding: 0px;">
                     <p style="margin: 0px; padding: 0px; font-size: 13px;">
-                        Dear ${object.name},
+                        Dobrý deň <t t-out="object.name"/>,
                         <br/><br/>
-                        This is to inform you that your annual available hours are running low.
+                        Chceli by sme Vás informovať, že ste práve vyčerpali predplatené servisné zásahy pre tento kalendárny rok.
                         <br/><br/>
-                        Current available hours: ${object.x_annual_available_hours}
+                        V prípade záujmu nás kontaktujte vo veci možného rozšírenia balíku služieb.
+                        <br/><br/>
+                        Servisy nad zazmluvnený rozsah sú účtované podľa platného cenníka.
+                        <br/><br/>
+                        Ďakujeme za využívanie našich služieb a ostávame s pozdravom.
                         <br/>
-                        Total annual free hours: ${object.x_annual_free_hours}
-                        <br/><br/>
-                        Please contact us to discuss your hours usage.
-                        <br/><br/>
-                        Best regards,
-                        <br/>
-                        ${user.company_id.name}
+                        <strong>podpora@novem.sk  |  02 20 20 22 22</strong>
+                        <strong>NOVEM-IT, s.r.o. | Lichnerova 35 | 903 01 Senec</strong>
                     </p>
                 </div>
             </field>
