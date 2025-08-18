@@ -11,24 +11,29 @@ class ResPartner(models.Model):
 
     x_hours_warning_sent = fields.Boolean(string="Hours Warning Sent", default=False)
 
-    @api.onchange('x_annual_available_hours')
-    def _onchange_annual_available_hours(self):
-        if self.company_type == 'company' and self.x_annual_free_hours:
-            threshold = self.x_annual_free_hours * 0.2  # 20% of free hours
-            
-            if self.x_annual_available_hours <= 0 and not self.x_hours_warning_sent:
-                # Hours completely ran out - send final alert
-                template = self.env.ref('contract.email_template_hours_depleted')
-                template.send_mail(self.id, force_send=True)
-                self.x_hours_warning_sent = True
-            elif self.x_annual_available_hours <= threshold and not self.x_hours_warning_sent:
-                # First time reaching 20% threshold - send initial alert
-                template = self.env.ref('contract.email_template_hours_low_warning')
-                template.send_mail(self.id, force_send=True)
-                self.x_hours_warning_sent = True
-            elif self.x_annual_available_hours > threshold:
-                # Reset the flag when hours go above threshold (e.g., after renewal)
-                self.x_hours_warning_sent = False
+    def write(self, vals):
+        # Check if we're updating available hours
+        if 'x_annual_available_hours' in vals:
+            for record in self:
+                new_hours = vals['x_annual_available_hours']
+                if record.company_type == 'company' and record.x_annual_free_hours:
+                    threshold = record.x_annual_free_hours * 0.2
+                    
+                    if new_hours <= 0:
+                        # Hours completely ran out - send final alert
+                        template = self.env.ref('contract.email_template_hours_depleted')
+                        template.send_mail(record.id, force_send=True)
+                        vals['x_hours_warning_sent'] = True
+                    elif new_hours <= threshold and not record.x_hours_warning_sent:
+                        # First time reaching 20% threshold - send initial alert
+                        template = self.env.ref('contract.email_template_hours_low_warning')
+                        template.send_mail(record.id, force_send=True)
+                        vals['x_hours_warning_sent'] = True
+                    elif new_hours > threshold:
+                        # Reset the warning flag when hours go above threshold
+                        vals['x_hours_warning_sent'] = False
+        
+        return super(ResPartner, self).write(vals)
 
     sale_contract_count = fields.Integer(
         string="Sale Contracts",

@@ -635,6 +635,7 @@
         POSTUP HLÁSENIA POŽIADAVIEK
     </a>
 </div> -->
+<div style="page-break-before: always;">
 <div class="support-notice" style="font-family:Arial, sans-serif; padding:20px; font-size:14px; line-height:1.6;">
         <div style="text-align:center; margin-bottom:20px;">
             <h2 style="font-size:22px; margin:0;">POSTUP HLÁSENIA POŽIADAVIEK</h2>
@@ -651,7 +652,7 @@
 
         <div style="text-align:center; margin:30px 0;">
             <strong style="font-size:20px;">POŠLITE MAIL 24 / 7</strong><br/>
-            <a href="mailto:podpora@novem.sk" style="font-size:18px;">podpora@novem.sk</a>
+            <a href="mailto:podpora@novem.sk" style="font-size:18px; color:#428FAC;">podpora@novem.sk</a>
         </div>
 
         <div style="text-align:center; margin:30px 0;">
@@ -666,38 +667,50 @@
         </div> -->
     </div>
 
-        <!-- Insert this block near the bottom of your report_contract_document template,
-     for example, right before the 'Poznámka k zmluve' section
 
-<div class="row" style="margin-top: 40px;">
+
+<style>
+  /* tune this to your footer height */
+  :root { --footer-h: 90px; }  /* try 70–110px */
+
+  .o_report_layout .page { 
+    position: relative;
+    /* keep body text from colliding with footer+signatures */
+    padding-bottom: calc(var(--footer-h) + 120px);
+  }
+
+  .signature-block {
+    position: fixed;
+    left: 0; right: 0;
+    bottom: calc(var(--footer-h) + 10px); /* sit just above footer */
+    z-index: 2; /* above footer if z-index is respected */
+  }
+
+  .o_report_layout .footer { z-index: 1; }
+</style>
+
+<div class="signature-block">
+  <div class="row" style="margin-top: 300px;">
     <div class="col-6 text-center">
-        <p>...........................................</p>
-        <p>
-            <t t-if="o.x_contract_type == 'Prenájom'">
-                Podpis Prenajímateľ
-            </t>
-            <t t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">
-                Podpis Poskytovateľ
-            </t>
-        </p>
-        <p>Dátum: .................... v .............</p>
+      <p>...........................................</p>
+      <p>
+        <t t-if="o.x_contract_type == 'Prenájom'">Podpis Prenajímateľ</t>
+        <t t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">Podpis Poskytovateľ</t>
+      </p>
     </div>
     <div class="col-6 text-center">
-        <p>...........................................</p>
-        <p>
-            <t t-if="o.x_contract_type == 'Prenájom'">
-                Podpis Nájomca
-            </t>
-            <t t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">
-                Podpis Objednávateľ
-            </t>
-        </p>
-        <p>Dátum: .................... v .............</p>
+      <p>...........................................</p>
+      <p>
+        <t t-if="o.x_contract_type == 'Prenájom'">Podpis Nájomca</t>
+        <t t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">Podpis Objednávateľ</t>
+      </p>
     </div>
+  </div>
 </div>
-		    <-->
 
-        <div style="margin-top: 400px; margin-bottom: 400px;"><!-- Intentionally left blank for e-signatures --></div>
+</div>
+
+        <!--<div style="margin-top: 400px; margin-bottom: 400px;"></div>-->
       </div>
     </t>
     </t>
