@@ -3,11 +3,20 @@
 
 from ast import literal_eval
 
-from odoo import fields, models
+from odoo import fields, models, api
 
 
 class ResPartner(models.Model):
     _inherit = "res.partner"
+
+
+    @api.onchange('x_annual_available_hours')
+    def _onchange_annual_available_hours(self):
+        if self.company_type == 'company' and self.x_annual_free_hours:
+            threshold = self.x_annual_free_hours * 0.2  # 20% of free hours
+            if self.x_annual_available_hours <= threshold:
+                template = self.env.ref('contract.email_template_hours_warning')
+                template.send_mail(self.id, force_send=True)
 
     sale_contract_count = fields.Integer(
         string="Sale Contracts",

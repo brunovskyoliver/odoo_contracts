@@ -22,6 +22,7 @@
         "security/groups.xml",
         "security/account_followup_security.xml",
         "data/account_followup_actions.xml",
+        "data/mail_template_hours_warning.xml",
         "views/account_followup_views.xml",
         "security/contract_tag.xml",
         "security/ir.model.access.csv",
