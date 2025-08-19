@@ -8,15 +8,15 @@ from datetime import datetime
 
 class ContractInventory(models.Model):
     _name = "contract.inventory"
-    _description = "Contract Inventory Storage"
+    _description = "Skladovanie inventára zmluvy"
     _inherit = ['mail.thread', 'mail.activity.mixin']
 
-    name = fields.Char(string="Name", required=True, copy=False, tracking=True)
-    code = fields.Char(string="Code", copy=False, tracking=True)
+    name = fields.Char(string="Názov", required=True, copy=False, tracking=True)
+    code = fields.Char(string="Kód", copy=False, tracking=True)
     warehouse_id = fields.Many2one(
         'stock.warehouse',
-        string='Default Warehouse',
-        help='Default warehouse for stock operations',
+        string='Predvolený sklad',
+        help='Predvolený sklad pre skladové operácie',
         tracking=True,
     )
     partner_id = fields.Many2one(
@@ -27,42 +27,42 @@ class ContractInventory(models.Model):
     contract_ids = fields.One2many(
         comodel_name="contract.contract",
         inverse_name="inventory_id",
-        string="Contracts",
+        string="Zmluvy",
     )
     active = fields.Boolean(default=True)
     company_id = fields.Many2one(
         comodel_name="res.company", 
-        string="Company",
+        string="Spoločnosť",
         default=lambda self: self.env.company,
     )
-    note = fields.Text(string="Notes")
+    note = fields.Text(string="Poznámky")
     inventory_line_ids = fields.One2many(
         comodel_name="contract.inventory.line",
         inverse_name="inventory_id",
-        string="Inventory Lines",
+        string="Inventárne riadky",
     )
     total_products = fields.Integer(
-        string="Total Products",
+        string="Spolu produkty",
         compute="_compute_total_products",
         store=True,
     )
     picking_ids = fields.Many2many(
         'stock.picking',
-        string="Related Stock Pickings",
+        string="Súvisiace skladové pohyby",
         compute='_compute_picking_ids',
         store=True,
     )
     picking_count = fields.Integer(
         compute='_compute_picking_ids',
         store=True,
-        string="Picking Count",
+        string="Počet pohybov",
     )
     stock_state = fields.Selection([
-        ('pending', 'Pending'),
-        ('partial', 'Partially Processed'),
-        ('done', 'Fully Processed'),
-        ('cancelled', 'Cancelled'),
-    ], string="Stock Status", compute='_compute_stock_state', store=True)
+        ('pending', 'Čakajúce'),
+        ('partial', 'Čiastočne spracované'),
+        ('done', 'Úplne spracované'),
+        ('cancelled', 'Zrušené'),
+    ], string="Stav skladu", compute='_compute_stock_state', store=True)
 
     @api.depends('inventory_line_ids', 'inventory_line_ids.quantity')
     def _compute_total_products(self):
@@ -97,10 +97,10 @@ class ContractInventory(models.Model):
                 record.stock_state = 'pending'
 
     def action_view_pickings(self):
-        """Show related pickings"""
+        """Zobraziť súvisiace pohyby"""
         self.ensure_one()
         return {
-            'name': _('Stock Operations'),
+            'name': _('Skladové operácie'),
             'view_mode': 'list,form',
             'res_model': 'stock.picking',
             'type': 'ir.actions.act_window',
@@ -112,14 +112,14 @@ class ContractInventory(models.Model):
         }
 
     def action_process_stock(self):
-        """Process stock movements for all pending lines"""
+        """Spracovať skladové pohyby pre všetky čakajúce riadky"""
         self.ensure_one()
         if not self.warehouse_id:
-            raise UserError(_("Please select a warehouse first"))
+            raise UserError(_("Najprv vyberte sklad"))
 
         pending_lines = self.inventory_line_ids.filtered(lambda l: l.state == 'draft')
         if not pending_lines:
-            raise UserError(_("No pending lines to process"))
+            raise UserError(_("Žiadne čakajúce riadky na spracovanie"))
 
         for line in pending_lines:
             line.process_stock_movement()
@@ -136,7 +136,7 @@ class ContractInventory(models.Model):
 
 class ContractInventoryLine(models.Model):
     _name = "contract.inventory.line"
-    _description = "Contract Inventory Line"
+    _description = "Riadok inventára zmluvy"
 
     def unlink(self):
         return super().unlink()
@@ -145,64 +145,64 @@ class ContractInventoryLine(models.Model):
 
     inventory_id = fields.Many2one(
         comodel_name="contract.inventory",
-        string="Inventory",
+        string="Inventár",
         required=True,
         ondelete="cascade",
     )
     product_id = fields.Many2one(
         comodel_name="product.product",
-        string="Product",
+        string="Produkt",
         required=True,
-        domain="[('qty_available', '>', 0)]",  # Only show products with stock available
+        domain="[('qty_available', '>', 0)]",  # Iba produkty s dostupným skladom
     )
     contract_line_id = fields.Many2one(
         comodel_name="contract.line",
-        string="Contract Line",
+        string="Riadok zmluvy",
     )
     quantity = fields.Float(
-        string="Quantity",
+        string="Množstvo",
         default=1.0,
         required=True,
     )
     uom_id = fields.Many2one(
         related="product_id.uom_id",
-        string="Unit of Measure",
+        string="Merná jednotka",
     )
     date_added = fields.Date(
-        string="Date Added",
+        string="Dátum pridania",
         default=fields.Date.context_today,
     )
     state = fields.Selection(
         selection=[
-            ('draft', 'Draft'),
-            ('pending', 'Pending'),
-            ('assigned', 'Assigned'),
-            ('returned', 'Returned'),
+            ('draft', 'Návrh'),
+            ('pending', 'Čakajúce'),
+            ('assigned', 'Priradené'),
+            ('returned', 'Vrátené'),
         ],
-        string="Status",
+        string="Stav",
         default='draft',
         tracking=True,
     )
     stock_move_ids = fields.One2many(
         'stock.move',
         'contract_inventory_line_id',
-        string="Stock Moves",
+        string="Skladové pohyby",
         readonly=True,
     )
     warehouse_id = fields.Many2one(
         'stock.warehouse',
-        string='Warehouse',
-        help='Specific warehouse to move this item to/from.',
+        string='Sklad',
+        help='Konkrétny sklad, z/do ktorého sa má položka presunúť.',
     )
     contract_id = fields.Many2one(
         related="contract_line_id.contract_id",
-        string="Contract",
+        string="Zmluva",
         store=True,
     )
     serial_number = fields.Char(
-        string="Serial Number",
+        string="Sériové číslo",
     )
-    note = fields.Text(string="Notes")
+    note = fields.Text(string="Poznámky")
 
     @api.onchange('product_id')
     def _onchange_product_id(self):
@@ -212,22 +212,22 @@ class ContractInventoryLine(models.Model):
     @api.model
     def create(self, vals):
         res = super().create(vals)
-        if res.state != 'returned':  # Don't create stock move for returned items
+        if res.state != 'returned':  # Nevytvárať pohyb pre už vrátené položky
             res.process_stock_movement()
         return res
 
     def process_stock_movement(self):
-        """Process stock movement for this line"""
+        """Spracovať skladový pohyb pre tento riadok"""
         self.ensure_one()
         
         quantity = self.env.context.get('quantity', self.quantity)
 
         if not self.warehouse_id and not self.inventory_id.warehouse_id:
-            raise UserError(_("Please select a warehouse for the line or inventory"))
+            raise UserError(_("Vyberte sklad pre riadok alebo inventár"))
 
         warehouse = self.warehouse_id or self.inventory_id.warehouse_id
         
-        # Determine locations based on operation type
+        # Určenie typu operácie
         if self.state == 'returned':
             picking_type = warehouse.in_type_id
             location_src = self.env.ref('stock.stock_location_customers')
@@ -237,7 +237,7 @@ class ContractInventoryLine(models.Model):
             location_src = warehouse.lot_stock_id
             location_dest = self.env.ref('stock.stock_location_customers')
 
-        # Create or get picking
+        # Nájsť alebo vytvoriť príjemku/výdajku
         domain = [
             ('picking_type_id', '=', picking_type.id),
             ('state', 'in', ['draft', 'assigned', 'confirmed']),
@@ -253,11 +253,11 @@ class ContractInventoryLine(models.Model):
                 'location_id': location_src.id,
                 'location_dest_id': location_dest.id,
                 'partner_id': self.contract_id.partner_id.id,
-                'origin': f'Contract Inventory {self.inventory_id.name}',
+                'origin': f'Inventár zmluvy {self.inventory_id.name}',
                 'company_id': self.inventory_id.company_id.id,
             })
 
-        # Create stock move
+        # Vytvoriť skladový pohyb
         move_vals = {
             'name': f'{self.product_id.name} - {self.inventory_id.name}',
             'product_id': self.product_id.id,
@@ -269,18 +269,15 @@ class ContractInventoryLine(models.Model):
             'company_id': self.inventory_id.company_id.id,
             'picking_type_id': picking_type.id,
             'contract_inventory_line_id': self.id,
-            'origin': f'Contract Inventory {self.inventory_id.name}',
+            'origin': f'Inventár zmluvy {self.inventory_id.name}',
         }
 
-        # Create the move
         move = self.env['stock.move'].create(move_vals)
 
-        # Confirm the picking
         picking.action_confirm()
 
-        # Process the picking as immediate transfer
+        # Vytvoriť riadok pohybu
         for move in picking.move_ids_without_package:
-            # Create a move line for the quantity
             self.env['stock.move.line'].create({
                 'move_id': move.id,
                 'picking_id': picking.id,
@@ -291,29 +288,24 @@ class ContractInventoryLine(models.Model):
                 'location_dest_id': move.location_dest_id.id,
             })
 
-        # Validate the picking
         picking.with_context(skip_backorder=True).button_validate()
-        
-        # Update line state
         self.write({'state': 'assigned'})
         
         return move
 
     def _return_to_stock(self, qty):
-        """Create return stock move for the given quantity"""
-        # Create a picking first
+        """Vytvoriť vrátenie skladového pohybu pre zadané množstvo"""
         picking = self.env['stock.picking'].create({
             'picking_type_id': self.env.ref('stock.picking_type_in').id,
             'location_id': self.env.ref('stock.stock_location_customers').id,
             'location_dest_id': self.env.ref('stock.stock_location_stock').id,
             'partner_id': self.contract_id.partner_id.id,
-            'origin': f'Contract Inventory Return {self.inventory_id.name}',
+            'origin': f'Vrátenie inventára zmluvy {self.inventory_id.name}',
             'company_id': self.inventory_id.company_id.id,
         })
 
-        # Create stock move
         stock_move = self.env['stock.move'].create({
-            'name': _('Contract Inventory Return: %s') % self.inventory_id.name,
+            'name': _('Vrátenie inventára zmluvy: %s') % self.inventory_id.name,
             'product_id': self.product_id.id,
             'product_uom_qty': qty,
             'product_uom': self.uom_id.id,
@@ -322,15 +314,12 @@ class ContractInventoryLine(models.Model):
             'location_dest_id': self.env.ref('stock.stock_location_stock').id,
             'company_id': self.inventory_id.company_id.id,
             'picking_type_id': self.env.ref('stock.picking_type_in').id,
-            'origin': f'Contract Inventory Return {self.inventory_id.name}',
+            'origin': f'Vrátenie inventára zmluvy {self.inventory_id.name}',
         })
 
-        # Confirm the picking
         picking.action_confirm()
 
-        # Process the picking as immediate transfer
         for move in picking.move_ids_without_package:
-            # Create a move line for the quantity
             self.env['stock.move.line'].create({
                 'move_id': move.id,
                 'picking_id': picking.id,
@@ -341,14 +330,13 @@ class ContractInventoryLine(models.Model):
                 'location_dest_id': move.location_dest_id.id,
             })
 
-        # Validate the picking
         picking.with_context(skip_backorder=True).button_validate()
         return stock_move
 
     @api.model
     def create(self, vals):
         res = super().create(vals)
-        if res.state != 'returned':  # Don't create stock move for returned items
+        if res.state != 'returned':  # Nevytvárať pohyb pre už vrátené položky
             res.process_stock_movement()
         return res
 
@@ -363,22 +351,16 @@ class ContractInventoryLine(models.Model):
                 new_qty = vals.get('quantity', old_qty)
                 new_state = vals.get('state', old_state)
                 
-                # Handle quantity changes
                 if new_qty != old_qty and new_state != 'returned':
                     if new_qty > old_qty:
-                        # Additional quantity needed
                         self.with_context(quantity=new_qty - old_qty).process_stock_movement()
                     else:
-                        # Return excess quantity to stock
                         self.write({'state': 'returned'})
                         self.with_context(quantity=old_qty - new_qty).process_stock_movement()
                 
-                # Handle state changes
                 if old_state != 'returned' and new_state == 'returned':
-                    # Product is being returned
                     self.with_context(quantity=old_qty).process_stock_movement()
                 elif old_state == 'returned' and new_state != 'returned':
-                    # Product is being reactivated
                     self.with_context(quantity=new_qty).process_stock_movement()
         
         return res
@@ -389,6 +371,6 @@ class ContractInventoryLine(models.Model):
             available_qty = line.product_id.with_context(location=self.env.ref('stock.stock_location_stock').id).qty_available
             if line.quantity > available_qty:
                 raise ValidationError(_(
-                    "Cannot assign more quantity than available in stock. "
-                    "Product %s has only %s units available."
+                    "Nie je možné priradiť väčšie množstvo, než je dostupné na sklade. "
+                    "Produkt %s má k dispozícii iba %s jednotiek."
                 ) % (line.product_id.name, line.product_id.qty_available))

@@ -7,36 +7,36 @@ from odoo.exceptions import ValidationError
 
 class ContractInventoryBulkReturnWizardLine(models.TransientModel):
     _name = 'contract.inventory.bulk.return.wizard.line'
-    _description = 'Return Inventory Lines Selection'
+    _description = 'Výber inventárnych riadkov na vrátenie'
 
     wizard_id = fields.Many2one(
         comodel_name='contract.inventory.bulk.return.wizard',
-        string='Wizard',
+        string='Sprievodca',
         required=True,
         ondelete='cascade',
     )
     inventory_line_id = fields.Many2one(
         'contract.inventory.line',
-        string='Inventory Line',
+        string='Inventárny riadok',
         required=True,
     )
     product_id = fields.Many2one(
         related='inventory_line_id.product_id',
-        string='Product',
+        string='Produkt',
         readonly=True,
     )
     available_qty = fields.Float(
         related='inventory_line_id.quantity',
-        string='Available Quantity',
+        string='Dostupné množstvo',
         readonly=True,
     )
     return_qty = fields.Float(
-        string='Quantity to Return',
+        string='Množstvo na vrátenie',
         required=True,
     )
     uom_id = fields.Many2one(
         related='inventory_line_id.uom_id',
-        string='Unit of Measure',
+        string='Merná jednotka',
         readonly=True,
     )
 
@@ -49,6 +49,6 @@ class ContractInventoryBulkReturnWizardLine(models.TransientModel):
     def _check_return_qty(self):
         for record in self:
             if record.return_qty <= 0:
-                raise ValidationError(_('Return quantity must be positive'))
+                raise ValidationError(_('Množstvo na vrátenie musí byť kladné'))
             if record.return_qty > record.available_qty:
-                raise ValidationError(_('Cannot return more than available quantity'))
+                raise ValidationError(_('Nie je možné vrátiť viac, než je dostupné množstvo'))

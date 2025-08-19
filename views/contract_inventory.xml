@@ -5,14 +5,14 @@
         <field name="name">contract.inventory.form.view</field>
         <field name="model">contract.inventory</field>
         <field name="arch" type="xml">
-            <form string="Inventory Storage">
+            <form string="Skladovanie inventára">
                 <sheet>
                     <div class="oe_button_box" name="button_box">
                         <button name="%(action_contract_inventory_bulk_return_wizard)d"
                                 type="action"
                                 class="oe_stat_button"
                                 icon="fa-truck"
-                                string="Return Products"/>
+                                string="Vrátiť produkty"/>
                         <button name="toggle_active" 
                             type="object" 
                             class="oe_stat_button" 
@@ -23,7 +23,7 @@
                     </div>
                     <div class="oe_title">
                         <label for="name" class="oe_edit_only"/>
-                        <h1><field name="name" placeholder="e.g. Main Storage"/></h1>
+                        <h1><field name="name" placeholder="napr. Hlavný sklad"/></h1>
                     </div>
                     <group>
                         <group>
@@ -35,9 +35,9 @@
                         </group>
                     </group>
                     <notebook>
-                        <page string="Inventory Lines" name="inventory_lines">
+                        <page string="Inventárne riadky" name="inventory_lines">
                             <field name="inventory_line_ids" widget="one2many">
-                                <list string="Inventory Lines" editable="bottom">
+                                <list string="Inventárne riadky" editable="bottom">
                                     <field name="product_id"/>
                                     <field name="quantity"/>
                                     <field name="uom_id"/>
@@ -50,9 +50,9 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Contracts" name="contracts">
+                        <page string="Zmluvy" name="contracts">
                             <field name="contract_ids" readonly="1">
-                                <list string="Contracts">
+                                <list string="Zmluvy">
                                     <field name="name"/>
                                     <field name="code"/>
                                     <field name="partner_id"/>
@@ -61,8 +61,8 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Notes" name="notes">
-                            <field name="note" placeholder="Internal notes..."/>
+                        <page string="Poznámky" name="notes">
+                            <field name="note" placeholder="Interné poznámky..."/>
                         </page>
                     </notebook>
                 </sheet>
@@ -80,7 +80,7 @@
         <field name="name">contract.inventory.list.view</field>
         <field name="model">contract.inventory</field>
         <field name="arch" type="xml">
-            <list string="Inventory Storage">
+            <list string="Skladovanie inventára">
                 <field name="name"/>
                 <field name="code"/>
                 <field name="warehouse_id"/>
@@ -96,15 +96,15 @@
         <field name="name">contract.inventory.search.view</field>
         <field name="model">contract.inventory</field>
         <field name="arch" type="xml">
-            <search string="Search Inventory Storage">
+            <search string="Hľadať skladovanie inventára">
                 <field name="name"/>
                 <field name="code"/>
                 <field name="partner_id"/>
                 <separator/>
-                <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
-                <group expand="0" string="Group By">
+                <filter string="Archivované" name="inactive" domain="[('active', '=', False)]"/>
+                <group expand="0" string="Zoskupiť podľa">
                     <filter string="Partner" name="group_by_partner" context="{'group_by': 'partner_id'}"/>
-                    <filter string="Company" name="group_by_company" context="{'group_by': 'company_id'}"/>
+                    <filter string="Spoločnosť" name="group_by_company" context="{'group_by': 'company_id'}"/>
                 </group>
             </search>
         </field>
@@ -115,7 +115,7 @@
         <field name="name">contract.inventory.line.list.view</field>
         <field name="model">contract.inventory.line</field>
         <field name="arch" type="xml">
-            <list string="Inventory Lines">
+            <list string="Inventárne riadky">
                 <field name="inventory_id"/>
                 <field name="product_id"/>
                 <field name="quantity"/>
@@ -134,7 +134,7 @@
         <field name="name">contract.inventory.line.form.view</field>
         <field name="model">contract.inventory.line</field>
         <field name="arch" type="xml">
-            <form string="Inventory Line">
+            <form string="Inventárny riadok">
                 <sheet>
                     <group>
                         <group>
@@ -151,8 +151,8 @@
                             <field name="state"/>
                         </group>
                     </group>
-                    <group string="Notes">
-                        <field name="note" nolabel="1" placeholder="Add notes here..."/>
+                    <group string="Poznámky">
+                        <field name="note" nolabel="1" placeholder="Pridajte poznámky..."/>
                     </group>
                 </sheet>
             </form>
@@ -164,20 +164,20 @@
         <field name="name">contract.inventory.line.search.view</field>
         <field name="model">contract.inventory.line</field>
         <field name="arch" type="xml">
-            <search string="Search Inventory Lines">
+            <search string="Hľadať inventárne riadky">
                 <field name="product_id"/>
                 <field name="inventory_id"/>
                 <field name="contract_id"/>
                 <field name="serial_number"/>
                 <separator/>
-                <filter string="Available" name="available" domain="[('state', '=', 'available')]"/>
-                <filter string="Assigned" name="assigned" domain="[('state', '=', 'assigned')]"/>
-                <filter string="Returned" name="returned" domain="[('state', '=', 'returned')]"/>
-                <group expand="0" string="Group By">
-                    <filter string="Inventory" name="group_by_inventory" context="{'group_by': 'inventory_id'}"/>
-                    <filter string="Product" name="group_by_product" context="{'group_by': 'product_id'}"/>
-                    <filter string="Contract" name="group_by_contract" context="{'group_by': 'contract_id'}"/>
-                    <filter string="Status" name="group_by_state" context="{'group_by': 'state'}"/>
+                <filter string="Dostupné" name="available" domain="[('state', '=', 'available')]"/>
+                <filter string="Priradené" name="assigned" domain="[('state', '=', 'assigned')]"/>
+                <filter string="Vrátené" name="returned" domain="[('state', '=', 'returned')]"/>
+                <group expand="0" string="Zoskupiť podľa">
+                    <filter string="Inventár" name="group_by_inventory" context="{'group_by': 'inventory_id'}"/>
+                    <filter string="Produkt" name="group_by_product" context="{'group_by': 'product_id'}"/>
+                    <filter string="Zmluva" name="group_by_contract" context="{'group_by': 'contract_id'}"/>
+                    <filter string="Stav" name="group_by_state" context="{'group_by': 'state'}"/>
                 </group>
             </search>
         </field>
@@ -185,43 +185,43 @@
 
     <!-- Action for Contract Inventory -->
     <record id="action_contract_inventory" model="ir.actions.act_window">
-        <field name="name">Inventory Storage</field>
+        <field name="name">Skladovanie inventára</field>
         <field name="res_model">contract.inventory</field>
         <field name="view_mode">list,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
-                Create a new inventory storage
+                Vytvorte nové skladovanie inventára
             </p>
             <p>
-                Organize your contract products in inventory storages.
+                Organizujte produkty zo zmlúv v skladových priestoroch.
             </p>
         </field>
     </record>
 
     <!-- Action for Contract Inventory Lines -->
     <record id="action_contract_inventory_line" model="ir.actions.act_window">
-        <field name="name">Inventory Products</field>
+        <field name="name">Inventárne produkty</field>
         <field name="res_model">contract.inventory.line</field>
         <field name="view_mode">list,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
-                No inventory products found
+                Neboli nájdené žiadne inventárne produkty
             </p>
             <p>
-                Inventory products are automatically created when contract lines are marked for inventory tracking.
+                Inventárne produkty sa automaticky vytvárajú, keď sú riadky zmluvy označené na sledovanie inventára.
             </p>
         </field>
     </record>
 
     <!-- Menu Items -->
     <menuitem id="menu_contract_inventory" 
-              name="Storage Locations" 
+              name="Skladové miesta" 
               action="action_contract_inventory" 
               parent="contract.menu_contract_inventory_root" 
               sequence="1"/>
 
     <menuitem id="menu_contract_inventory_lines" 
-              name="Inventory Products" 
+              name="Inventárne produkty" 
               action="action_contract_inventory_line" 
               parent="contract.menu_contract_inventory_root" 
               sequence="2"/>

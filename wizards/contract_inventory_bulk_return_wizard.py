@@ -7,24 +7,24 @@ from odoo.exceptions import UserError
 
 class ContractInventoryBulkReturnWizard(models.TransientModel):
     _name = 'contract.inventory.bulk.return.wizard'
-    _description = 'Return Multiple Inventory Lines to Warehouse'
+    _description = 'Vrátiť viacero inventárnych riadkov do skladu'
 
     inventory_id = fields.Many2one(
         'contract.inventory',
-        string='Inventory',
+        string='Inventár',
         required=True,
         readonly=True,
     )
     warehouse_id = fields.Many2one(
         'stock.warehouse',
-        string='Return to Warehouse',
+        string='Vrátiť do skladu',
         required=True,
-        help='Select the warehouse where the items should be returned to',
+        help='Vyberte sklad, do ktorého majú byť položky vrátené',
     )
     line_ids = fields.One2many(
         comodel_name='contract.inventory.bulk.return.wizard.line',
         inverse_name='wizard_id',
-        string='Lines to Return',
+        string='Riadky na vrátenie',
     )
 
     @api.model
@@ -60,7 +60,7 @@ class ContractInventoryBulkReturnWizard(models.TransientModel):
     def action_return_to_warehouse(self):
         self.ensure_one()
         if not self.line_ids:
-            raise UserError(_('Please select at least one product to return'))
+            raise UserError(_('Vyberte aspoň jeden produkt na vrátenie'))
 
         # Create one picking for all returns
         picking = self.env['stock.picking'].create({
@@ -68,7 +68,7 @@ class ContractInventoryBulkReturnWizard(models.TransientModel):
             'location_id': self.env.ref('stock.stock_location_customers').id,
             'location_dest_id': self.warehouse_id.lot_stock_id.id,
             'partner_id': self.inventory_id.partner_id.id,
-            'origin': f'Bulk Return: {self.inventory_id.name}',
+            'origin': f'Hromadné vrátenie: {self.inventory_id.name}',
             'company_id': self.inventory_id.company_id.id or self.env.company.id,
         })
 
@@ -78,7 +78,7 @@ class ContractInventoryBulkReturnWizard(models.TransientModel):
 
             # Create stock move
             move = self.env['stock.move'].create({
-                'name': f'Return: {wizard_line.product_id.name}',
+                'name': f'Vrátenie: {wizard_line.product_id.name}',
                 'product_id': wizard_line.product_id.id,
                 'product_uom_qty': wizard_line.return_qty,
                 'product_uom': wizard_line.uom_id.id,
@@ -118,12 +118,10 @@ class ContractInventoryBulkReturnWizard(models.TransientModel):
         # Show the picking
         return {
             'type': 'ir.actions.act_window',
-            'name': _('Return Picking'),
+            'name': _('Vrátené príjemky'),
             'res_model': 'stock.picking',
             'res_id': picking.id,
             'view_mode': 'form',
             'view_type': 'form',
             'target': 'current',
         }
-
-        

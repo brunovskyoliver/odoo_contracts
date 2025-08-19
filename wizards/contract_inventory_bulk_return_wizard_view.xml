@@ -20,31 +20,31 @@
         <field name="name">contract.inventory.bulk.return.wizard.form</field>
         <field name="model">contract.inventory.bulk.return.wizard</field>
         <field name="arch" type="xml">
-            <form string="Return Products to Warehouse">
+            <form string="Vrátiť produkty do skladu">
                 <sheet>
                     <div class="oe_title">
                         <label for="warehouse_id" class="oe_edit_only"/>
-                        <h1><field name="warehouse_id" options="{'no_create': True}" placeholder="Select Warehouse..."/></h1>
+                        <h1><field name="warehouse_id" options="{'no_create': True}" placeholder="Vyberte sklad..."/></h1>
                     </div>
                     <group>
                         <field name="inventory_id" invisible="1"/>
                     </group>
                     <notebook>
-                        <page string="Products to Return" name="products">
+                        <page string="Produkty na vrátenie" name="products">
                             <field name="line_ids" context="{'default_inventory_id': inventory_id}"/>
                             <button type="object" 
                                     name="action_add_all_lines" 
-                                    string="Add All Lines" 
+                                    string="Pridať všetky riadky" 
                                     class="oe_highlight"/>
                         </page>
                     </notebook>
                 </sheet>
                 <footer>
                     <button name="action_return_to_warehouse" 
-                            string="Return to Stock" 
+                            string="Vrátiť na sklad" 
                             type="object" 
                             class="btn-primary"/>
-                    <button string="Cancel" 
+                    <button string="Zrušiť" 
                             class="btn-secondary" 
                             special="cancel"/>
                 </footer>
@@ -53,7 +53,7 @@
     </record>
 
     <record id="action_contract_inventory_bulk_return_wizard" model="ir.actions.act_window">
-        <field name="name">Return Products to Warehouse</field>
+        <field name="name">Vrátiť produkty do skladu</field>
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">contract.inventory.bulk.return.wizard</field>
         <field name="view_mode">form</field>
