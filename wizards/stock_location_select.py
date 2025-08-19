@@ -6,8 +6,7 @@ class StockLocationSelectWizard(models.TransientModel):
     _description = 'Storage Location Selection'
 
     invoice_id = fields.Many2one('account.move', required=True)
-    warehouse_id = fields.Many2one('stock.warehouse', string='Storage Location', required=True,
-        domain="[('name', 'in', ['NOVEM IT, s.r.o.', 'NOVEM IT, s.r.o. zákazníci'])]")
+    warehouse_id = fields.Many2one('stock.warehouse', string='Storage Location', required=True)
 
     def action_confirm(self):
         self.ensure_one()

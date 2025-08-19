@@ -8,8 +8,12 @@
             <form string="Inventory Storage">
                 <sheet>
                     <div class="oe_button_box" name="button_box">
-                        <button 
-                            name="toggle_active" 
+                        <button name="%(action_contract_inventory_bulk_return_wizard)d"
+                                type="action"
+                                class="oe_stat_button"
+                                icon="fa-truck"
+                                string="Return Products"/>
+                        <button name="toggle_active" 
                             type="object" 
                             class="oe_stat_button" 
                             icon="fa-archive">
@@ -24,6 +28,7 @@
                     <group>
                         <group>
                             <field name="code"/>
+                            <field name="warehouse_id" options="{'no_create': True}" required="1"/>
                             <field name="partner_id"/>
                             <field name="company_id" groups="base.group_multi_company"/>
                             <field name="total_products"/>
@@ -36,6 +41,7 @@
                                     <field name="product_id"/>
                                     <field name="quantity"/>
                                     <field name="uom_id"/>
+                                    <field name="warehouse_id" options="{'no_create': True}"/>
                                     <field name="contract_line_id"/>
                                     <field name="contract_id"/>
                                     <field name="serial_number"/>
@@ -77,6 +83,7 @@
             <list string="Inventory Storage">
                 <field name="name"/>
                 <field name="code"/>
+                <field name="warehouse_id"/>
                 <field name="partner_id"/>
                 <field name="total_products"/>
                 <field name="company_id" groups="base.group_multi_company"/>

@@ -66,6 +66,7 @@
                 <field name="partner_id" string="Partner"/>
                 <field name="contract_id" string="Zmluva"/>
                 <field name="inventory_id" string="Inventár"/>
+                <field name="notes" string="Poznámky"/>
                 <filter string="Aktívne" name="active" domain="[('is_active', '=', True)]"/>
                 <filter string="Neaktívne" name="inactive" domain="[('is_active', '=', False)]"/>
                 <separator/>

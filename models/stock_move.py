@@ -14,3 +14,10 @@ class StockMove(models.Model):
         ondelete='set null',
         index=True,
     )
+
+    contract_inventory_line_id = fields.Many2one(
+        'contract.inventory.line',
+        string='Contract Inventory Line',
+        ondelete='set null',
+        index=True,
+    )

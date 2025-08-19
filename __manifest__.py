@@ -26,6 +26,7 @@
         "views/account_followup_views.xml",
         "security/contract_tag.xml",
         "security/ir.model.access.csv",
+        "wizards/contract_inventory_bulk_return_wizard_view.xml",
         "security/contract_security.xml",
         "security/contract_terminate_reason.xml",
         "security/contract_inventory.xml",

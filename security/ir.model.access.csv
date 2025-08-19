@@ -34,3 +34,7 @@
 "access_stock_move_invoice","stock.move.invoice","stock.model_stock_move","account.group_account_invoice",1,1,1,1
 "access_stock_location_select_wizard_user","stock.location.select.wizard user","model_stock_location_select_wizard","account.group_account_invoice",1,1,1,1
 "access_stock_location_select_wizard_manager","stock.location.select.wizard manager","model_stock_location_select_wizard","account.group_account_manager",1,1,1,1
+"access_contract_inventory_bulk_return_wizard_manager","Contract Inventory Bulk Return Wizard Manager","model_contract_inventory_bulk_return_wizard","account.group_account_manager",1,1,1,1
+"access_contract_inventory_bulk_return_wizard_user","Contract Inventory Bulk Return Wizard User","model_contract_inventory_bulk_return_wizard","account.group_account_invoice",1,1,1,1
+"access_contract_inventory_bulk_return_wizard_line_manager","Contract Inventory Bulk Return Wizard Line Manager","model_contract_inventory_bulk_return_wizard_line","account.group_account_manager",1,1,1,1
+"access_contract_inventory_bulk_return_wizard_line_user","Contract Inventory Bulk Return Wizard Line User","model_contract_inventory_bulk_return_wizard_line","account.group_account_invoice",1,1,1,1
