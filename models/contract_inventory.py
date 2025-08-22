@@ -220,6 +220,10 @@ class ContractInventoryLine(models.Model):
         """Spracovať skladový pohyb pre tento riadok"""
         self.ensure_one()
         
+        # Skip stock movement if context flag is set
+        if self.env.context.get('no_stock_movement'):
+            return False
+            
         quantity = self.env.context.get('quantity', self.quantity)
 
         if not self.warehouse_id and not self.inventory_id.warehouse_id:
