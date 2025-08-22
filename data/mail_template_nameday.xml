@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Email Template for Nameday -->
+        <record id="email_template_nameday" model="mail.template">
+            <field name="name">Blahoželanie k meninám</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="subject">Blahoželanie k meninám {{object.name}}!</field>
+            <field name="email_from">novem@novem.sk</field>
+            <field name="email_to">{{ object.email }}</field>
+            <field name="lang">{{ object.lang }}</field>
+            <field name="body_html" type="html">
+                <div style="margin: 0px; padding: 0px;">
+                    <p>Dobrý deň <t t-out="object.name"/>,</p>
+                    <p>Radi by sme Vám zaželali k dnešným meninám veľa zdravia, šťastia, lásky a spokojnosti.</p>
+                    <p>Váš IT team NOVEM</p>
+                    <strong>podpora@novem.sk  |  02 20 20 22 22</strong>
+                    <br/>
+                    <strong>NOVEM-IT, s.r.o. | Lichnerova 35 | 903 01 Senec</strong>
+                </div>
+            </field>
+        </record>
+    </data>
+</odoo>
+
