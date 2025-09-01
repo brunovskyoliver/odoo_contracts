@@ -873,6 +873,7 @@ class ContractContract(models.Model):
             ('x_datum_viazanost', '>=', today),
             ('x_datum_viazanosti_notification_2month', '=', False),
             ('is_terminated', '=', False),
+            ('x_contract_type', '!=', 'Prenájom'),
         ])
         
         # Find contracts with commitment date within 1 month that haven't received 1-month notification
@@ -882,6 +883,7 @@ class ContractContract(models.Model):
             ('x_datum_viazanost', '>=', today),
             ('x_datum_viazanosti_notification_1month', '=', False),
             ('is_terminated', '=', False),
+            ('x_contract_type', '!=', 'Prenájom'),
         ])
         
         # Send notifications
