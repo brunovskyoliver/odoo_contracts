@@ -167,7 +167,9 @@
             <table class="table table-sm">
               <tr class="border-black o_subtotal o_total">
                 <td style="font-size:20px;padding-right:20px;">
-                  <strong t-if="o.x_contract_type == 'Prenájom'">Cena nájomného za mesiac</strong>
+                  <t t-set="has_yearly_recurrence" t-value="any(line.recurring_interval == 12 and line.recurring_rule_type == 'monthly' or line.recurring_rule_type == 'yearly' for line in o.contract_line_ids)"/>
+                  <strong t-if="o.x_contract_type == 'Prenájom' and has_yearly_recurrence">Cena nájomného za rok</strong>
+                  <strong t-if="o.x_contract_type == 'Prenájom' and not has_yearly_recurrence">Cena nájomného za mesiac</strong>
                   <strong t-if="o.x_contract_type == 'Služby' or o.x_contract_type == 'Mobilky'">Cena objednaných služieb za mesiac</strong>
                 </td>
                 <td style="vertical-align: middle;">

@@ -187,6 +187,21 @@ class ContractLine(models.Model):
                 recurring_invoicing_offset=rec.recurring_invoicing_offset,
             )
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        """Inherit contract's commitment date and set recurring_next_date"""
+        for vals in vals_list:
+            if vals.get('contract_id') and vals.get('date_start'):
+                # Set recurring_next_date to match date_start
+                vals['recurring_next_date'] = vals['date_start']
+                
+                # Get commitment date from contract
+                contract = self.env['contract.contract'].browse(vals['contract_id'])
+                if contract.x_datum_viazanost:
+                    vals['x_datum_viazanosti_produktu'] = contract.x_datum_viazanost
+                    
+        return super().create(vals_list)
+
     @api.depends("next_period_date_start")
     def _compute_recurring_next_date(self):
         """Compute the next invoice date"""
