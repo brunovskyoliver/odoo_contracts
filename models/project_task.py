@@ -31,7 +31,7 @@ class ProjectTask(models.Model):
         """Update contract inventory when task is marked as done."""
         _logger.info('Starting contract inventory update for task %s', self.id)
         
-        if not self.sale_order_id:
+        if not self.sudo().sale_order_id:
             _logger.warning('Task %s has no sale_order_id, skipping inventory update', self.id)
             return
         
@@ -55,8 +55,8 @@ class ProjectTask(models.Model):
                           self.id, self.partner_id.id)
             return
 
-        # Find contract inventory for the company
-        contract_inventory = self.env['contract.inventory'].search([
+        # Find contract inventory for the company - using sudo() to bypass access rights
+        contract_inventory = self.env['contract.inventory'].sudo().search([
             ('partner_id', '=', company_partner.id),
             ('active', '=', True)
         ], limit=1)
@@ -69,9 +69,9 @@ class ProjectTask(models.Model):
         _logger.info('Task %s - Found contract inventory: %s', 
                     self.id, contract_inventory.id)
 
-        # Get all sale order lines with products and quantities
-        sale_order = self.sale_order_id
-        if sale_order and sale_order.state == 'sale':  # Only process confirmed sales orders
+        # Get all sale order lines with products and quantities using sudo()
+        sale_order = self.sudo().sale_order_id
+        if sale_order and sale_order.sudo().state == 'sale':  # Only process confirmed sales orders
             _logger.info('Task %s - Processing sale order: %s with %s lines', 
                         self.id, sale_order.id, len(sale_order.order_line))
             
@@ -83,13 +83,13 @@ class ProjectTask(models.Model):
                 
                 if line.product_id and line.product_uom_qty > 0:
                     # Check if product already exists in inventory
-                    inventory_line = self.env['contract.inventory.line'].search([
+                    inventory_line = self.env['contract.inventory.line'].sudo().search([
                         ('inventory_id', '=', contract_inventory.id),
                         ('product_id', '=', line.product_id.id)
                     ], limit=1)
 
                     try:
-                        InventoryLine = self.env['contract.inventory.line'].with_context(no_stock_movement=True)
+                        InventoryLine = self.env['contract.inventory.line'].sudo().with_context(no_stock_movement=True)
                         if inventory_line:
                             # Update existing line (tracking only, no stock movement)
                             new_qty = inventory_line.quantity + line.product_uom_qty
