@@ -18,17 +18,24 @@ class ProjectTask(models.Model):
             return
 
         try:
-            company_partner = record.partner_id
-            if not company_partner.is_company and company_partner.parent_id:
-                company_partner = company_partner.parent_id
+            search_partner = record.partner_id
+            if not search_partner:
+                _logger.warning('No partner found for task %s', record.id)
+                return
+
+            # If partner is a contact with a parent company, use the parent
+            if not search_partner.is_company and search_partner.parent_id:
+                search_partner = search_partner.parent_id
+                _logger.info('Task %s - Using parent company: %s instead of contact: %s', 
+                            record.id, search_partner.id, record.partner_id.id)
 
             contract_inventory = self.env['contract.inventory'].sudo().search([
-                ('partner_id', '=', company_partner.id),
+                ('partner_id', '=', search_partner.id),
                 ('active', '=', True)
             ], limit=1)
 
             if not contract_inventory:
-                _logger.warning('No active contract inventory found for partner %s', company_partner.id)
+                _logger.warning('No active contract inventory found for partner %s', search_partner.id)
                 return
 
             warehouse = self.env['stock.warehouse'].sudo().search([], limit=1)
@@ -41,7 +48,7 @@ class ProjectTask(models.Model):
                 'picking_type_id': warehouse.in_type_id.id,
                 'location_id': self.env.ref('stock.stock_location_customers').id,
                 'location_dest_id': warehouse.lot_stock_id.id,
-                'partner_id': company_partner.id,
+                'partner_id': search_partner.id,
                 'origin': f'Return from Task {record.name}',
                 'company_id': contract_inventory.company_id.id or self.env.company.id,
             })
@@ -137,142 +144,92 @@ class ProjectTask(models.Model):
     def _update_contract_inventory(self):
         """Update contract inventory when task is marked as done."""
         _logger.info('Starting contract inventory update for task %s', self.id)
-        
-        if not self.sudo().sale_order_id:
+
+        # Basic guards
+        sale_order = self.sudo().sale_order_id
+        if not sale_order:
             _logger.warning('Task %s has no sale_order_id, skipping inventory update', self.id)
             return
-        
         if not self.partner_id:
             _logger.warning('Task %s has no partner_id, skipping inventory update', self.id)
             return
 
-        _logger.info('Task %s - Found sale order: %s, partner: %s', 
-                    self.id, self.sale_order_id.id, self.partner_id.id)
+        partner = self.partner_id
+        _logger.info('Task %s - Found sale order: %s, partner: %s',
+                    self.id, sale_order.id, partner.id)
 
-        # Get the company partner - either directly or through parent
-        company_partner = self.partner_id
-        if not company_partner.is_company and company_partner.parent_id:
-            company_partner = company_partner.parent_id
-            _logger.info('Task %s - Using parent company: %s instead of contact: %s', 
-                        self.id, company_partner.id, self.partner_id.id)
+        # Choose which partner to use for contract inventory
+        if partner.is_company:
+            search_partner = partner
+        elif partner.parent_id:
+            search_partner = partner.parent_id
+            _logger.info('Task %s - Using parent company %s instead of contact %s',
+                        self.id, search_partner.id, partner.id)
+        else:
+            search_partner = partner
+            _logger.info('Task %s - No company/parent; using partner %s directly',
+                        self.id, partner.id)
 
-        # Only proceed if we found a company
-        if not company_partner.is_company:
-            _logger.warning('Task %s - No company found for partner %s', 
-                          self.id, self.partner_id.id)
-            return
-
-        # Find contract inventory for the company - using sudo() to bypass access rights
+        # Find active contract inventory for that partner
         contract_inventory = self.env['contract.inventory'].sudo().search([
-            ('partner_id', '=', company_partner.id),
-            ('active', '=', True)
+            ('partner_id', '=', search_partner.id),
+            ('active', '=', True),
         ], limit=1)
 
         if not contract_inventory:
-            _logger.warning('Task %s - No active contract inventory found for company %s', 
-                          self.id, company_partner.id)
+            _logger.warning('Task %s - No active contract inventory found for partner %s',
+                            self.id, search_partner.id)
             return
 
-        # Process sale order lines
-        sale_order = self.sudo().sale_order_id
-        for line in sale_order.order_line:
-            if line.product_id and line.product_uom_qty > 0:
-                # Check if product already exists in inventory
-                inventory_line = self.env['contract.inventory.line'].sudo().search([
-                    ('inventory_id', '=', contract_inventory.id),
-                    ('product_id', '=', line.product_id.id)
-                ], limit=1)
-
-                try:
-                    InventoryLine = self.env['contract.inventory.line'].sudo()
-                    if inventory_line:
-                        # Update existing line
-                        new_qty = inventory_line.quantity + line.product_uom_qty
-                        _logger.info('Task %s - Updating existing inventory line %s. Old qty: %s, Adding: %s, New qty: %s', 
-                                   self.id, inventory_line.id, inventory_line.quantity, 
-                                   line.product_uom_qty, new_qty)
-                        inventory_line.write({
-                            'quantity': new_qty
-                        })
-                    else:
-                        # Create new inventory line
-                        _logger.info('Task %s - Creating new inventory line for product %s with qty %s', 
-                                   self.id, line.product_id.id, line.product_uom_qty)
-                        InventoryLine.create({
-                            'inventory_id': contract_inventory.id,
-                            'product_id': line.product_id.id,
-                            'quantity': line.product_uom_qty,
-                            'state': 'assigned'
-                        })
-                except Exception as e:
-                    _logger.error('Task %s - Error while processing inventory line: %s', 
-                                self.id, str(e), exc_info=True)
-                    raise UserError(_('Error updating contract inventory: %s') % str(e))
-        if not company_partner.is_company and company_partner.parent_id:
-            company_partner = company_partner.parent_id
-            _logger.info('Task %s - Using parent company: %s instead of contact: %s', 
-                        self.id, company_partner.id, self.partner_id.id)
-
-        # Only proceed if we found a company
-        if not company_partner.is_company:
-            _logger.warning('Task %s - No company found for partner %s', 
-                          self.id, self.partner_id.id)
-            return
-
-        # Find contract inventory for the company - using sudo() to bypass access rights
-        contract_inventory = self.env['contract.inventory'].sudo().search([
-            ('partner_id', '=', company_partner.id),
-            ('active', '=', True)
-        ], limit=1)
-
-        if not contract_inventory:
-            _logger.warning('Task %s - No active contract inventory found for company %s', 
-                          self.id, company_partner.id)
-            return
-
-        _logger.info('Task %s - Found contract inventory: %s', 
+        _logger.info('Task %s - Found contract inventory: %s',
                     self.id, contract_inventory.id)
 
-        # Get all sale order lines with products and quantities using sudo()
-        sale_order = self.sudo().sale_order_id
-        if sale_order and sale_order.sudo().state == 'sale':  # Only process confirmed sales orders
-            _logger.info('Task %s - Processing sale order: %s with %s lines', 
-                        self.id, sale_order.id, len(sale_order.order_line))
-            
-            for line in sale_order.order_line:
-                _logger.info('Task %s - Processing order line: %s, Product: %s, Quantity: %s', 
-                           self.id, line.id, 
-                           line.product_id.id if line.product_id else 'No product',
-                           line.product_uom_qty)
-                
-                if line.product_id and line.product_uom_qty > 0:
-                    # Check if product already exists in inventory
-                    inventory_line = self.env['contract.inventory.line'].sudo().search([
-                        ('inventory_id', '=', contract_inventory.id),
-                        ('product_id', '=', line.product_id.id)
-                    ], limit=1)
+        # Only process confirmed sales orders
+        if sale_order.sudo().state != 'sale':
+            _logger.info('Task %s - Sale order %s not in state "sale" (is: %s); skipping.',
+                        self.id, sale_order.id, sale_order.state)
+            return
 
-                    try:
-                        InventoryLine = self.env['contract.inventory.line'].sudo().with_context(no_stock_movement=True)
-                        if inventory_line:
-                            # Update existing line (tracking only, no stock movement)
-                            new_qty = inventory_line.quantity + line.product_uom_qty
-                            _logger.info('Task %s - Updating existing inventory line %s. Old qty: %s, Adding: %s, New qty: %s', 
-                                       self.id, inventory_line.id, inventory_line.quantity, 
-                                       line.product_uom_qty, new_qty)
-                            inventory_line.write({
-                                'quantity': new_qty
-                            })
-                        else:
-                            # Create new inventory line (tracking only, no stock movement)
-                            _logger.info('Task %s - Creating new inventory line for product %s with qty %s', 
-                                       self.id, line.product_id.id, line.product_uom_qty)
-                            InventoryLine.create({
-                                'inventory_id': contract_inventory.id,
-                                'product_id': line.product_id.id,
-                                'quantity': line.product_uom_qty,
-                                'state': 'assigned'
-                            })
-                    except Exception as e:
-                        _logger.error('Task %s - Error while processing inventory line: %s', 
-                                    self.id, str(e), exc_info=True)
+        _logger.info('Task %s - Processing sale order: %s with %s lines',
+                    self.id, sale_order.id, len(sale_order.order_line))
+
+        InventoryLine = self.env['contract.inventory.line'].sudo().with_context(no_stock_movement=True)
+
+        for line in sale_order.order_line:
+            _logger.info('Task %s - Processing order line: %s, Product: %s, Quantity: %s',
+                        self.id, line.id,
+                        line.product_id.id if line.product_id else 'No product',
+                        line.product_uom_qty)
+
+            if not line.product_id or line.product_uom_qty <= 0:
+                continue
+
+            inventory_line = self.env['contract.inventory.line'].sudo().search([
+                ('inventory_id', '=', contract_inventory.id),
+                ('product_id', '=', line.product_id.id),
+            ], limit=1)
+
+            try:
+                if inventory_line:
+                    new_qty = inventory_line.quantity + line.product_uom_qty
+                    _logger.info(
+                        'Task %s - Updating inventory line %s. Old qty: %s, +%s => %s',
+                        self.id, inventory_line.id, inventory_line.quantity,
+                        line.product_uom_qty, new_qty
+                    )
+                    inventory_line.write({'quantity': new_qty})
+                else:
+                    _logger.info(
+                        'Task %s - Creating inventory line for product %s with qty %s',
+                        self.id, line.product_id.id, line.product_uom_qty
+                    )
+                    InventoryLine.create({
+                        'inventory_id': contract_inventory.id,
+                        'product_id': line.product_id.id,
+                        'quantity': line.product_uom_qty,
+                        'state': 'assigned',
+                    })
+            except Exception as e:
+                _logger.error('Task %s - Error while processing inventory line: %s',
+                            self.id, str(e), exc_info=True)
+                raise UserError(_('Error updating contract inventory: %s') % str(e))
