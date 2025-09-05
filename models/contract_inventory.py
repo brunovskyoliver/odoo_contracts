@@ -372,6 +372,10 @@ class ContractInventoryLine(models.Model):
     @api.constrains('quantity', 'product_id')
     def _check_quantity(self):
         for line in self:
+            # Skip validation for products with "Servisné práce" in name
+            if 'Servisné práce' in line.product_id.name:
+                continue
+                
             available_qty = line.product_id.with_context(location=self.env.ref('stock.stock_location_stock').id).qty_available
             if line.quantity > available_qty:
                 raise ValidationError(_(
