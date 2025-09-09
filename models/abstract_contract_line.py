@@ -225,10 +225,13 @@ class ContractAbstractContractLine(models.AbstractModel):
     )
     def _compute_price_unit(self):
         """Get the specific price if no auto-price, and the price obtained
-        from the pricelist otherwise.
+        from the pricelist otherwise. If the line name contains 'prenájom',
+        use x_zlavnena_cena as the price unit.
         """
         for line in self:
-            if line.automatic_price and line.product_id:
+            if line.name and "prenájom" in line.name.lower():
+                line.price_unit = line.x_zlavnena_cena if line.x_zlavnena_cena else 0.0
+            elif line.automatic_price and line.product_id:
                 pricelist = (
                     line.contract_id.pricelist_id
                     or line.contract_id.partner_id.with_company(
