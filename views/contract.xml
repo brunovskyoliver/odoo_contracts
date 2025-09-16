@@ -296,7 +296,7 @@
                                 readonly="is_terminated"
                                 invisible="not line_recurrence"
                                 widget="section_and_note_one2many"
-                                context="{'default_contract_type': contract_type}"
+                                context="{'default_contract_type': contract_type, 'default_recurring_next_date': recurring_next_date, 'default_x_datum_viazanosti_produktu': x_datum_viazanost}"
                             >
                                 <list
                                     decoration-muted="is_canceled"
