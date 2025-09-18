@@ -74,7 +74,7 @@ class ContractMobileService(models.Model):
         
         # Check if we have exactly 9 digits after removing prefix
         if len(cleaned_number) != 9:
-            raise ValidationError(_('Phone number must have exactly 9 digits (without prefix) or 12 digits (with 421 prefix). Got: %s') % phone_number)
+            raise ValidationError(_('Chybne telefonne cislo, musi mat presne 9 cifier bez prefixu alebo 12 cifier (s 421). Ziskane: %s') % phone_number)
             
         return '421' + cleaned_number
 
