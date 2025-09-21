@@ -6,12 +6,32 @@ from odoo.exceptions import ValidationError, UserError
 from datetime import datetime
 
 
+class ContractInventoryLocation(models.Model):
+    _name = 'contract.inventory.location'
+    _description = 'Contract Inventory Location'
+    _order = 'name'
+
+    name = fields.Char(string='Názov miesta', required=True)
+    active = fields.Boolean(default=True)
+    inventory_id = fields.Many2one(
+        'contract.inventory',
+        string='Inventory',
+        required=True,
+        ondelete='cascade'
+    )
+
+
 class ContractInventory(models.Model):
     _name = "contract.inventory"
     _description = "Skladovanie inventára zmluvy"
     _inherit = ['mail.thread', 'mail.activity.mixin']
 
     name = fields.Char(string="Názov", required=True, copy=False, tracking=True)
+    location_ids = fields.One2many(
+        'contract.inventory.location',
+        'inventory_id',
+        string='Locations'
+    )
     code = fields.Char(string="Kód", copy=False, tracking=True)
     warehouse_id = fields.Many2one(
         'stock.warehouse',
@@ -148,6 +168,11 @@ class ContractInventoryLine(models.Model):
         string="Inventár",
         required=True,
         ondelete="cascade",
+    )
+    location_id = fields.Many2one(
+        comodel_name="contract.inventory.location",
+        string="Miesto",
+        domain="[('inventory_id', '=', inventory_id)]"
     )
     product_id = fields.Many2one(
         comodel_name="product.product",
