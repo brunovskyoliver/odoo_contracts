@@ -6,3 +6,4 @@ from . import stock_location_select
 
 from . import contract_inventory_bulk_return_wizard_line
 from . import contract_inventory_bulk_return_wizard
+from . import contract_inventory_line_export

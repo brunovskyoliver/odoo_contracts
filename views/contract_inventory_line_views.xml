@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Contract Inventory Line Tree View -->
+    <record id="contract_inventory_line_tree_view" model="ir.ui.view">
+        <field name="name">contract.inventory.line.tree.view</field>
+        <field name="model">contract.inventory.line</field>
+        <field name="arch" type="xml">
+            <list string="Inventárne riadky" multi_edit="1">
+                <header>
+                    <button name="%(contract.action_contract_inventory_line_export_wizard)d"
+                            type="action"
+                            class="btn btn-primary"
+                            string="Export inventára"/>
+                </header>
+                <field name="inventory_id"/>
+                <field name="product_id"/>
+                <field name="location_id"/>
+                <field name="quantity"/>
+                <field name="uom_id"/>
+            </list>
+        </field>
+    </record>
+</odoo>

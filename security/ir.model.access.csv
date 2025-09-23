@@ -42,3 +42,5 @@
 "access_contract_inventory_bulk_return_wizard_line_user","Contract Inventory Bulk Return Wizard Line User","model_contract_inventory_bulk_return_wizard_line","account.group_account_invoice",1,1,1,1
 "contract_inventory_location_manager","Contract Inventory Location Manager","model_contract_inventory_location","account.group_account_manager",1,1,1,1
 "contract_inventory_location_user","Contract Inventory Location User","model_contract_inventory_location","account.group_account_invoice",1,1,1,0
+"access_contract_inventory_line_export_wizard_manager","Contract Inventory Line Export Wizard Manager","model_contract_inventory_line_export_wizard","account.group_account_manager",1,1,1,1
+"access_contract_inventory_line_export_wizard_user","Contract Inventory Line Export Wizard User","model_contract_inventory_line_export_wizard","account.group_account_invoice",1,1,1,1

@@ -124,10 +124,4 @@
         </field>
     </record>
     
-    <!-- Menu Item for Contract Line Inventory -->
-    <menuitem id="menu_contract_line_inventory"
-              name="Contract Products"
-              action="action_contract_line_inventory"
-              parent="contract.menu_contract_inventory_root"
-              sequence="3"/>
 </odoo>

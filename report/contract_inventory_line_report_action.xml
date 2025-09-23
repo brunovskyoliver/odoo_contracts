@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="report_contract_inventory_lines_action" model="ir.actions.report">
+        <field name="name">Položky inventára</field>
+        <field name="model">contract.inventory.line</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">contract.report_contract_inventory_lines</field>
+        <field name="report_file">contract.report_contract_inventory_lines</field>
+        <field name="binding_model_id" ref="model_contract_inventory_line"/>
+        <field name="binding_type">report</field>
+    </record>
+</odoo>
