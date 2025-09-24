@@ -1328,6 +1328,7 @@ class ContractMobileUsageReport(models.Model):
         # If we're here, user is already on a suitable plan
         return None, None
 
+    
     @api.model
     def check_service_usage_patterns(self):
         """
@@ -1378,12 +1379,12 @@ class ContractMobileUsageReport(models.Model):
                             phone_patterns[line.phone_number] = []
                         phone_patterns[line.phone_number].append({
                             'date': report.date,
-                            'data_usage': line.total_data_usage,  # Use total data usage instead of excess
+                            'data_usage': line.total_data_usage,  # MB
                             'basic_plan': line.basic_plan,
                             'mobile_service': line.mobile_service_id,
                             'total_cost': line.total_cost,
-                            'sms_mms_usage': line.total_sms_mms_usage,  # Track SMS/MMS usage
-                            'voice_usage': line.total_call_usage,  # Track voice usage
+                            'sms_mms_usage': line.total_sms_mms_usage,   # count
+                            'voice_usage': line.total_call_usage,        # seconds
                         })
 
                 # Check patterns for each phone number
@@ -1405,72 +1406,111 @@ class ContractMobileUsageReport(models.Model):
                     # Sort by date
                     usages.sort(key=lambda x: x['date'])
                     
-                    # Analyze data usage
+                    # Analyze usage
                     high_usage_months = 0
-                    total_usage_gb = 0
+                    total_usage_gb = 0.0
+
                     high_sms_months = 0
                     total_sms_count = 0
+
+                    high_voice_months = 0
+                    total_voice_seconds = 0
+
                     current_plan = usages[-1]['basic_plan']
                     current_plan_size = self._get_plan_data_size(current_plan)
-                    sms_limit = None
+
+                    # Thresholds based on plan name
                     plan_lower = current_plan.lower()
-                    if "nekonečno" in plan_lower: # treat NOVEM 10GB as unlimited
-                        sms_limit = None  # skip SMS check
+
+                    # SMS/MMS limits
+                    if "nekonečno" in plan_lower:
+                        sms_limit = None
                     elif "fér" in plan_lower:
                         sms_limit = 40
                     elif "250" in plan_lower or "150" in plan_lower:
                         sms_limit = 100
                     else:
-                        sms_limit = None  # default limit if you want one
+                        sms_limit = None  # default finite-plan limit
 
-                    
+                    # Voice limits (in minutes/month)
+                    voice_limit = None
+                    if "fér" in plan_lower:
+                        voice_limit = 50
+                    elif "250" in plan_lower:
+                        voice_limit = 250
+                    elif "150" in plan_lower:
+                        voice_limit = 150
+                    # else: None -> no voice check
+
                     for usage in usages:
-                        # Convert data_usage from MB to GB
-                        gb_usage = usage['data_usage'] / 1024  # Convert MB to GB
+                        # Data
+                        gb_usage = usage['data_usage'] / (1024 ** 3)  # MB -> GB
                         total_usage_gb += gb_usage
-                        sms_count = usage.get('sms_mms_usage', 0)
-                        total_sms_count += sms_count
-                        # Consider it high usage if exceeding 90% of the current plan
+
+                        # High data month?
                         if current_plan_size > 0.5 and gb_usage > (current_plan_size * 0.9):
                             high_usage_months += 1
-                        # For plans with no data or 0.5GB, consider anything over 2GB as high
                         elif current_plan_size <= 0.5 and gb_usage > 2:
                             high_usage_months += 1
 
+                        # SMS/MMS
+                        sms_count = usage.get('sms_mms_usage', 0)
+                        total_sms_count += sms_count
                         if sms_limit and sms_count > sms_limit:
                             high_sms_months += 1
 
+                        # Voice (seconds -> minutes)
+                        voice_seconds = usage.get('voice_usage', 0) or 0
+                        total_voice_seconds += voice_seconds
+                        if voice_limit:
+                            voice_mins_this_month = voice_seconds / 60.0
+                            if voice_mins_this_month > voice_limit:
+                                high_voice_months += 1
 
-                    avg_monthly_usage_gb = total_usage_gb / len(usages)
+                    # Aggregates
+                    months_n = len(usages)
+
+                    avg_monthly_usage_gb = total_usage_gb / months_n
                     max_usage = max(usages, key=lambda x: x['data_usage'])
-                    max_usage_gb = max_usage['data_usage'] / 1024  # Convert MB to GB, same as above
+                    max_usage_gb = max_usage['data_usage'] / (1024 ** 3)
                     max_usage_month = max_usage['date'].strftime('%m/%Y')
 
-                    avg_monthly_sms = total_sms_count / len(usages)
+                    avg_monthly_sms = total_sms_count / months_n
                     max_sms = max(usages, key=lambda x: x.get('sms_mms_usage', 0))
                     max_sms_count = max_sms.get('sms_mms_usage', 0)
                     max_sms_month = max_sms['date'].strftime('%m/%Y')
 
-                    # Check for potential upgrades (high usage) or downgrades (low usage)
-                    issue_data = None
-                    
-                    if high_usage_months >= 2 or (sms_limit and high_sms_months >= 2):  # Consistently high data or SMS usage
+                    avg_monthly_voice_mins = (total_voice_seconds / 60.0) / months_n if months_n else 0.0
+                    max_voice = max(usages, key=lambda x: x.get('voice_usage', 0) or 0)
+                    max_voice_mins = (max_voice.get('voice_usage', 0) or 0) / 60.0
+                    max_voice_month = max_voice['date'].strftime('%m/%Y')
+
+                    # Decision: upgrades/downgrades
+                    if (high_usage_months >= 2) or (sms_limit and high_sms_months >= 2) or (voice_limit and high_voice_months >= 2):
+                        # Recommend a higher data plan (data-based)
                         recommended_plan, recommended_size = self._get_next_recommended_plan(
                             current_plan,
                             avg_monthly_usage_gb
                         )
 
-                        # Adjust if SMS overuse requires a stronger plan
+                        # If SMS overuse, force into NOVEM 250 family (keep data size)
                         sms_needs_upgrade = sms_limit and high_sms_months >= 2
-                        if sms_needs_upgrade:
-                            if "250" not in current_plan:
-                                # Keep recommended_size if present, otherwise current size
-                                size_for_suffix = recommended_size or current_plan_size
-                                size_suffix = f"{size_for_suffix}GB" if size_for_suffix else "bez dát"
-                                recommended_plan = f"NOVEM 250 {size_suffix}"
-                                recommended_size = size_for_suffix
+                        if sms_needs_upgrade and "250" not in current_plan:
+                            size_for_suffix = recommended_size or current_plan_size
+                            size_suffix = f"{size_for_suffix}GB" if size_for_suffix else "bez dát"
+                            recommended_plan = f"NOVEM 250 {size_suffix}"
+                            recommended_size = size_for_suffix
 
-                        if recommended_plan:  # Only add to issues if there's a recommended upgrade
+                        # If Voice overuse, also force into appropriate family; preference: keep NOVEM 250 if already chosen
+                        voice_needs_upgrade = voice_limit and high_voice_months >= 2
+                        if voice_needs_upgrade and "250" not in (recommended_plan or current_plan):
+                            # Align to NOVEM 250 (voice limit 250) while keeping/bumping data size as already recommended
+                            size_for_suffix = recommended_size or current_plan_size
+                            size_suffix = f"{size_for_suffix}GB" if size_for_suffix else "bez dát"
+                            recommended_plan = f"NOVEM 250 {size_suffix}"
+                            recommended_size = size_for_suffix
+
+                        if recommended_plan:
                             issues_found.append({
                                 'partner_name': partner.name,
                                 'phone_number': phone,
@@ -1481,24 +1521,28 @@ class ContractMobileUsageReport(models.Model):
                                 'max_usage_month': max_usage_month,
                                 'recommended_plan': recommended_plan,
                                 'recommended_plan_size': recommended_size,
-                                'months_analyzed': len(usages),
+                                'months_analyzed': months_n,
                                 'high_usage_months': high_usage_months,
+                                # SMS fields
                                 'avg_monthly_sms': avg_monthly_sms,
                                 'max_sms_count': max_sms_count,
                                 'max_sms_month': max_sms_month,
                                 'high_sms_months': high_sms_months,
                                 'sms_limit': sms_limit,
+                                # Voice fields
+                                'avg_monthly_voice_mins': avg_monthly_voice_mins,
+                                'max_voice_mins': max_voice_mins,
+                                'max_voice_month': max_voice_month,
+                                'high_voice_months': high_voice_months,
+                                'voice_limit': voice_limit,
                                 'type': 'upgrade',
                             })
 
-                                                    
-                    # Check for potential downgrades
-                    elif current_plan_size > 0.5:  # Don't suggest downgrades for minimal plans
-                        # Calculate average usage percentage of current plan
+                    elif current_plan_size > 0.5:
+                        # Possible downgrade only if current plan has more than 0.5 GB (data-based only, unchanged)
                         usage_percentage = (avg_monthly_usage_gb / current_plan_size) * 100
                         max_usage_percentage = (max_usage_gb / current_plan_size) * 100
                         
-                        # If using less than 30% of plan consistently and max usage never exceeded 50%
                         if usage_percentage < 30 and max_usage_percentage < 50:
                             # Define available plans in descending order
                             plans = [
@@ -1536,11 +1580,12 @@ class ContractMobileUsageReport(models.Model):
                                     'max_usage_month': max_usage_month,
                                     'recommended_plan': next_lower_plan,
                                     'recommended_plan_size': next_lower_size,
-                                    'months_analyzed': len(usages),
+                                    'months_analyzed': months_n,
                                     'high_usage_months': high_usage_months,
                                     'type': 'downgrade',
-                                    'recommended_size': next_lower_size})
-                    
+                                    'recommended_size': next_lower_size
+                                })
+            
             # If issues found, send email report
             if issues_found:
                 # Split issues into upgrades and downgrades
@@ -1570,9 +1615,13 @@ class ContractMobileUsageReport(models.Model):
                     if not rows:
                         return ""
 
-                    # Detect if this section contains any SMS-related info
+                    # Detect if this section contains any SMS/Voice-related info
                     has_sms = any(
                         r.get('avg_monthly_sms') is not None or r.get('max_sms_count') is not None
+                        for r in rows
+                    )
+                    has_voice = any(
+                        r.get('avg_monthly_voice_mins') is not None or r.get('max_voice_mins') is not None
                         for r in rows
                     )
 
@@ -1591,6 +1640,12 @@ class ContractMobileUsageReport(models.Model):
                             "<th style='{th}'>Priemerný počet SMS/MMS</th>",
                             "<th style='{th}'>Najvyšší počet SMS/MMS</th>",
                             "<th style='{th}'>Mesiac najvyššieho počtu SMS/MMS</th>",
+                        ]
+                    if has_voice:
+                        header_cells += [
+                            "<th style='{th}'>Priemerné minúty hovoru</th>",
+                            "<th style='{th}'>Najviac minút hovoru</th>",
+                            "<th style='{th}'>Mesiac najvyššieho počtu minút</th>",
                         ]
                     header_cells += [
                         "<th style='{th}'>Odporúčaný plán</th>",
@@ -1617,6 +1672,12 @@ class ContractMobileUsageReport(models.Model):
                                 f"<td style='{td_style}'>{int(r['max_sms_count']) if r.get('max_sms_count') is not None else '-'}</td>",
                                 f"<td style='{td_style}'>{r.get('max_sms_month') or '-'}</td>",
                             ]
+                        if has_voice:
+                            row_cells += [
+                                f"<td style='{td_style}'>{int(round(r.get('avg_monthly_voice_mins', 0))) if r.get('avg_monthly_voice_mins') is not None else '-'}</td>",
+                                f"<td style='{td_style}'>{int(round(r.get('max_voice_mins', 0))) if r.get('max_voice_mins') is not None else '-'}</td>",
+                                f"<td style='{td_style}'>{r.get('max_voice_month') or '-'}</td>",
+                            ]
                         row_cells += [
                             f"<td style='{td_style}'>{r['recommended_plan']}</td>",
                             f"<td style='{td_style}'>{r['recommended_plan_size']:.1f}</td>",
@@ -1633,7 +1694,6 @@ class ContractMobileUsageReport(models.Model):
                         f"</table>"
                     )
 
-
                 date_from = start_date.strftime('%d.%m.%Y')
                 today = fields.Date.today()
                 last_day_of_month = today.replace(day=1) - timedelta(days=1)
@@ -1642,9 +1702,9 @@ class ContractMobileUsageReport(models.Model):
                 email_body = (
                     f"<div style='{container_style}'>"
                     f"<h2 style='{h2_style}'>Sledovanie nadspotreby {date_from} – {date_to}</h2>"
-                    f"<p style='{p_style}'>Automatický prehľad odporúčaných úprav dátových balíkov podľa spotreby za sledované obdobie.</p>"
-                    f"{render_section('Odporúčané zvýšenie dátového balíka', '#d35400', upgrades)}"
-                    f"{render_section('Odporúčané zníženie dátového balíka', '#27ae60', downgrades)}"
+                    f"<p style='{p_style}'>Automatický prehľad odporúčaných úprav balíkov podľa spotreby za sledované obdobie.</p>"
+                    f"{render_section('Odporúčané zvýšenie balíka', '#d35400', upgrades)}"
+                    f"{render_section('Odporúčané zníženie balíka', '#27ae60', downgrades)}"
                     f"</div>"
                 )
 
@@ -1657,7 +1717,6 @@ class ContractMobileUsageReport(models.Model):
                 }
                 self.env['mail.mail'].create(mail_values).send()
 
-                
                 # Update last run timestamp
                 self.env['ir.config_parameter'].sudo().set_param(
                     'last_usage_pattern_check', 
@@ -1666,6 +1725,7 @@ class ContractMobileUsageReport(models.Model):
 
         except Exception as e:
             _logger.error(f"Error in service usage pattern analysis: {str(e)}")
+
 
 class ContractMobileUsageReportLine(models.Model):
     _name = "contract.mobile.usage.report.line"
