@@ -962,6 +962,9 @@ class ContractMobileUsageReport(models.Model):
                                 'basic_plan_cost': 0.0,
                                 'excess_usage_cost': 0.0,
                                 'total_cost': 0.0,
+                                'total_data_usage': 0.0,  # Track total data usage
+                                'total_sms_mms_usage': 0.0,  # Track total SMS/MMS count
+                                'total_call_usage': 0.0,  # Track total call duration
                                 'excess_data_usage': 0.0,
                                 'excess_voice_usage': 0.0,
                                 'excess_sms_usage': 0.0,
@@ -974,11 +977,17 @@ class ContractMobileUsageReport(models.Model):
                             data['basic_plan'] = line.service_name
                             data['basic_plan_cost'] = line.total
                         elif line.service_type == 'data':
-                            data['excess_data_usage'] += line.quantity
+                            data['total_data_usage'] += line.quantity  # Track ALL data usage
+                            if line.is_excess_usage:
+                                data['excess_data_usage'] += line.quantity
                         elif line.service_type == 'voice':
-                            data['excess_voice_usage'] += line.quantity
+                            data['total_call_usage'] += line.quantity  # Track ALL call duration
+                            if line.is_excess_usage:
+                                data['excess_voice_usage'] += line.quantity
                         elif line.service_type in ['sms', 'mms']:
-                            data['excess_sms_usage'] += line.quantity
+                            data['total_sms_mms_usage'] += line.quantity  # Track ALL SMS/MMS
+                            if line.is_excess_usage:
+                                data['excess_sms_usage'] += line.quantity
                         
                         if line.is_excess_usage:
                             data['excess_usage_cost'] += line.total
@@ -996,6 +1005,9 @@ class ContractMobileUsageReport(models.Model):
                             'basic_plan_cost': data['basic_plan_cost'],
                             'excess_usage_cost': data['excess_usage_cost'],
                             'total_cost': data['total_cost'],
+                            'total_data_usage': data['total_data_usage'],  # Add total data usage
+                            'total_sms_mms_usage': data['total_sms_mms_usage'],  # Add total SMS/MMS usage
+                            'total_call_usage': data['total_call_usage'],  # Add total call usage
                             'excess_data_usage': data['excess_data_usage'],
                             'excess_voice_usage': data['excess_voice_usage'],
                             'excess_sms_usage': data['excess_sms_usage'],
@@ -1223,6 +1235,438 @@ class ContractMobileUsageReport(models.Model):
         except Exception as e:
             _logger.error(f"Error generating Excel report: {str(e)}")
             return False
+    def _normalize_plan_name(self, plan_name):
+        """Normalize plan name from e-Net to NOVEM format"""
+        if not plan_name:
+            return ''
+        
+        name = plan_name.strip()
+        # Convert e-Net to NOVEM
+        if "e-Net" in name:
+            name = name.replace("e-Net", "NOVEM")
+        
+        # Handle minutes in name
+        if "minút" in name:
+            name = name.replace("minút", "")
+        elif "minut" in name:
+            name = name.replace("minut", "")
+        
+        # Handle nekonečno
+        if "nekonečno" in name:
+            # Remove nekonečno and keep the data part
+            name = name.replace("nekonečno", "").strip()
+            name = f"NOVEM {name}"
+        
+        return name
+
+    def _get_plan_data_size(self, plan_name):
+        """Extract data size in GB from plan name"""
+        if not plan_name or 'bez dát' in plan_name:
+            return 0
+        
+        try:
+            # Extract number followed by GB
+            match = re.search(r'(\d+(?:,\d+)?)\s*GB', plan_name)
+            if match:
+                # Replace comma with dot for proper float conversion
+                size = float(match.group(1).replace(',', '.'))
+                return size
+            # Handle specific case for 0.5GB
+            if '0,5GB' in plan_name:
+                return 0.5
+            return 0
+        except:
+            return 0
+
+    def _get_next_recommended_plan(self, current_plan, avg_monthly_usage_gb):
+        """
+        Get the next recommended plan based on usage.
+        Returns tuple (plan_name, plan_data_gb)
+        """
+        # Define available data plans (GB) and their names
+        plans = [
+            (0, 'bez dát'),
+            (0.5, '0,5GB'),
+            (6, '6GB'),
+            (10, '10GB'),
+            (20, '20GB'),
+            (30, '30GB'),
+            (50, '50GB')
+        ]
+        
+        # Normalize current plan name
+        current_plan = self._normalize_plan_name(current_plan)
+        
+        # Determine plan type (Fér/250/regular)
+        prefix = "NOVEM "
+        if "Fér" in current_plan:
+            prefix = "NOVEM Fér "
+        elif "150" in current_plan:
+            prefix = "NOVEM 150 "
+        elif "250" in current_plan:
+            prefix = "NOVEM 250 "
+
+        # Get current plan size
+        current_size = self._get_plan_data_size(current_plan)
+        
+        # Don't recommend upgrade if usage is less than 90% of current plan
+        if current_size > 0 and avg_monthly_usage_gb < (current_size * 0.9):
+            return None, None
+
+        # For small plans (0.5GB), only upgrade if usage is significantly higher
+        if current_size <= 0.5 and avg_monthly_usage_gb < 2:
+            next_size = 0.5 if current_size == 0 else 6
+            # simply build the suffix yourself; no need for index()
+            suffix = '0,5GB' if next_size == 0.5 else f'{int(next_size)}GB'
+            return f"{prefix}{suffix}", next_size
+
+        # Find next suitable plan
+        for size, suffix in plans:
+            if size > current_size and size >= avg_monthly_usage_gb * 1.1:  # Give 10% buffer
+                return f"{prefix}{suffix}", size
+                
+        # If we're here, user is already on a suitable plan
+        return None, None
+
+    @api.model
+    def check_service_usage_patterns(self):
+        """
+        Check the last 3 months of usage reports to identify users with consistently high data usage
+        that might benefit from a different service plan.
+        """
+        try:
+            # Prevent duplicate runs by checking last execution
+            last_run = self.env['ir.config_parameter'].sudo().get_param('last_usage_pattern_check')
+            if last_run:
+                last_run_dt = fields.Datetime.from_string(last_run)
+                if last_run_dt + timedelta(minutes=1) > fields.Datetime.now():
+                    _logger.info("Skipping usage pattern check - already run within 1 minute")
+                    return
+
+            # Get reports for last 3 full months (shifted back by one month since we analyze previous month's data)
+            today = fields.Date.today()
+            end_date = today.replace(day=1) - timedelta(days=1)  # Last day of previous month
+            start_date = end_date.replace(day=1)  # First day of previous month
+            start_date = start_date - timedelta(days=start_date.day)  # Last day of month before
+            start_date = start_date.replace(day=1)  # First day
+            start_date = start_date - timedelta(days=start_date.day)  # Last day of month before
+            start_date = start_date.replace(day=1)  # First day of the third month back
+            
+            recent_reports = self.env['contract.mobile.usage.report'].search([
+                ('date', '>=', start_date),
+                ('date', '<=', end_date),
+                ('state', '=', 'done')
+            ])
+
+            # Group reports by partner
+            partner_reports = {}
+            for report in recent_reports:
+                if report.partner_id not in partner_reports:
+                    partner_reports[report.partner_id] = []
+                partner_reports[report.partner_id].append(report)
+
+            # Analyze patterns for each partner
+            issues_found = []
+            for partner, reports in partner_reports.items():
+                if len(reports) < 2:  # Need at least 2 months of data
+                    continue
+
+                phone_patterns = {}
+                for report in reports:
+                    for line in report.report_line_ids:
+                        if line.phone_number not in phone_patterns:
+                            phone_patterns[line.phone_number] = []
+                        phone_patterns[line.phone_number].append({
+                            'date': report.date,
+                            'data_usage': line.total_data_usage,  # Use total data usage instead of excess
+                            'basic_plan': line.basic_plan,
+                            'mobile_service': line.mobile_service_id,
+                            'total_cost': line.total_cost,
+                            'sms_mms_usage': line.total_sms_mms_usage,  # Track SMS/MMS usage
+                            'voice_usage': line.total_call_usage,  # Track voice usage
+                        })
+
+                # Check patterns for each phone number
+                for phone, usages in phone_patterns.items():
+                    if len(usages) < 2:  # Need at least 2 months of data for this number
+                        continue
+                        
+                    # Check if the number is still active in contract.mobile.service
+                    active_service = self.env['contract.mobile.service'].search([
+                        ('phone_number', '=', phone),
+                        ('partner_id', '=', partner.id),
+                        ('is_active', '=', True)
+                    ], limit=1)
+                    
+                    if not active_service:
+                        _logger.info(f"Skipping phone {phone} - no longer active for partner {partner.name}")
+                        continue
+
+                    # Sort by date
+                    usages.sort(key=lambda x: x['date'])
+                    
+                    # Analyze data usage
+                    high_usage_months = 0
+                    total_usage_gb = 0
+                    high_sms_months = 0
+                    total_sms_count = 0
+                    current_plan = usages[-1]['basic_plan']
+                    current_plan_size = self._get_plan_data_size(current_plan)
+                    sms_limit = None
+                    plan_lower = current_plan.lower()
+                    if "nekonečno" in plan_lower: # treat NOVEM 10GB as unlimited
+                        sms_limit = None  # skip SMS check
+                    elif "fér" in plan_lower:
+                        sms_limit = 40
+                    elif "250" in plan_lower or "150" in plan_lower:
+                        sms_limit = 100
+                    else:
+                        sms_limit = None  # default limit if you want one
+
+                    
+                    for usage in usages:
+                        # Convert data_usage from MB to GB
+                        gb_usage = usage['data_usage'] / 1024  # Convert MB to GB
+                        total_usage_gb += gb_usage
+                        sms_count = usage.get('sms_mms_usage', 0)
+                        total_sms_count += sms_count
+                        # Consider it high usage if exceeding 90% of the current plan
+                        if current_plan_size > 0.5 and gb_usage > (current_plan_size * 0.9):
+                            high_usage_months += 1
+                        # For plans with no data or 0.5GB, consider anything over 2GB as high
+                        elif current_plan_size <= 0.5 and gb_usage > 2:
+                            high_usage_months += 1
+
+                        if sms_limit and sms_count > sms_limit:
+                            high_sms_months += 1
+
+
+                    avg_monthly_usage_gb = total_usage_gb / len(usages)
+                    max_usage = max(usages, key=lambda x: x['data_usage'])
+                    max_usage_gb = max_usage['data_usage'] / 1024  # Convert MB to GB, same as above
+                    max_usage_month = max_usage['date'].strftime('%m/%Y')
+
+                    avg_monthly_sms = total_sms_count / len(usages)
+                    max_sms = max(usages, key=lambda x: x.get('sms_mms_usage', 0))
+                    max_sms_count = max_sms.get('sms_mms_usage', 0)
+                    max_sms_month = max_sms['date'].strftime('%m/%Y')
+
+                    # Check for potential upgrades (high usage) or downgrades (low usage)
+                    issue_data = None
+                    
+                    if high_usage_months >= 2 or (sms_limit and high_sms_months >= 2):  # Consistently high data or SMS usage
+                        recommended_plan, recommended_size = self._get_next_recommended_plan(
+                            current_plan,
+                            avg_monthly_usage_gb
+                        )
+
+                        # Adjust if SMS overuse requires a stronger plan
+                        sms_needs_upgrade = sms_limit and high_sms_months >= 2
+                        if sms_needs_upgrade:
+                            if "250" not in current_plan:
+                                # Keep recommended_size if present, otherwise current size
+                                size_for_suffix = recommended_size or current_plan_size
+                                size_suffix = f"{size_for_suffix}GB" if size_for_suffix else "bez dát"
+                                recommended_plan = f"NOVEM 250 {size_suffix}"
+                                recommended_size = size_for_suffix
+
+                        if recommended_plan:  # Only add to issues if there's a recommended upgrade
+                            issues_found.append({
+                                'partner_name': partner.name,
+                                'phone_number': phone,
+                                'current_plan': handle_o2_service_name(current_plan),
+                                'current_plan_size': current_plan_size,
+                                'avg_monthly_usage_gb': avg_monthly_usage_gb,
+                                'max_usage_gb': max_usage_gb,
+                                'max_usage_month': max_usage_month,
+                                'recommended_plan': recommended_plan,
+                                'recommended_plan_size': recommended_size,
+                                'months_analyzed': len(usages),
+                                'high_usage_months': high_usage_months,
+                                'avg_monthly_sms': avg_monthly_sms,
+                                'max_sms_count': max_sms_count,
+                                'max_sms_month': max_sms_month,
+                                'high_sms_months': high_sms_months,
+                                'sms_limit': sms_limit,
+                                'type': 'upgrade',
+                            })
+
+                                                    
+                    # Check for potential downgrades
+                    elif current_plan_size > 0.5:  # Don't suggest downgrades for minimal plans
+                        # Calculate average usage percentage of current plan
+                        usage_percentage = (avg_monthly_usage_gb / current_plan_size) * 100
+                        max_usage_percentage = (max_usage_gb / current_plan_size) * 100
+                        
+                        # If using less than 30% of plan consistently and max usage never exceeded 50%
+                        if usage_percentage < 30 and max_usage_percentage < 50:
+                            # Define available plans in descending order
+                            plans = [
+                                (50, '50GB'), (30, '30GB'), (20, '20GB'),
+                                (10, '10GB'), (6, '6GB'), (0.5, '0,5GB')
+                            ]
+                            
+                            # Find the next plan down that would still comfortably handle max usage
+                            next_lower_plan = None
+                            next_lower_size = 0
+                            
+                            for size, suffix in plans:
+                                if size < current_plan_size and size >= max_usage_gb * 1.5:  # 50% buffer
+                                    prefix = ""
+                                    if "Fér" in current_plan:
+                                        prefix = "NOVEM Fér "
+                                    elif "250" in current_plan:
+                                        prefix = "NOVEM 250 "
+                                    elif "150" in current_plan:
+                                        prefix = "NOVEM 150 "
+                                    else:
+                                        prefix = "NOVEM "
+                                    next_lower_plan = f"{prefix}{suffix}"
+                                    next_lower_size = size
+                                    break
+                            
+                            if next_lower_plan:
+                                issues_found.append({
+                                    'partner_name': partner.name,
+                                    'phone_number': phone,
+                                    'current_plan': handle_o2_service_name(current_plan),
+                                    'current_plan_size': current_plan_size,
+                                    'avg_monthly_usage_gb': avg_monthly_usage_gb,
+                                    'max_usage_gb': max_usage_gb,
+                                    'max_usage_month': max_usage_month,
+                                    'recommended_plan': next_lower_plan,
+                                    'recommended_plan_size': next_lower_size,
+                                    'months_analyzed': len(usages),
+                                    'high_usage_months': high_usage_months,
+                                    'type': 'downgrade',
+                                    'recommended_size': next_lower_size})
+                    
+            # If issues found, send email report
+            if issues_found:
+                # Split issues into upgrades and downgrades
+                upgrades = [i for i in issues_found if i['type'] == 'upgrade']
+                downgrades = [i for i in issues_found if i['type'] == 'downgrade']
+
+                # Common inline styles (email-safe)
+                container_style = (
+                    "font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, "
+                    "Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;"
+                    "line-height:1.5;color:#111827;"
+                )
+                h2_style = "margin:0 0 8px 0;font-size:18px;font-weight:700;color:#111827;"
+                p_style = "margin:0 0 16px 0;font-size:14px;color:#374151;"
+                section_title = "margin:24px 0 8px 0;font-size:16px;font-weight:700;"
+                table_style = (
+                    "width:100%;border-collapse:collapse;margin:8px 0 16px 0;"
+                    "font-size:13px;table-layout:auto;"
+                )
+                th_style = (
+                    "text-align:left;padding:8px 10px;border:1px solid #E5E7EB;"
+                    "background:#F9FAFB;font-weight:600;white-space:nowrap;"
+                )
+                td_style = "padding:8px 10px;border:1px solid #E5E7EB;vertical-align:top;"
+
+                def render_section(title_text, title_color, rows):
+                    if not rows:
+                        return ""
+
+                    # Detect if this section contains any SMS-related info
+                    has_sms = any(
+                        r.get('avg_monthly_sms') is not None or r.get('max_sms_count') is not None
+                        for r in rows
+                    )
+
+                    # Build the header dynamically
+                    header_cells = [
+                        "<th style='{th}'>Partner</th>",
+                        "<th style='{th}'>Telefónne číslo</th>",
+                        "<th style='{th}'>Aktuálny plán</th>",
+                        "<th style='{th}'>Aktuálne dáta (GB)</th>",
+                        "<th style='{th}'>Priemerná mesačná spotreba (GB)</th>",
+                        "<th style='{th}'>Najvyššia spotreba (GB)</th>",
+                        "<th style='{th}'>Mesiac najvyššej spotreby</th>",
+                    ]
+                    if has_sms:
+                        header_cells += [
+                            "<th style='{th}'>Priemerný počet SMS/MMS</th>",
+                            "<th style='{th}'>Najvyšší počet SMS/MMS</th>",
+                            "<th style='{th}'>Mesiac najvyššieho počtu SMS/MMS</th>",
+                        ]
+                    header_cells += [
+                        "<th style='{th}'>Odporúčaný plán</th>",
+                        "<th style='{th}'>Odporúčaný dátový objem (GB)</th>",
+                        "<th style='{th}'>Analyzované mesiace</th>",
+                    ]
+                    header = "<tr>" + "".join(c.format(th=th_style) for c in header_cells) + "</tr>"
+
+                    # Build body rows
+                    body_rows = []
+                    for r in rows:
+                        row_cells = [
+                            f"<td style='{td_style}'>{r['partner_name']}</td>",
+                            f"<td style='{td_style}'>{r['phone_number']}</td>",
+                            f"<td style='{td_style}'>{r['current_plan']}</td>",
+                            f"<td style='{td_style}'>{r['current_plan_size']:.1f}</td>",
+                            f"<td style='{td_style}'>{r['avg_monthly_usage_gb']:.1f}</td>",
+                            f"<td style='{td_style}'>{r['max_usage_gb']:.1f}</td>",
+                            f"<td style='{td_style}'>{r['max_usage_month']}</td>",
+                        ]
+                        if has_sms:
+                            row_cells += [
+                                f"<td style='{td_style}'>{int(r['avg_monthly_sms']) if r.get('avg_monthly_sms') is not None else '-'}</td>",
+                                f"<td style='{td_style}'>{int(r['max_sms_count']) if r.get('max_sms_count') is not None else '-'}</td>",
+                                f"<td style='{td_style}'>{r.get('max_sms_month') or '-'}</td>",
+                            ]
+                        row_cells += [
+                            f"<td style='{td_style}'>{r['recommended_plan']}</td>",
+                            f"<td style='{td_style}'>{r['recommended_plan_size']:.1f}</td>",
+                            f"<td style='{td_style}'>{r['months_analyzed']}</td>",
+                        ]
+                        body_rows.append("<tr>" + "".join(row_cells) + "</tr>")
+
+                    # Put together
+                    return (
+                        f"<h3 style='{section_title}color:{title_color};'>{title_text}</h3>"
+                        f"<table role='table' style='{table_style}'>"
+                        f"<thead>{header}</thead>"
+                        f"<tbody>{''.join(body_rows)}</tbody>"
+                        f"</table>"
+                    )
+
+
+                date_from = start_date.strftime('%d.%m.%Y')
+                today = fields.Date.today()
+                last_day_of_month = today.replace(day=1) - timedelta(days=1)
+                date_to = last_day_of_month.strftime('%d.%m.%Y')
+
+                email_body = (
+                    f"<div style='{container_style}'>"
+                    f"<h2 style='{h2_style}'>Sledovanie nadspotreby {date_from} – {date_to}</h2>"
+                    f"<p style='{p_style}'>Automatický prehľad odporúčaných úprav dátových balíkov podľa spotreby za sledované obdobie.</p>"
+                    f"{render_section('Odporúčané zvýšenie dátového balíka', '#d35400', upgrades)}"
+                    f"{render_section('Odporúčané zníženie dátového balíka', '#27ae60', downgrades)}"
+                    f"</div>"
+                )
+
+                # Send email
+                mail_values = {
+                    'email_from': self.env.company.email,
+                    'email_to': 'obrunovsky7@gmail.com',
+                    'subject': 'Sledovanie nadspotreby mobilných služieb',
+                    'body_html': email_body,
+                }
+                self.env['mail.mail'].create(mail_values).send()
+
+                
+                # Update last run timestamp
+                self.env['ir.config_parameter'].sudo().set_param(
+                    'last_usage_pattern_check', 
+                    fields.Datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                )
+
+        except Exception as e:
+            _logger.error(f"Error in service usage pattern analysis: {str(e)}")
+
 class ContractMobileUsageReportLine(models.Model):
     _name = "contract.mobile.usage.report.line"
     _description = "Mobile Usage Report Line"
@@ -1244,6 +1688,9 @@ class ContractMobileUsageReportLine(models.Model):
     basic_plan_cost = fields.Float(string="Basic Plan Cost", digits=(16, 2))
     excess_usage_cost = fields.Float(string="Excess Usage Cost", digits=(16, 2))
     total_cost = fields.Float(string="Total Cost", digits=(16, 2))
+    total_data_usage = fields.Float(string="Total Data Usage", digits=(16, 6))  # New field for total data usage
+    total_sms_mms_usage = fields.Float(string="Total SMS/MMS Usage", digits=(16, 0))  # New field for total SMS/MMS counti
+    total_call_usage = fields.Float(string="Total Call Usage", digits=(16, 6))  # New field for total call duration in seconds
     excess_data_usage = fields.Float(string="Excess Data Usage", digits=(16, 6))
     excess_voice_usage = fields.Float(string="Excess Voice Usage", digits=(16, 6))
     excess_sms_usage = fields.Float(string="Excess SMS Usage", digits=(16, 0))

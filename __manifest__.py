@@ -24,6 +24,7 @@
         "data/mail_template_nameday.xml",
         "security/account_followup_security.xml",
         "data/account_followup_actions.xml",
+        "data/usage_pattern_cron.xml",
         "data/mail_template_hours_warning.xml",
         "views/account_followup_views.xml",
         "security/contract_tag.xml",
