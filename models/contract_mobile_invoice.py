@@ -13,6 +13,7 @@ from openpyxl.drawing.image import Image
 import pandas as pd
 import re
 import io
+import csv
 import base64
 import logging
 
@@ -1396,7 +1397,8 @@ class ContractMobileUsageReport(models.Model):
                     active_service = self.env['contract.mobile.service'].search([
                         ('phone_number', '=', phone),
                         ('partner_id', '=', partner.id),
-                        ('is_active', '=', True)
+                        ('is_active', '=', True),
+                        ('ignore_alert', '=', False),
                     ], limit=1)
                     
                     if not active_service:
@@ -1708,12 +1710,92 @@ class ContractMobileUsageReport(models.Model):
                     f"</div>"
                 )
 
-                # Send email
+                # Define CSV headers
+                headers = [
+                    'Partner', 'Telefónne číslo', 'Aktuálny plán', 'Aktuálne dáta (GB)',
+                    'Priemerná mesačná spotreba (GB)', 'Najvyššia spotreba (GB)',
+                    'Mesiac najvyššej spotreby', 'Priemerný počet SMS/MMS',
+                    'Najvyšší počet SMS/MMS', 'Mesiac najvyššieho počtu SMS/MMS',
+                    'Priemerné minúty hovoru', 'Najviac minút hovoru',
+                    'Mesiac najvyššieho počtu minút', 'Odporúčaný plán',
+                    'Odporúčaný dátový objem (GB)', 'Analyzované mesiace',
+                    'Typ odporúčania'
+                ]
+
+                def create_csv_content(issues):
+                    csv_data = io.StringIO()
+                    csv_writer = csv.writer(csv_data, delimiter=';', quoting=csv.QUOTE_MINIMAL)
+                    csv_writer.writerow(headers)
+                    
+                    for issue in issues:
+                        row = [
+                            issue['partner_name'],
+                            issue['phone_number'],
+                            issue['current_plan'],
+                            f"{issue['current_plan_size']:.1f}",
+                            f"{issue['avg_monthly_usage_gb']:.1f}",
+                            f"{issue['max_usage_gb']:.1f}",
+                            issue['max_usage_month'],
+                            str(int(issue['avg_monthly_sms'])) if issue.get('avg_monthly_sms') is not None else '-',
+                            str(int(issue['max_sms_count'])) if issue.get('max_sms_count') is not None else '-',
+                            issue.get('max_sms_month', '-'),
+                            str(int(round(issue['avg_monthly_voice_mins']))) if issue.get('avg_monthly_voice_mins') is not None else '-',
+                            str(int(round(issue['max_voice_mins']))) if issue.get('max_voice_mins') is not None else '-',
+                            issue.get('max_voice_month', '-'),
+                            issue['recommended_plan'],
+                            f"{issue['recommended_plan_size']:.1f}",
+                            str(issue['months_analyzed']),
+                            'Zvýšenie' if issue['type'] == 'upgrade' else 'Zníženie'
+                        ]
+                        csv_writer.writerow(row)
+                    
+                    return base64.b64encode(csv_data.getvalue().encode('utf-8-sig'))
+
+                # Group issues by partner
+                all_issues = upgrades + downgrades
+                partner_issues = {}
+                regular_issues = []
+                attachments = []
+
+                for issue in all_issues:
+                    partner_name = issue['partner_name']
+                    if partner_name not in partner_issues:
+                        partner_issues[partner_name] = []
+                    partner_issues[partner_name].append(issue)
+
+                # Process each partner's issues
+                for partner_name, issues in partner_issues.items():
+                    if len(issues) >= 3:
+                        # Create separate CSV for this partner
+                        partner_csv = create_csv_content(issues)
+                        safe_name = ''.join(c for c in partner_name if c.isalnum() or c in (' ', '-', '_')).strip()
+                        attachments.append({
+                            'name': f'nadspotreba_{safe_name}_{date_from}_{date_to}.csv',
+                            'type': 'binary',
+                            'datas': partner_csv,
+                            'mimetype': 'text/csv'
+                        })
+                    else:
+                        # Add to regular issues for main CSV
+                        regular_issues.extend(issues)
+
+                # Create main CSV if there are any regular issues
+                if regular_issues:
+                    main_csv = create_csv_content(regular_issues)
+                    attachments.append({
+                        'name': f'nadspotreba_{date_from}_{date_to}.csv',
+                        'type': 'binary',
+                        'datas': main_csv,
+                        'mimetype': 'text/csv'
+                    })
+
+                # Send email with all attachments
                 mail_values = {
                     'email_from': self.env.company.email,
                     'email_to': 'obrunovsky7@gmail.com',
                     'subject': 'Sledovanie nadspotreby mobilných služieb',
                     'body_html': email_body,
+                    'attachment_ids': [(0, 0, att) for att in attachments]
                 }
                 self.env['mail.mail'].create(mail_values).send()
 

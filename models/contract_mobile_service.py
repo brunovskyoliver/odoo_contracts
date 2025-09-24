@@ -27,6 +27,12 @@ class ContractMobileService(models.Model):
         tracking=True,
         help="Iba aktívne mobilné služby budú fakturované",
     )
+    ignore_alert = fields.Boolean(
+        string="Ignorovať upozornenia",
+        default=False,
+        tracking=True,
+        help="Ak je zaškrtnuté, nebudú sa zobrazovať upozornenia o zle nastavenom paušále",
+    )
     inventory_id = fields.Many2one(
         comodel_name="contract.inventory",
         string="Inventár",

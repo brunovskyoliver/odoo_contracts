@@ -30,6 +30,7 @@
                             <field name="phone_number"/>
                             <field name="operator"/>
                             <field name="is_active"/>
+                            <field name="ignore_alert"/>
                         </group>
                         <group>
                             <field name="inventory_id"/>
