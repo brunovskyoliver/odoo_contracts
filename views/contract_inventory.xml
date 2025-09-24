@@ -187,6 +187,7 @@
                     <filter string="Produkt" name="group_by_product" context="{'group_by': 'product_id'}"/>
                     <filter string="Zmluva" name="group_by_contract" context="{'group_by': 'contract_id'}"/>
                     <filter string="Stav" name="group_by_state" context="{'group_by': 'state'}"/>
+                    <filter string="Umiestnenie" name="group_by_location" context="{'group_by': 'location_id'}"/>
                 </group>
             </search>
         </field>

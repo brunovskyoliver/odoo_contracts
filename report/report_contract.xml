@@ -65,9 +65,6 @@
                   <th class="text-right">
                     <strong>Jednotková cena</strong>
                   </th>
-                  <th class="text-right" >
-                    <strong>Zľava</strong>
-                  </th>
                   <th class="text-right">
                     <strong>Spolu</strong>
                   </th>
@@ -90,10 +87,11 @@
                           <span t-field="l.quantity"/>
                         </td>
                         <td class="text-right">
-                          <span t-field="l.price_unit" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: o.currency_id}"/>
-                        </td>
-                        <td class="text-right" t-if="l.commitment_discount">
-                          <span t-field="l.commitment_discount" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: o.currency_id}"/>
+                          <span t-esc="l.price_unit" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: o.currency_id}"/>
+                          <t t-if="l.commitment_discount">
+                            <br/>
+                            <small>(-<span t-field="l.commitment_discount" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: o.currency_id}"/> zľava)</small>
+                          </t>
                         </td>
                         <td class="text-right">
                           <span t-field="l.price_subtotal" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: o.currency_id}"/>
