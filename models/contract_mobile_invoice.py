@@ -387,6 +387,7 @@ class ContractMobileInvoice(models.Model):
                 
                 for _, row in recurring_fees.iterrows():
                     service_name = row['Subscribers__Subscriber__InvoiceLines__FeeLines__Fee__FeeName']
+                    service_name = handle_o2_service_name(service_name)
                     if pd.notna(service_name):
                         result.append({
                             'phone_number': phone_number,
@@ -520,6 +521,47 @@ class ContractMobileInvoice(models.Model):
         
         # First mark as done
         self.write({'state': 'done'})
+        
+        # Track mismatches between service names
+        mismatched_services = []
+        
+        # Check each invoice line's service name against its mobile service
+        for line in self.invoice_line_ids:
+            if line.service_type == 'basic' and line.mobile_service_id:
+                mobile_service = line.mobile_service_id
+                if line.service_name != mobile_service.service_name:
+                    mismatched_services.append({
+                        'phone_number': line.phone_number,
+                        'current_service': line.service_name,
+                        'expected_service': mobile_service.service_name,
+                        'partner': line.partner_id.name
+                    })
+        
+        # Send email report if there are mismatches
+        if mismatched_services:
+            # Prepare email body
+            email_body = "Report po importe mobiliek:\n\n"
+            for mismatch in mismatched_services:
+                email_body += f"Telefónne číslo: {mismatch['phone_number']}\n"
+                email_body += f"Partner: {mismatch['partner']}\n"
+                email_body += f"Súčasná služba: {mismatch['current_service']}\n"
+                email_body += f"Očakávaná služba: {mismatch['expected_service']}\n"
+                email_body += "-" * 50 + "\n"
+            
+            # Send email
+            mail_values = {
+                'subject': _('Report po importe mobiliek - %s') % fields.Datetime.now(),
+                'email_from': self.env.company.email or self.env.user.email,
+                'email_to': 'obrunovsky7@gmail.com',
+                'body_html': '<pre>%s</pre>' % email_body,
+                'auto_delete': False,
+            }
+            self.env['mail.mail'].sudo().with_context(
+                mail_notify_force_send=False,
+                mail_auto_subscribe_no_notify=True,
+                tracking_disable=True,
+                mail_create_nolog=True
+            ).create(mail_values).send()
         
         # Get all invoice lines with excess usage for all partners
         excess_usage_by_partner = {}
@@ -1240,23 +1282,42 @@ def format_phone_number(number):
         cleaned = '421' + cleaned
     return cleaned
 
+def handle_o2_service_name(name):
+    if not name:
+        return ''
+    name = name.strip()
+    if "e-Net" in name:
+        name = name.replace("e-Net", "NOVEM")
+    
+    if "fér" in name:
+        name = name.replace("fér", "Fér")
+    
+    if "nekonečno" in name:
+        name = name.replace("nekonečno ", "")
+    if "minút" in name:
+        name = name.replace("minút", "")
+    if "minut" in name:
+        name = name.replace("minut", "")
+
+    return name
+
 def format_plan_name(text):
     """Convert T-Biznis plan names to NOVEM equivalents"""
     if not text:
         return ''
         
     replacements = {
-        "T-Biznis Flex - Variant 1": "NOVEM nekonečno 6GB",
-        "T-Biznis Flex - Variant 10": "NOVEM nekonečno 10GB",
-        "T-Biznis Flex - Variant 11": "NOVEM nekonečno 30GB",
+        "T-Biznis Flex - Variant 1": "NOVEM 6GB",
+        "T-Biznis Flex - Variant 10": "NOVEM 10GB",
+        "T-Biznis Flex - Variant 11": "NOVEM 30GB",
         "T-Biznis Flex - Variant 2": "NOVEM Fér bez dát",
-        "T-Biznis Flex - Variant 3": "NOVEM nekonečno 20GB",
-        "T-Biznis Flex - Variant 4": "NOVEM nekonečno 50GB",
+        "T-Biznis Flex - Variant 3": "NOVEM 20GB",
+        "T-Biznis Flex - Variant 4": "NOVEM 50GB",
         "T-Biznis Flex - Variant 5": "NOVEM 250 0,5GB",
-        "T-Biznis Flex - Variant 6": "NOVEM nekonečno 0,5GB",
+        "T-Biznis Flex - Variant 6": "NOVEM 0,5GB",
         "T-Biznis Flex - Variant 7": "NOVEM 250 30 GB",
         "T-Biznis Flex - Variant 8": "NOVEM 250 10 GB",
-        "T-Biznis Flex - Variant 9": "NOVEM nekonečno bez dát"
+        "T-Biznis Flex - Variant 9": "NOVEM bez dát"
     }
     
     # First, try exact match to avoid partial replacements
@@ -1277,3 +1338,5 @@ def format_plan_name(text):
         result = result.replace("minut", "")
     
     return result
+
+
