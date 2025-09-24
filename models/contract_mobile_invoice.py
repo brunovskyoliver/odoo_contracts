@@ -1584,6 +1584,18 @@ class ContractMobileUsageReport(models.Model):
                                     'recommended_plan_size': next_lower_size,
                                     'months_analyzed': months_n,
                                     'high_usage_months': high_usage_months,
+                                    # SMS fields
+                                    'avg_monthly_sms': avg_monthly_sms,
+                                    'max_sms_count': max_sms_count,
+                                    'max_sms_month': max_sms_month,
+                                    'high_sms_months': high_sms_months,
+                                    'sms_limit': sms_limit,
+                                    # Voice fields
+                                    'avg_monthly_voice_mins': avg_monthly_voice_mins,
+                                    'max_voice_mins': max_voice_mins,
+                                    'max_voice_month': max_voice_month,
+                                    'high_voice_months': high_voice_months,
+                                    'voice_limit': voice_limit,
                                     'type': 'downgrade',
                                     'recommended_size': next_lower_size
                                 })
@@ -1792,7 +1804,7 @@ class ContractMobileUsageReport(models.Model):
                 # Send email with all attachments
                 mail_values = {
                     'email_from': self.env.company.email,
-                    'email_to': 'obrunovsky7@gmail.com',
+                    'email_to': 'obrunovsky7@gmail.com,oliver.brunovsky@novem.sk,tomas.juricek@novem.sk',
                     'subject': 'Sledovanie nadspotreby mobilných služieb',
                     'body_html': email_body,
                     'attachment_ids': [(0, 0, att) for att in attachments]
