@@ -210,20 +210,28 @@ class ProjectTask(models.Model):
             ], limit=1)
 
             try:
+                # Check available quantity in warehouse
+                available_qty = line.product_id.with_context(warehouse=self.env['stock.warehouse'].sudo().search([], limit=1).id).qty_available
+                if available_qty < line.product_uom_qty:
+                    raise UserError(_(
+                        'Nie je možné priradiť väčšie množstvo, než je dostupné na sklade. '
+                        'Produkt %s má k dispozícii iba %s jednotiek, požadované: %s.'
+                    ) % (line.product_id.name, available_qty, line.product_uom_qty))
+
                 if inventory_line:
                     new_qty = inventory_line.quantity + line.product_uom_qty
                     _logger.info(
-                        'Task %s - Updating inventory line %s. Old qty: %s, +%s => %s',
+                        'Task %s - Updating inventory line %s. Old qty: %s, +%s => %s (Available in warehouse: %s)',
                         self.id, inventory_line.id, inventory_line.quantity,
-                        line.product_uom_qty, new_qty
+                        line.product_uom_qty, new_qty, available_qty
                     )
-                    inventory_line.write({'quantity': new_qty})
+                    inventory_line.with_context(no_stock_movement=True).write({'quantity': new_qty})
                 else:
                     _logger.info(
-                        'Task %s - Creating inventory line for product %s with qty %s',
-                        self.id, line.product_id.id, line.product_uom_qty
+                        'Task %s - Creating inventory line for product %s with qty %s (Available in warehouse: %s)',
+                        self.id, line.product_id.id, line.product_uom_qty, available_qty
                     )
-                    InventoryLine.create({
+                    InventoryLine.with_context(no_stock_movement=True).create({
                         'inventory_id': contract_inventory.id,
                         'product_id': line.product_id.id,
                         'quantity': line.product_uom_qty,

@@ -234,13 +234,6 @@ class ContractInventoryLine(models.Model):
         if self.product_id:
             self.uom_id = self.product_id.uom_id.id
 
-    @api.model
-    def create(self, vals):
-        res = super().create(vals)
-        if res.state != 'returned':  # Nevytvárať pohyb pre už vrátené položky
-            res.process_stock_movement()
-        return res
-
     def process_stock_movement(self):
         """Spracovať skladový pohyb pre tento riadok"""
         self.ensure_one()
