@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Global rule for contract.inventory - allows full access to all records -->
+    <record id="rule_contract_inventory_global" model="ir.rule">
+        <field name="name">Contract Inventory: Full Access to All Records</field>
+        <field name="model_id" ref="model_contract_inventory"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('contract.group_contract_inventory_only'))]"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <!-- Global rule for inventory lines - allows full access to all records -->
+    <record id="rule_contract_inventory_line_global" model="ir.rule">
+        <field name="name">Contract Inventory Lines: Full Access to All Records</field>
+        <field name="model_id" ref="model_contract_inventory_line"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('contract.group_contract_inventory_only'))]"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <!-- Global rule for inventory locations - allows reading all records -->
+    <record id="rule_contract_inventory_location_global" model="ir.rule">
+        <field name="name">Contract Inventory Locations: Read All Records</field>
+        <field name="model_id" ref="model_contract_inventory_location"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('contract.group_contract_inventory_only'))]"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <!-- Global rule for contracts - allows reading all records -->
+    <record id="rule_contract_global_read" model="ir.rule">
+        <field name="name">Contracts: Read All Records</field>
+        <field name="model_id" ref="model_contract_contract"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('contract.group_contract_inventory_only'))]"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <!-- Global rule for inventory bulk return wizard - allows full access to all records -->
+    <record id="rule_contract_inventory_bulk_return_wizard_global" model="ir.rule">
+        <field name="name">Contract Inventory Bulk Return Wizard: Full Access</field>
+        <field name="model_id" ref="model_contract_inventory_bulk_return_wizard"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('contract.group_contract_inventory_only'))]"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <!-- Global rule for inventory bulk return wizard lines - allows full access to all records -->
+    <record id="rule_contract_inventory_bulk_return_wizard_line_global" model="ir.rule">
+        <field name="name">Contract Inventory Bulk Return Wizard Line: Full Access</field>
+        <field name="model_id" ref="model_contract_inventory_bulk_return_wizard_line"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('contract.group_contract_inventory_only'))]"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+</odoo>

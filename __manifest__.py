@@ -20,6 +20,7 @@
     "development_status": "Production/Stable",
     "data": [
         "security/groups.xml",
+        "security/contract_inventory_rules.xml",
         "data/nameday_cron.xml",
         "data/mail_template_nameday.xml",
         "security/account_followup_security.xml",
@@ -27,8 +28,10 @@
         "data/usage_pattern_cron.xml",
         "data/mail_template_hours_warning.xml",
         "views/account_followup_views.xml",
+        "views/contract_inventory_menu.xml",
         "security/contract_tag.xml",
         "security/ir.model.access.csv",
+        "views/res_users_views.xml",
         "wizards/contract_inventory_bulk_return_wizard_view.xml",
         "security/contract_security.xml",
         "security/contract_terminate_reason.xml",

@@ -6,6 +6,7 @@
         name="Zmluvy"
         web_icon="contract,static/description/icon.png"
         sequence="65"
+        groups="contract.can_terminate_contract"
     />
     
     <!-- Configuration menu under main accounting -->

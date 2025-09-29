@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Create a special group for users with contract inventory only -->
+    <record id="group_contract_inventory_only" model="res.groups">
+        <field name="name">Contract Inventory Only</field>
+        <field name="category_id" ref="base.module_category_hidden"/>
+        <field name="comment">Users with access to contract inventory only</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <!-- Give read access to contract.inventory for users with contract_inventory_only -->
+    <record id="access_contract_inventory_readonly" model="ir.model.access">
+        <field name="name">contract.inventory read access</field>
+        <field name="model_id" ref="model_contract_inventory"/>
+        <field name="group_id" ref="group_contract_inventory_only"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="menu_action_contract_inventory_dashboard" model="ir.actions.act_window">
+        <field name="name">Inventáre</field>
+        <field name="res_model">contract.inventory</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[]</field>
+        <field name="context">{}</field>
+    </record>
+
+    <!-- Menu item in root -->
+    <menuitem id="menu_contract_inventory_dashboard"
+        name="Inventáre"
+        web_icon="contract,static/description/inv.png"
+        action="menu_action_contract_inventory_dashboard"
+        groups="contract.group_contract_inventory_only"
+        sequence="10"/>
+</odoo>
