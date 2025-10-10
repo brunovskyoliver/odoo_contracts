@@ -235,4 +235,5 @@
               action="action_contract_inventory_line" 
               parent="contract.menu_contract_inventory_root" 
               sequence="2"/>
+
 </odoo>

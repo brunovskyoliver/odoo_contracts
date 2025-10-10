@@ -530,11 +530,11 @@ class ContractMobileInvoice(models.Model):
         for line in self.invoice_line_ids:
             if line.service_type == 'basic' and line.mobile_service_id:
                 mobile_service = line.mobile_service_id
-                if line.service_name != mobile_service.service_name:
+                if line.service_name != mobile_service.name:
                     mismatched_services.append({
                         'phone_number': line.phone_number,
                         'current_service': line.service_name,
-                        'expected_service': mobile_service.service_name,
+                        'expected_service': mobile_service.name,
                         'partner': line.partner_id.name
                     })
         

@@ -48,5 +48,7 @@
 "contract_inventory_bulk_return_wizard_only_full","Contract Inventory Bulk Return Wizard - Full Access","model_contract_inventory_bulk_return_wizard","contract.group_contract_inventory_only",1,1,1,1
 "contract_inventory_bulk_return_wizard_line_only_full","Contract Inventory Bulk Return Wizard Line - Full Access","model_contract_inventory_bulk_return_wizard_line","contract.group_contract_inventory_only",1,1,1,1
 "contract_inventory_line_only_full","Contract Inventory Line Only - Full Access","model_contract_inventory_line","contract.group_contract_inventory_only",1,1,1,1
+"access_contract_inventory_import_wizard_manager","Contract Inventory Import Wizard Manager","model_contract_inventory_import_wizard","account.group_account_manager",1,1,1,1
+"access_contract_inventory_import_wizard_user","Contract Inventory Import Wizard User","model_contract_inventory_import_wizard","account.group_account_invoice",1,1,1,1
 "contract_inventory_location_only_read","Contract Inventory Location Only - Read Access","model_contract_inventory_location","contract.group_contract_inventory_only",1,0,0,0
 "contract_contract_only_read","Contract Only - Read Access","model_contract_contract","contract.group_contract_inventory_only",1,0,0,0

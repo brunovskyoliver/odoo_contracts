@@ -358,7 +358,7 @@ class ContractInventoryLine(models.Model):
     @api.model
     def create(self, vals):
         res = super().create(vals)
-        if res.state != 'returned':  # Nevytvárať pohyb pre už vrátené položky
+        if not self.env.context.get('no_stock_movement') and res.state != 'returned':
             res.process_stock_movement()
         return res
 
@@ -369,7 +369,7 @@ class ContractInventoryLine(models.Model):
             
             res = super().write(vals)
             
-            if 'quantity' in vals or 'state' in vals:
+            if not self.env.context.get('no_stock_movement') and ('quantity' in vals or 'state' in vals):
                 new_qty = vals.get('quantity', old_qty)
                 new_state = vals.get('state', old_state)
                 

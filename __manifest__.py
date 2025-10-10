@@ -39,6 +39,7 @@
         "security/contract_mobile_service.xml",
         "security/contract_mobile_invoice.xml",
         "wizards/contract_inventory_line_export_view.xml",
+        "wizards/contract_inventory_import_view.xml",
         "report/report_contract.xml",
         "report/contract_views.xml",
         "report/contract_inventory_line_report.xml",
