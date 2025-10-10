@@ -66,6 +66,13 @@
                         invisible="not is_terminated"
                         groups="contract.can_terminate_contract"
                     />
+                    <button
+                        name="action_open_date_update_wizard"
+                        type="object"
+                        string="Update Dates"
+                        invisible="is_terminated"
+                        groups="base.group_user"
+                    />
                     <button type="object" string="Preview" name="action_preview" />
                 </header>
                 <sheet string="Contract">

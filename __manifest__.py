@@ -58,6 +58,7 @@
         "wizards/contract_manually_create_invoice.xml",
         "wizards/contract_contract_terminate.xml",
         "wizards/contract_mobile_invoice_import.xml",
+        "wizards/contract_date_update_wizard_view.xml",
         "wizards/stock_location_select_view.xml",
         "views/sale_views.xml",
         "views/contract_tag.xml",

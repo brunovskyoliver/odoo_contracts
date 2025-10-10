@@ -955,6 +955,21 @@ class ContractContract(models.Model):
             'target': 'self',
         }
     
+    def action_open_date_update_wizard(self):
+        """Open the date update wizard for the contract"""
+        self.ensure_one()
+        if self.is_terminated:
+            raise UserError(_("Cannot update dates for terminated contracts"))
+            
+        return {
+            'name': _('Update Contract Dates'),
+            'type': 'ir.actions.act_window',
+            'res_model': 'contract.date.update.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {'active_ids': self.ids},
+        }
+    
     def _copy_mobile_usage_reports_to_invoice(self, invoice):
         """Copy latest mobile usage report from contract to invoice if this is a Mobilky contract and set as main attachment"""
         self.ensure_one()

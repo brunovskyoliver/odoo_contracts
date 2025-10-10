@@ -52,3 +52,5 @@
 "access_contract_inventory_import_wizard_user","Contract Inventory Import Wizard User","model_contract_inventory_import_wizard","account.group_account_invoice",1,1,1,1
 "contract_inventory_location_only_read","Contract Inventory Location Only - Read Access","model_contract_inventory_location","contract.group_contract_inventory_only",1,0,0,0
 "contract_contract_only_read","Contract Only - Read Access","model_contract_contract","contract.group_contract_inventory_only",1,0,0,0
+"access_contract_date_update_wizard_manager","Contract Date Update Wizard Manager","model_contract_date_update_wizard","account.group_account_manager",1,1,1,1
+"access_contract_date_update_wizard_user","Contract Date Update Wizard User","model_contract_date_update_wizard","account.group_account_invoice",1,1,1,1
