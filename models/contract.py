@@ -961,7 +961,7 @@ class ContractContract(models.Model):
             raise UserError(_("Cannot update dates for terminated contracts"))
             
         return {
-            'name': _('Update Contract Dates'),
+            'name': _('Zmeniť dátumy fakturácie'),
             'type': 'ir.actions.act_window',
             'res_model': 'contract.date.update.wizard',
             'view_mode': 'form',

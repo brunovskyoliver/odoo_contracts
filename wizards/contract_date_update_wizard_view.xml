@@ -4,7 +4,7 @@
         <field name="name">contract.date.update.wizard.form</field>
         <field name="model">contract.date.update.wizard</field>
         <field name="arch" type="xml">
-            <form string="Update Contract Dates">
+            <form string="Zmeniť dátumy fakturácie">
                 <group>
                     <field name="update_date"/>
                 </group>
@@ -17,7 +17,7 @@
     </record>
 
     <record id="action_contract_date_update_wizard" model="ir.actions.act_window">
-        <field name="name">Update Contract Dates</field>
+        <field name="name">Zmeniť dátumy fakturácie</field>
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">contract.date.update.wizard</field>
         <field name="view_mode">form</field>

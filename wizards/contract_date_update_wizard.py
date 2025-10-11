@@ -7,7 +7,7 @@ class ContractDateUpdateWizard(models.TransientModel):
     _name = 'contract.date.update.wizard'
     _description = 'Contract Date Update Wizard'
 
-    update_date = fields.Date(string='Date to Update', required=True, default=fields.Date.today)
+    update_date = fields.Date(string='Nový dátum', required=True, default=fields.Date.today)
 
     def action_update_dates(self):
         """Update contract and contract line dates based on the selected date"""
