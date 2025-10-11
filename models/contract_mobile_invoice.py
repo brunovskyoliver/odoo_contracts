@@ -1420,6 +1420,7 @@ class ContractMobileUsageReport(models.Model):
 
                     current_plan = usages[-1]['basic_plan']
                     current_plan_size = self._get_plan_data_size(current_plan)
+                    _logger.info(f"Phone {phone}: Current plan: {current_plan}, Plan size: {current_plan_size} GB")
 
                     # Thresholds based on plan name
                     plan_lower = current_plan.lower()
@@ -1446,7 +1447,19 @@ class ContractMobileUsageReport(models.Model):
 
                     for usage in usages:
                         # Data
-                        gb_usage = usage['data_usage'] / (1024 ** 3)  # MB -> GB
+                        # Convert bytes to GB (1 GB = 1024^3 bytes)
+                        data_usage_bytes = usage['data_usage']
+                        
+                        # Unit detection and conversion
+                        unit = "unknown"
+                        if data_usage_bytes > 100000000:  # If it's in bytes (> ~100MB in bytes)
+                            gb_usage = data_usage_bytes / (1024**3)
+                            unit = "bytes"
+                        else:  # If it's already in MB
+                            gb_usage = data_usage_bytes / 1024
+                            unit = "MB"
+                            
+                        _logger.info(f"Phone {phone}, date {usage['date']}: Data usage detected as {unit}: {data_usage_bytes} -> {gb_usage:.2f} GB")
                         total_usage_gb += gb_usage
 
                         # High data month?
@@ -1474,8 +1487,18 @@ class ContractMobileUsageReport(models.Model):
 
                     avg_monthly_usage_gb = total_usage_gb / months_n
                     max_usage = max(usages, key=lambda x: x['data_usage'])
-                    max_usage_gb = max_usage['data_usage'] / (1024 ** 3)
+                    max_data_usage = max_usage['data_usage']
+                    
+                    # Apply the same logic for max usage
+                    if max_data_usage > 100000000:  # If it's in bytes (> ~100MB in bytes)
+                        max_usage_gb = max_data_usage / (1024**3)
+                    else:  # If it's already in MB
+                        max_usage_gb = max_data_usage / 1024
+                        
                     max_usage_month = max_usage['date'].strftime('%m/%Y')
+                    
+                    _logger.info(f"Phone {phone}: Raw data usage values: {[u['data_usage'] for u in usages]}")
+                    _logger.info(f"Phone {phone}: Avg usage: {avg_monthly_usage_gb:.2f} GB, Max usage: {max_usage_gb:.2f} GB")
 
                     avg_monthly_sms = total_sms_count / months_n
                     max_sms = max(usages, key=lambda x: x.get('sms_mms_usage', 0))
@@ -1804,6 +1827,7 @@ class ContractMobileUsageReport(models.Model):
                 # Send email with all attachments
                 mail_values = {
                     'email_from': self.env.company.email,
+                    #'email_to': 'obrunovsky7@gmail.com,oliver.brunovsky@novem.sk',
                     'email_to': 'obrunovsky7@gmail.com,oliver.brunovsky@novem.sk,tomas.juricek@novem.sk',
                     'subject': 'Sledovanie nadspotreby mobilných služieb',
                     'body_html': email_body,
