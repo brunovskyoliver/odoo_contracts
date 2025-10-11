@@ -516,6 +516,119 @@ class ContractMobileInvoice(models.Model):
     
     # Legacy methods removed - only using implementations with parameters
     
+    def _extract_data_size(self, normalized_plan_name):
+        """Extract the data size in GB from a normalized plan name"""
+        try:
+            # Look for patterns like "X GB", "X.Y GB", "XGB", etc.
+            data_match = re.search(r'(\d+(?:[.,]\d+)?)\s*gb', normalized_plan_name)
+            if data_match:
+                # Convert the matched value to float
+                data_size = data_match.group(1).replace(',', '.')
+                return float(data_size)
+                
+            # Look for special case "bez dát" (no data)
+            if "bez dát" in normalized_plan_name:
+                return 0.0
+                
+            return None
+        except Exception as e:
+            _logger.error(f"Error extracting data size from '{normalized_plan_name}': {e}")
+            return None
+    
+    def _normalize_service_name(self, service_name):
+        """Normalize service name for consistent comparison"""
+        if not service_name:
+            return ""
+            
+        original = service_name
+        
+        # Convert to lowercase for case-insensitive comparison
+        normalized = service_name.lower()
+        
+        # Remove unnecessary spaces
+        normalized = re.sub(r'\s+', ' ', normalized)
+        
+        # Remove commas in numeric values (e.g., "0,5GB" -> "0.5GB")
+        normalized = re.sub(r'(\d+),(\d+)', r'\1.\2', normalized)
+        
+        # Ensure space before GB
+        normalized = re.sub(r'(\d+(?:[.,]\d+)?)gb', r'\1 gb', normalized)
+        
+        # Handle "250," vs "250" format
+        normalized = re.sub(r'(\d+),\s*(\d+\s*gb)', r'\1 \2', normalized)
+        
+        # Handle special cases like "volne" vs "NOVEM Fér bez dát"
+        if "volne" in normalized:
+            return "volne"
+            
+        # Fix "novem250" vs "novem 250"
+        normalized = re.sub(r'(novem)(\d+)', r'\1 \2', normalized)
+        
+        # Handle cases where prefixes are different
+        if "250 min" in normalized:
+            normalized = normalized.replace("250 min", "novem 250")
+        
+        if "150 min" in normalized:
+            normalized = normalized.replace("150 min", "novem 150")
+            
+        # Handle "fér 0,5GB" vs "NOVEM Fér 0,5GB"
+        if "fér " in normalized and "novem" not in normalized:
+            normalized = "novem " + normalized
+            
+        # For plans with 250 min or 150 min
+        normalized = normalized.replace("novem 250, ", "novem 250 ")
+        normalized = normalized.replace("novem 150, ", "novem 150 ")
+            
+        # CRITICAL: novem250 and novem150 cannot be nekonečno at the same time
+        # They are mutually exclusive plan types
+        if re.search(r'novem\s+(250|150)', normalized) and "nekonečno" in normalized:
+            # Remove "nekonečno" from novem250/novem150 plans
+            normalized = re.sub(r'(novem\s+(?:250|150))\s+nekonečno', r'\1', normalized)
+            _logger.debug(f"Removed 'nekonečno' from novem250/150 plan: {normalized}")
+        
+        # Standardize "nekonečno" in other NOVEM plans
+        elif "novem" in normalized and "gb" in normalized:
+            # Special case: if Fér is in the name, don't add nekonečno
+            # And don't add it to novem250/novem150 plans
+            if "nekonečno" not in normalized and "fér" not in normalized and not re.search(r'novem\s+(250|150)', normalized):
+                normalized = re.sub(r'(novem)(?:\s+(\d+))?(\s+)(\d+(?:[.,]\d+)?\s*gb)', r'\1\2\3nekonečno \4', normalized)
+        
+        # For comparing different data plans (don't compare GB sizes - the mobile_service name is the source of truth)
+        # Extract the plan type without the GB size
+        if "novem" in normalized and "gb" in normalized:
+            # Extract the plan structure (novem/novem 250/novem 150) without the GB size
+            match = re.search(r'(novem(?:\s+\d+)?)(?:\s+nekonečno)?', normalized)
+            if match:
+                plan_prefix = match.group(1)
+                # Don't include GB size in comparison for now
+                # We would need a proper table of equivalent plans to handle this correctly
+                _logger.debug(f"Extracted plan prefix: {plan_prefix} from {normalized}")
+        
+        # Fix "NOVEM 150  20GB" vs "150 min 20GB"
+        normalized = re.sub(r'(\d+)\s+gb', r'\1 gb', normalized)
+        
+        # Handle "NOVEM bez dát" vs "NOVEM 150 bez dát"
+        if "bez dát" in normalized:
+            # Extract the core parts
+            pattern = r'(novem)(?:\s+(\d+|fér))?(\s+)(bez dát)'
+            match = re.search(pattern, normalized)
+            if match:
+                # Keep the plan type (150/250) if present
+                plan_type = match.group(2)
+                if plan_type and (plan_type == "150" or plan_type == "250"):
+                    # Keep the plan type for 150/250
+                    normalized = f"novem {plan_type} bez dát"
+                    _logger.debug(f"Preserved plan type in bez dát plan: {normalized}")
+                else:
+                    # Standardize to "novem bez dát" for other cases
+                    normalized = "novem bez dát"
+        
+        # Log if significant changes were made
+        if normalized != service_name.lower():
+            _logger.debug(f"Service name normalized: '{original}' -> '{normalized}'")
+            
+        return normalized
+    
     def action_done(self):
         """Mark invoice as done and process excess usage"""
         self.ensure_one()
@@ -526,34 +639,146 @@ class ContractMobileInvoice(models.Model):
         # Track mismatches between service names
         mismatched_services = []
         
-        # Check each invoice line's service name against its mobile service
+        # Group invoice lines by phone number to handle multiple plans per phone
+        phone_lines = {}
         for line in self.invoice_line_ids:
-            if line.service_type == 'basic' and line.mobile_service_id:
-                mobile_service = line.mobile_service_id
-                if line.service_name != mobile_service.name:
-                    mismatched_services.append({
-                        'phone_number': line.phone_number,
-                        'current_service': line.service_name,
-                        'expected_service': mobile_service.name,
-                        'partner': line.partner_id.name
-                    })
+            if line.service_type == 'basic' and line.phone_number:
+                # Debug for specific case
+                if line.phone_number == "421902107427":
+                    _logger.info(f"Debug - Found issue case: {line.phone_number}")
+                    _logger.info(f"Debug - Service name: {line.service_name}")
+                    if line.mobile_service_id:
+                        _logger.info(f"Debug - Mobile service: {line.mobile_service_id.name}")
+                        _logger.info(f"Debug - Is active: {line.mobile_service_id.is_active}")
+                
+                if line.phone_number not in phone_lines:
+                    phone_lines[line.phone_number] = []
+                phone_lines[line.phone_number].append(line)
+        
+        # Check each phone number's services against its mobile service
+        for phone_number, lines in phone_lines.items():
+            # Skip if no mobile service assigned
+            if not lines or not lines[0].mobile_service_id:
+                continue
+                
+            mobile_service = lines[0].mobile_service_id
+            
+            # Skip inactive mobile services
+            if not mobile_service.is_active:
+                _logger.info(f"Phone: {phone_number}, Mobile service is inactive - skipping comparison")
+                continue
+                
+            normalized_mobile_service = self._normalize_service_name(mobile_service.name)
+            
+            # If there are multiple plans for this phone number, check if any match the mobile service
+            any_match_found = False
+            
+            _logger.info(f"Phone: {phone_number} has {len(lines)} basic plans in invoice")
+            
+            # Check each plan for the phone number
+            for line in lines:
+                normalized_line_service = self._normalize_service_name(line.service_name)
+                
+                # Log each service with detailed normalization
+                _logger.info(f"Phone: {phone_number}, Invoice plan: '{line.service_name}' -> '{normalized_line_service}'")
+                _logger.info(f"Phone: {phone_number}, Odoo service: '{mobile_service.name}' -> '{normalized_mobile_service}'")
+                
+                # Check if this plan matches the mobile service
+                if normalized_line_service == normalized_mobile_service:
+                    _logger.info(f"Phone: {phone_number}, Direct match found!")
+                    any_match_found = True
+                    break
+                
+                # If no direct match, check plan structure
+                # Extract and compare core plan structure (novem/novem 250/novem 150/novem fér)
+                
+                # Special case for "bez dát" plans - must match exactly including plan type
+                if "bez dát" in normalized_line_service and "bez dát" in normalized_mobile_service:
+                    # Check if both have the same plan type prefix (novem 150, novem 250, or just novem)
+                    if normalized_line_service == normalized_mobile_service:
+                        _logger.info(f"Phone: {phone_number}, Exact 'bez dát' plan match")
+                        any_match_found = True
+                        break
+                    else:
+                        _logger.info(f"Phone: {phone_number}, 'bez dát' plans with different prefixes")
+                        continue
+                
+                # Extract and compare data sizes for NOVEM 250/150 plans
+                if ("novem 250" in normalized_line_service and "novem 250" in normalized_mobile_service) or \
+                ("novem 150" in normalized_line_service and "novem 150" in normalized_mobile_service):
+
+                    # Extract data sizes from both plans
+                    line_data_size = self._extract_data_size(normalized_line_service)
+                    mobile_data_size = self._extract_data_size(normalized_mobile_service)
+
+                    _logger.info(f"Phone: {phone_number}, Plan data sizes: '{line_data_size}' GB vs '{mobile_data_size}' GB")
+
+                    # Strict comparison — must match exactly
+                    if line_data_size is not None and mobile_data_size is not None:
+                        if line_data_size == mobile_data_size:
+                            _logger.info(f"Phone: {phone_number}, Exact data size match")
+                            any_match_found = True
+                            break
+                        else:
+                            _logger.info(f"Phone: {phone_number}, Data size mismatch: {line_data_size} GB ≠ {mobile_data_size} GB")
+                            continue
+                            # Do not break yet — continue checking other lines if any
+                    else:
+                        # Could not extract properly, but base plan matches (log and continue)
+                        _logger.info(f"Phone: {phone_number}, Same plan type, but data size could not be extracted")
+                        # You can decide if this should count as a match or not:
+                        # any_match_found = True
+                        # break
+
+                
+                # For other cases, use regex pattern matching
+                if not ("novem 250" in normalized_line_service or "novem 150" in normalized_line_service):
+                    line_plan_match = re.search(r'(novem(?:\s+(?:250|150|fér))?)(?:\s+(?:nekonečno))?(?:\s+.*)?', normalized_line_service)
+                    mobile_plan_match = re.search(r'(novem(?:\s+(?:250|150|fér))?)(?:\s+(?:nekonečno))?(?:\s+.*)?', normalized_mobile_service)
+                    
+                    if line_plan_match and mobile_plan_match:
+                        line_plan_structure = line_plan_match.group(1)
+                        mobile_plan_structure = mobile_plan_match.group(1)
+                        
+                        _logger.info(f"Phone: {phone_number}, Plan structures: '{line_plan_structure}' vs '{mobile_plan_structure}'")
+                        
+                        # Compare plan structures
+                        if line_plan_structure == mobile_plan_structure:
+                            _logger.info(f"Phone: {phone_number}, Structure match found!")
+                            any_match_found = True
+                            break
+            
+            # If no match found after checking all plans, report mismatch
+            if not any_match_found and line.partner_id:
+                _logger.info(f"Phone: {phone_number}, No matching plan found among multiple plans")
+                
+                # Use the first line for reporting
+                line = lines[0]
+                all_services = ", ".join([l.service_name for l in lines])
+                
+                mismatched_services.append({
+                    'phone_number': phone_number,
+                    'current_service': all_services,
+                    'expected_service': mobile_service.name,
+                    'partner': line.partner_id.name
+                })
         
         # Send email report if there are mismatches
         if mismatched_services:
             # Prepare email body
-            email_body = "Report po importe mobiliek:\n\n"
+            email_body = f"Report po importe mobiliek - {self.operator}:\n\n"
             for mismatch in mismatched_services:
                 email_body += f"Telefónne číslo: {mismatch['phone_number']}\n"
                 email_body += f"Partner: {mismatch['partner']}\n"
-                email_body += f"Súčasná služba: {mismatch['current_service']}\n"
-                email_body += f"Očakávaná služba: {mismatch['expected_service']}\n"
+                email_body += f"Služba na faktúre: {mismatch['current_service']}\n"
+                email_body += f"Služba v Odoo: {mismatch['expected_service']}\n"
                 email_body += "-" * 50 + "\n"
             
             # Send email
             mail_values = {
-                'subject': _('Report po importe mobiliek - %s') % fields.Datetime.now(),
+                'subject': _('Report po importe mobiliek - %s - %s') % (self.operator, fields.Datetime.now()),
                 'email_from': self.env.company.email or self.env.user.email,
-                'email_to': 'obrunovsky7@gmail.com',
+                'email_to': 'obrunovsky7@gmail.com, eva.varady@e-net.sk, tomas.juricek@novem.sk',
                 'body_html': '<pre>%s</pre>' % email_body,
                 'auto_delete': False,
             }
@@ -563,6 +788,7 @@ class ContractMobileInvoice(models.Model):
                 tracking_disable=True,
                 mail_create_nolog=True
             ).create(mail_values).send()
+        
         
         # Get all invoice lines with excess usage for all partners
         excess_usage_by_partner = {}

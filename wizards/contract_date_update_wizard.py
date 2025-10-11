@@ -86,12 +86,12 @@ class ContractDateUpdateWizard(models.TransientModel):
                 ids_tuple = tuple(contract_lines.ids) if len(contract_lines.ids) > 1 else (contract_lines.ids[0],)
                 
                 # Update date_start for all lines
-                _logger.info(f"Updating date_start for {len(contract_lines)} lines with date {self.update_date}")
-                self.env.cr.execute("""
-                    UPDATE contract_line 
-                    SET date_start = %s 
-                    WHERE id IN %s
-                """, (self.update_date, ids_tuple))
+                # _logger.info(f"Updating date_start for {len(contract_lines)} lines with date {self.update_date}")
+                # self.env.cr.execute("""
+                #     UPDATE contract_line 
+                #     SET date_start = %s 
+                #     WHERE id IN %s
+                # """, (self.update_date, ids_tuple))
                 
                 # Update recurring_next_date for all lines
                 _logger.info(f"Updating recurring_next_date for {len(contract_lines)} lines with date {self.update_date}")
@@ -101,13 +101,13 @@ class ContractDateUpdateWizard(models.TransientModel):
                     WHERE id IN %s
                 """, (self.update_date, ids_tuple))
                 
-                # Update the contract's recurring_next_date and date_start
-                _logger.info(f"Updating recurring_next_date and date_start for contract {contract.id}")
-                self.env.cr.execute("""
-                    UPDATE contract_contract 
-                    SET recurring_next_date = %s, date_start = %s 
-                    WHERE id = %s
-                """, (self.update_date, self.update_date, contract.id))
+                # # Update the contract's recurring_next_date and date_start
+                # _logger.info(f"Updating recurring_next_date and date_start for contract {contract.id}")
+                # self.env.cr.execute("""
+                #     UPDATE contract_contract 
+                #     SET recurring_next_date = %s, date_start = %s 
+                #     WHERE id = %s
+                # """, (self.update_date, self.update_date, contract.id))
                 
                 # Invalidate the cache for all affected records
                 contract_lines.invalidate_recordset()

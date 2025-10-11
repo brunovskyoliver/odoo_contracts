@@ -954,7 +954,6 @@ class ContractContract(models.Model):
             'url': '/web/content/%s?download=true' % self.id,
             'target': 'self',
         }
-    
     def action_open_date_update_wizard(self):
         """Open the date update wizard for the contract"""
         self.ensure_one()
