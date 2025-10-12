@@ -726,6 +726,42 @@ class ContractLine(models.Model):
         }
         return months[month_name]
 
+    def _get_months_list(self, first_date_invoiced, last_date_invoiced):
+        """Generate a list of months covered by the invoice period."""
+        months = []
+        current_date = first_date_invoiced
+        while current_date <= last_date_invoiced:
+            month_str = f"{current_date.month:02d}"
+            year_str = f"{current_date.year}"
+            months.append((month_str, year_str))
+            # Move to next month
+            if current_date.month == 12:
+                current_date = current_date.replace(month=1, year=current_date.year + 1)
+            else:
+                current_date = current_date.replace(month=current_date.month + 1)
+        
+        return months
+
+    def _format_months_for_invoice(self, months_list):
+        """Format the list of months for display on invoice."""
+        if not months_list:
+            return ""
+            
+        # Group by year
+        years_dict = {}
+        for month, year in months_list:
+            if year not in years_dict:
+                years_dict[year] = []
+            years_dict[year].append(month)
+            
+        # Format result
+        result = []
+        for year, months in years_dict.items():
+            months_str = ",".join(months)
+            result.append(f"{months_str}-{year}")
+            
+        return " ".join(result)
+            
     def _insert_markers(self, first_date_invoiced, last_date_invoiced):
         self.ensure_one()
         lang_obj = self.env["res.lang"]
@@ -740,6 +776,14 @@ class ContractLine(models.Model):
                 first_date_invoiced.strftime("%m")
             ),
         )
+        
+        # Add month information for SETEM s.r.o. contracts
+        if self.contract_id.company_id and self.contract_id.company_id.id == 3:  # SETEM s.r.o.
+            months_list = self._get_months_list(first_date_invoiced, last_date_invoiced)
+            months_str = self._format_months_for_invoice(months_list)
+            if months_str:
+                name += _(" za mesiace %s") % months_str
+                
         return name
 
     def _update_recurring_next_date(self):
