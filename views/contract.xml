@@ -721,8 +721,9 @@
 
     <!-- Base menu for contracts reporting -->
     <record model="ir.ui.menu" id="menu_contract_reporting">
-        <field name="name">Contracts</field>
-        <field name="parent_id" ref="account.menu_finance_reports" />
+        <field name="name">Riadky zmluv</field>
+        <!-- <field name="parent_id" ref="account.menu_finance_reports" /> -->
+        <field name="parent_id" ref="contract.menu_contract_root" />
         <field name="sequence" eval="40" />
     </record>
 </odoo>
