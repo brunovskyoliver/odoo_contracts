@@ -56,6 +56,9 @@
             <table class="table table-sm">
               <thead>
                 <tr>
+                <th>
+                <strong>Názov</strong>
+                </th>
                   <th>
                     <strong>Popis</strong>
                   </th>
@@ -80,6 +83,9 @@
                     <t t-set="current_subtotal" t-value="current_subtotal + l.price_subtotal"/>
                     <tr t-att-class="'bg-200 font-weight-bold o_line_section' if l.display_type == 'line_section' else 'font-italic o_line_note' if l.display_type == 'line_note' else ''">
                       <t t-if="not l.display_type">
+                      <td>
+                          <span t-field="l.product_id"/>
+                        </td>
                         <td>
                           <span t-field="l.name"/>
                         </td>
