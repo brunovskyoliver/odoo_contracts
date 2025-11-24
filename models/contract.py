@@ -458,14 +458,19 @@ class ContractContract(models.Model):
                 )
             ).mapped("recurring_next_date")
             # we give priority to computation from date_start if modified
-            if (
-                contract._origin
-                and contract._origin.date_start != contract.date_start
-                or not recurring_next_date
-            ):
-                super(ContractContract, contract)._compute_recurring_next_date()
-            else:
+            if recurring_next_date:
                 contract.recurring_next_date = min(recurring_next_date)
+            else:
+                # If no recurring_next_date from lines, compute from contract start date
+                contract.recurring_next_date = contract._get_first_date_start()
+
+    def _get_first_date_start(self):
+        """Get the first possible date_start for contract invoicing.
+        Used when no recurring_next_date is found from contract lines."""
+        self.ensure_one()
+        if self.date_start:
+            return self.date_start
+        return fields.Date.context_today(self)
 
     @api.depends("contract_line_ids.create_invoice_visibility")
     def _compute_create_invoice_visibility(self):
