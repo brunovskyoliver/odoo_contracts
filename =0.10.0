@@ -1,0 +1,19 @@
+Requirement already satisfied: PyPDF2 in /usr/lib/python3/dist-packages (2.12.1)
+Collecting pdfplumber
+  Downloading pdfplumber-0.11.8-py3-none-any.whl (60 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 60.0/60.0 kB 2.2 MB/s eta 0:00:00
+Collecting pdfminer.six==20251107
+  Downloading pdfminer_six-20251107-py3-none-any.whl (5.6 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.6/5.6 MB 33.7 MB/s eta 0:00:00
+Requirement already satisfied: Pillow>=9.1 in /usr/lib/python3/dist-packages (from pdfplumber) (9.4.0)
+Collecting pypdfium2>=4.18.0
+  Downloading pypdfium2-5.1.0-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.0/3.0 MB 66.6 MB/s eta 0:00:00
+Requirement already satisfied: charset-normalizer>=2.0.0 in /usr/lib/python3/dist-packages (from pdfminer.six==20251107->pdfplumber) (3.0.1)
+Requirement already satisfied: cryptography>=36.0.0 in /usr/lib/python3/dist-packages (from pdfminer.six==20251107->pdfplumber) (38.0.4)
+Installing collected packages: pypdfium2, pdfminer.six, pdfplumber
+  Attempting uninstall: pdfminer.six
+    Found existing installation: pdfminer.six 20221105
+    Not uninstalling pdfminer-six at /usr/lib/python3/dist-packages, outside environment /usr
+    Can't uninstall 'pdfminer.six'. No files were found to uninstall.
+Successfully installed pdfminer.six-20251107 pdfplumber-0.11.8 pypdfium2-5.1.0

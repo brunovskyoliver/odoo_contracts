@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List View -->
+    <record id="view_supplier_invoice_processor_list" model="ir.ui.view">
+        <field name="name">supplier.invoice.processor.list</field>
+        <field name="model">supplier.invoice.processor</field>
+        <field name="arch" type="xml">
+            <list string="Supplier Invoice Processor" decoration-info="state=='draft'" decoration-success="state=='done'" decoration-warning="state in ('processing','extracted')" decoration-danger="state=='error'">
+                <field name="name"/>
+                <field name="filename"/>
+                <field name="supplier_id"/>
+                <field name="invoice_number"/>
+                <field name="invoice_date"/>
+                <field name="total_amount" sum="Total"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="state" widget="badge" decoration-info="state=='draft'" decoration-success="state=='done'" decoration-warning="state in ('processing','extracted')" decoration-danger="state=='error'"/>
+                <field name="invoice_id"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_supplier_invoice_processor_form" model="ir.ui.view">
+        <field name="name">supplier.invoice.processor.form</field>
+        <field name="model">supplier.invoice.processor</field>
+        <field name="arch" type="xml">
+            <form string="Supplier Invoice Processor">
+                <header>
+                    <button name="action_process_pdf" string="Process PDF" type="object" class="btn-primary" invisible="state not in ('draft', 'error')"/>
+                    <button name="action_create_invoice" string="Create Invoice" type="object" class="btn-primary" invisible="state != 'extracted'"/>
+                    <button name="action_view_invoice" string="View Invoice" type="object" class="btn-primary" invisible="not invoice_id"/>
+                    <button name="action_reset_to_draft" string="Reset to Draft" type="object" invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,processing,extracted,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_invoice" type="object" class="oe_stat_button" icon="fa-pencil-square-o" invisible="not invoice_id">
+                            <field name="invoice_id" widget="statinfo" string="Invoice"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="pdf_file" filename="pdf_filename" widget="binary"/>
+                            <field name="pdf_filename" invisible="1"/>
+                            <field name="attachment_id" invisible="1"/>
+                            <field name="filename"/>
+                            <field name="supplier_id"/>
+                            <field name="invoice_number"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group>
+                            <field name="invoice_date"/>
+                            <field name="invoice_due_date"/>
+                            <field name="currency_id" groups="base.group_multi_currency"/>
+                            <field name="total_amount" widget="monetary"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Invoice Lines" name="lines">
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="product_id"/>
+                                    <field name="quantity"/>
+                                    <field name="price_unit"/>
+                                    <field name="vat_rate" string="DPH %"/>
+                                    <field name="price_subtotal"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                            <group class="oe_subtotal_footer oe_right">
+                                <field name="total_untaxed" widget="monetary"/>
+                                <field name="total_tax" widget="monetary"/>
+                                <div class="oe_subtotal_footer_separator oe_inline">
+                                    <label for="total_amount"/>
+                                </div>
+                                <field name="total_amount" class="oe_subtotal_footer_separator" widget="monetary"/>
+                            </group>
+                        </page>
+                        <page string="Extracted Text" name="extracted_text" invisible="not extracted_text">
+                            <field name="extracted_text" widget="text"/>
+                        </page>
+                        <page string="Notes" name="notes">
+                            <field name="notes" placeholder="Add any notes here..."/>
+                        </page>
+                        <page string="Error" name="error" invisible="state != 'error'">
+                            <field name="error_message" widget="text" readonly="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_supplier_invoice_processor_search" model="ir.ui.view">
+        <field name="name">supplier.invoice.processor.search</field>
+        <field name="model">supplier.invoice.processor</field>
+        <field name="arch" type="xml">
+            <search string="Supplier Invoice Processor">
+                <field name="name"/>
+                <field name="supplier_id"/>
+                <field name="invoice_number"/>
+                <field name="filename"/>
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Processing" name="processing" domain="[('state', '=', 'processing')]"/>
+                <filter string="Extracted" name="extracted" domain="[('state', '=', 'extracted')]"/>
+                <filter string="Done" name="done" domain="[('state', '=', 'done')]"/>
+                <filter string="Error" name="error" domain="[('state', '=', 'error')]"/>
+                <separator/>
+                <filter string="No Invoice Created" name="no_invoice" domain="[('invoice_id', '=', False)]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Supplier" name="group_supplier" context="{'group_by': 'supplier_id'}"/>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Invoice Date" name="group_invoice_date" context="{'group_by': 'invoice_date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_supplier_invoice_processor" model="ir.actions.act_window">
+        <field name="name">Invoice Processor</field>
+        <field name="res_model">supplier.invoice.processor</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_no_invoice': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Upload a supplier invoice PDF to process
+            </p>
+            <p>
+                This tool will extract invoice data from PDF files and help you create supplier invoices automatically.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu -->
+    <menuitem id="menu_supplier_invoice_processor"
+              name="Invoice Processor"
+              parent="account.menu_finance_payables"
+              action="action_supplier_invoice_processor"
+              sequence="50"/>
+
+</odoo>

@@ -29,6 +29,10 @@
 "contract_mobile_usage_report_manager","Contract Mobile Usage Report Manager","model_contract_mobile_usage_report","account.group_account_manager",1,1,1,1
 "contract_mobile_usage_report_user","Contract Mobile Usage Report User","model_contract_mobile_usage_report","account.group_account_invoice",1,1,1,0
 "contract_mobile_usage_report_line_manager","Contract Mobile Usage Report Line Manager","model_contract_mobile_usage_report_line","account.group_account_manager",1,1,1,1
+"supplier_invoice_processor_manager","Supplier Invoice Processor Manager","model_supplier_invoice_processor","account.group_account_manager",1,1,1,1
+"supplier_invoice_processor_user","Supplier Invoice Processor User","model_supplier_invoice_processor","account.group_account_invoice",1,1,1,0
+"supplier_invoice_processor_line_manager","Supplier Invoice Processor Line Manager","model_supplier_invoice_processor_line","account.group_account_manager",1,1,1,1
+"supplier_invoice_processor_line_user","Supplier Invoice Processor Line User","model_supplier_invoice_processor_line","account.group_account_invoice",1,1,1,0
 "contract_mobile_usage_report_line_user","Contract Mobile Usage Report Line User","model_contract_mobile_usage_report_line","account.group_account_invoice",1,1,1,0
 "contract_mobile_invoice_import_wizard","Contract Mobile Invoice Import Wizard","model_contract_mobile_invoice_import","account.group_account_invoice",1,1,1,1
 "contract_mobile_generate_report_wizard","Contract Mobile Generate Report Wizard","model_contract_mobile_generate_report","account.group_account_invoice",1,1,1,1

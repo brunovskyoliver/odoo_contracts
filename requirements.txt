@@ -1,0 +1,3 @@
+# PDF processing libraries for supplier invoice processor
+PyPDF2>=3.0.0
+pdfplumber>=0.10.0
