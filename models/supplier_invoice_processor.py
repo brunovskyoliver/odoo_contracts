@@ -24,7 +24,7 @@ class SupplierInvoiceProcessor(models.Model):
     _order = 'create_date desc'
 
     name = fields.Char(
-        string='Reference',
+        string='Referencia',
         required=True,
         copy=False,
         readonly=True,
@@ -33,32 +33,32 @@ class SupplierInvoiceProcessor(models.Model):
     )
     
     state = fields.Selection([
-        ('draft', 'Draft'),
-        ('processing', 'Processing'),
-        ('extracted', 'Data Extracted'),
-        ('done', 'Invoice Created'),
-        ('error', 'Error'),
+        ('draft', 'Koncept'),
+        ('processing', 'Spracovávanie'),
+        ('extracted', 'Údaje extrahované'),
+        ('done', 'Faktúra vytvorená'),
+        ('error', 'Chyba'),
     ], string='Status', default='draft', required=True, tracking=True)
 
     # Direct PDF upload field
     pdf_file = fields.Binary(
-        string='Upload PDF',
+        string='Nahrať PDF',
         attachment=True,
-        help='Upload the supplier invoice PDF file',
+        help='Nahrajte PDF faktúru dodávateľa na spracovanie',
     )
     
     pdf_filename = fields.Char(
-        string='PDF Filename',
+        string='Názov PDF súboru',
     )
     
     attachment_id = fields.Many2one(
         'ir.attachment',
-        string='PDF Attachment',
+        string='PDF Príloha',
         tracking=True,
     )
     
     filename = fields.Char(
-        string='Filename',
+        string='Názov súboru',
         compute='_compute_filename',
         readonly=True,
     )
@@ -66,52 +66,55 @@ class SupplierInvoiceProcessor(models.Model):
     # Extracted invoice header data
     supplier_id = fields.Many2one(
         'res.partner',
-        string='Supplier',
+        string='Dodávateľ',
         domain=[('supplier_rank', '>', 0)],
         tracking=True,
     )
     
     invoice_number = fields.Char(
-        string='Invoice Number',
+        string='Číslo faktúry',
         tracking=True,
     )
     
     invoice_date = fields.Date(
-        string='Invoice Date',
+        string='Dátum faktúry',
         tracking=True,
     )
     
     invoice_due_date = fields.Date(
-        string='Due Date',
+        string='Dátum splatnosti',
         tracking=True,
     )
     
     currency_id = fields.Many2one(
         'res.currency',
-        string='Currency',
+        string='Mena',
         default=lambda self: self.env.company.currency_id,
         tracking=True,
     )
     
     # Extracted totals
     total_untaxed = fields.Monetary(
-        string='Total Untaxed',
+        string='Celkom bez DPH',
         currency_field='currency_id',
+        readonly=True,
     )
     
     total_tax = fields.Monetary(
-        string='Total Tax',
+        string='Celková DPH',
         currency_field='currency_id',
+        readonly=True,
     )
     
     total_amount = fields.Monetary(
-        string='Total Amount',
+        string='Celková suma',
         currency_field='currency_id',
+        readonly=True,
     )
     
     # Extracted text for reference
     extracted_text = fields.Text(
-        string='Extracted Text',
+        string='Extrahovaný text',
         readonly=True,
     )
     
@@ -125,24 +128,24 @@ class SupplierInvoiceProcessor(models.Model):
     # Created invoice
     invoice_id = fields.Many2one(
         'account.move',
-        string='Created Invoice',
+        string='Vytvorená faktúra',
         readonly=True,
         tracking=True,
     )
     
     company_id = fields.Many2one(
         'res.company',
-        string='Company',
+        string='Spoločnosť',
         default=lambda self: self.env.company,
         required=True,
     )
     
     notes = fields.Text(
-        string='Notes',
+        string='Poznámky',
     )
     
     error_message = fields.Text(
-        string='Error Message',
+        string='Chybová správa',
         readonly=True,
     )
 
@@ -352,11 +355,36 @@ class SupplierInvoiceProcessor(models.Model):
         if name_match:
             data['supplier_name'] = name_match.group(1).strip()
         
-        # Extract amounts
+        # Extract amounts from tax breakdown section
+        # Look for "Vyčíslenie DPH v EUR:" section which has the accurate breakdown
+        # Pattern: "23 % 15,65 3,60" or "0 % 0,00 0,00"
+        # We need to sum all base amounts and tax amounts
+        
+        total_untaxed = 0.0
+        total_tax = 0.0
+        
+        # Find the tax breakdown section
+        vat_breakdown_pattern = r'(\d+)\s*%\s+([\d\s]+,\d+)\s+([\d\s]+,\d+)'
+        vat_matches = re.findall(vat_breakdown_pattern, text)
+        
+        for match in vat_matches:
+            vat_rate = match[0]
+            base_amount = match[1].replace(' ', '').replace(',', '.')
+            tax_amount = match[2].replace(' ', '').replace(',', '.')
+            
+            try:
+                total_untaxed += float(base_amount)
+                total_tax += float(tax_amount)
+            except ValueError:
+                pass
+        
+        data['total_untaxed'] = total_untaxed
+        data['total_tax'] = total_tax
+        
+        # Extract total amount (should match untaxed + tax)
         amount_patterns = [
             r'Celkom\s*:?\s*€?\s*([\d\s,]+\.?\d*)\s*EUR',
             r'Total\s*:?\s*€?\s*([\d\s,]+\.?\d*)',
-            r'Celkom\s*:?\s*€?\s*([\d\s,]+\.?\d*)',
             r'Amount\s*:?\s*€?\s*([\d\s,]+\.?\d*)',
         ]
         for pattern in amount_patterns:
@@ -368,6 +396,10 @@ class SupplierInvoiceProcessor(models.Model):
                 except ValueError:
                     pass
                 break
+        
+        # If total_amount not found, calculate it
+        if 'total_amount' not in data and total_untaxed > 0:
+            data['total_amount'] = total_untaxed + total_tax
         
         # Try to extract table data using pdfplumber for better accuracy
         if pdfplumber:
@@ -499,14 +531,19 @@ class SupplierInvoiceProcessor(models.Model):
         """
         Alza invoice parser - handles products where code, description, and numbers are on same line.
         Format: CODE Description Qty Price Subtotal Tax TaxPct TotalPrice Warranty
+        
+        New logic: A line with pattern "Qty Price Price..." marks a product.
+        All lines WITHOUT this pattern are description continuations.
         """
         rows = [r.strip() for r in text.split("\n")]
         items = []
         i = 0
         in_items = False
-
-        CODE_RE = re.compile(r'^[A-Z]{2}[A-Z0-9]{2,}')  # PP899vh, SAMO02, etc.
-        DIGITS_ONLY = re.compile(r'^\d+$')              # Internal codes like 129, 68b1, etc.
+        
+        # Pattern to identify product data line: Qty (int) Price (decimal) Price (decimal)
+        # Example: "1 837,02 837,02 192,51 23 1 029,53 24"
+        PRODUCT_DATA_PATTERN = re.compile(r'\s+(\d+)\s+(-?\d+,\d+)\s+(-?\d+,\d+)')
+        CODE_RE = re.compile(r'^[A-Z]{2}[A-Z0-9]{2,}')  # Product codes like NA626e, SL190r
 
         while i < len(rows):
             line = rows[i]
@@ -526,98 +563,82 @@ class SupplierInvoiceProcessor(models.Model):
                 i += 1
                 continue
 
-            # Check if line starts with product code
-            tokens = line.split()
-            if not tokens:
-                i += 1
-                continue
+            # Check if this line contains product data (Qty Price Price...)
+            data_match = PRODUCT_DATA_PATTERN.search(line)
+            
+            if data_match:
+                # This line has product data - it's a product line
+                # Everything before the numbers is the description
+                desc_part = line[:data_match.start()].strip()
                 
-            first = tokens[0]
-
-            if CODE_RE.match(first):
-                # This is a product line
-                # Format: CODE Description... Qty Price Subtotal Tax TaxPct TotalPrice Warranty
-                
-                # Collect full line including continuations
-                full_line = line
+                # Collect continuation lines (lines without product data pattern)
                 j = i + 1
+                continuation_lines = []
                 while j < len(rows):
                     next_line = rows[j].strip()
                     if not next_line:
                         break
-                    # Stop if new product code
-                    if CODE_RE.match(next_line.split()[0] if next_line.split() else ""):
-                        break
+                    
                     # Stop at totals
                     if any(stop in next_line for stop in ["Celkom:", "Vyčíslenie", "Nehraďte"]):
                         break
                     
-                    # For continuation lines, remove all leading numbers/codes
-                    # This handles cases like "67a21 UM3406KA-OLED282W Jade Black"
-                    # We only want the text description part
+                    # If next line has product data pattern, it's a new product
+                    if PRODUCT_DATA_PATTERN.search(next_line):
+                        break
+                    
+                    # This is a continuation line - add to description
+                    # Remove any leading codes/numbers from continuation
                     parts = next_line.split()
-                    if parts:
-                        # Check if first token is a number or code (contains digits)
-                        first_token = parts[0]
-                        if re.search(r'\d', first_token):
-                            # Skip the first token and add the rest
-                            if len(parts) > 1:
-                                full_line += ' ' + ' '.join(parts[1:])
-                        else:
-                            # No numbers in first token, add the whole line
-                            full_line += ' ' + next_line
+                    if parts and re.search(r'\d', parts[0]):
+                        # First token has digits, skip it
+                        if len(parts) > 1:
+                            continuation_lines.append(' '.join(parts[1:]))
+                    else:
+                        continuation_lines.append(next_line)
                     
                     i = j
                     j += 1
                 
-                # Now parse the full line
-                # Find numeric pattern: Qty Price Subtotal Tax TaxPct TotalPrice
-                # Pattern: 1 5,30 5,30 1,22 23 6,52 24
-                num_pattern = r'\s+(\d+)\s+(-?\d+,\d+)\s+(-?\d+,\d+)'
-                num_match = re.search(num_pattern, full_line)
+                # Build full description
+                full_description = desc_part
+                if continuation_lines:
+                    full_description += ' ' + ' '.join(continuation_lines)
                 
-                if num_match:
-                    # Everything before numbers is description
-                    desc_part = full_line[:num_match.start()].strip()
-                    # Remove the product code from description
-                    desc_part = desc_part[len(first):].strip()
-                    
-                    # Skip lines with "Nehmotný produkt" in description
-                    if "Nehmotný produkt" in desc_part:
-                        _logger.info(f"Skipping intangible product: {desc_part[:50]}")
-                        i += 1
-                        continue
-                    
-                    qty = float(num_match.group(1))
-                    price = float(num_match.group(2).replace(',', '.'))
-                    
-                    # Try to extract VAT rate from the line
-                    # Remaining after Qty Price: "192,51 23 1 029,53 24 description..."
-                    # Pattern: DPH_Amount VAT%(0-25) Total Warranty/description
-                    # We want the first standalone number that's 0-25
-                    remaining = full_line[num_match.end():]
-                    
-                    # Find first standalone number in range 0-25 (VAT rate)
-                    tokens = remaining.split()
-                    vat_rate = 0.0
-                    
-                    for token in tokens:
-                        # Check if it's a standalone number (digits only, no comma/decimal)
-                        if token.isdigit():
-                            num = int(token)
-                            # VAT should be 0-25 for Slovakia
-                            if 0 <= num <= 25:
-                                vat_rate = float(num)
-                                break
-                    
-                    items.append({
-                        "description": f"{desc_part}",
-                        "quantity": qty,
-                        "price_unit": price,
-                        "vat_rate": vat_rate,
-                    })
-                else:
-                    _logger.warning(f"Could not parse numbers from line: {full_line[:100]}")
+                # Remove product code from start if present
+                tokens = full_description.split()
+                if tokens and CODE_RE.match(tokens[0]):
+                    full_description = ' '.join(tokens[1:])
+                
+                # Skip lines with "Nehmotný produkt"
+                if "Nehmotný produkt" in full_description:
+                    _logger.info(f"Skipping intangible product: {full_description[:50]}")
+                    i += 1
+                    continue
+                
+                # Extract quantity and price from the match
+                qty = float(data_match.group(1))
+                price = float(data_match.group(2).replace(',', '.'))
+                
+                # Extract VAT rate from remaining numbers
+                # After Qty Price Price, pattern is: DPH_Amount VAT% Total Warranty
+                remaining = line[data_match.end():]
+                tokens = remaining.split()
+                vat_rate = 0.0
+                
+                for token in tokens:
+                    if token.isdigit():
+                        num = int(token)
+                        if 0 <= num <= 25:
+                            vat_rate = float(num)
+                            break
+                
+                items.append({
+                    "description": full_description.strip(),
+                    "quantity": qty,
+                    "price_unit": price,
+                    "vat_rate": vat_rate,
+                })
 
             i += 1
 
@@ -813,41 +834,41 @@ class SupplierInvoiceProcessorLine(models.Model):
     )
     
     name = fields.Char(
-        string='Description',
+        string='Popis',
         required=True,
     )
     
     product_id = fields.Many2one(
         'product.product',
-        string='Product',
+        string='Produkt',
     )
     
     quantity = fields.Float(
-        string='Quantity',
+        string='Množstvo',
         default=1.0,
         required=True,
     )
     
     price_unit = fields.Float(
-        string='Unit Price',
+        string='Jednotková cena',
         required=True,
     )
     
     vat_rate = fields.Float(
-        string='VAT %',
+        string='DPH %',
         default=0.0,
-        help='VAT rate in percentage (e.g., 20 for 20%)',
+        help='Sadzba DPH v percentách (napr. 20 pre 20%)',
     )
     
     price_subtotal = fields.Float(
-        string='Subtotal',
+        string='Medzisúčet',
         compute='_compute_price_subtotal',
         store=True,
     )
     
     currency_id = fields.Many2one(
         related='processor_id.currency_id',
-        string='Currency',
+        string='Mena',
         readonly=True,
     )
 

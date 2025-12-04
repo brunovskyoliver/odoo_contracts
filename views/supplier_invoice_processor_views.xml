@@ -24,12 +24,12 @@
         <field name="name">supplier.invoice.processor.form</field>
         <field name="model">supplier.invoice.processor</field>
         <field name="arch" type="xml">
-            <form string="Supplier Invoice Processor">
+            <form string="Processor 3000">
                 <header>
-                    <button name="action_process_pdf" string="Process PDF" type="object" class="btn-primary" invisible="state not in ('draft', 'error')"/>
-                    <button name="action_create_invoice" string="Create Invoice" type="object" class="btn-primary" invisible="state != 'extracted'"/>
-                    <button name="action_view_invoice" string="View Invoice" type="object" class="btn-primary" invisible="not invoice_id"/>
-                    <button name="action_reset_to_draft" string="Reset to Draft" type="object" invisible="state == 'draft'"/>
+                    <button name="action_process_pdf" string="Načítať PDF" type="object" class="btn-primary" invisible="state not in ('draft', 'error')"/>
+                    <button name="action_create_invoice" string="Vytvoriť faktúru" type="object" class="btn-primary" invisible="state != 'extracted'"/>
+                    <button name="action_view_invoice" string="Zobraziť faktúru" type="object" class="btn-primary" invisible="not invoice_id"/>
+                    <button name="action_reset_to_draft" string="Vrátiť do konceptu" type="object" invisible="state == 'draft'"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,processing,extracted,done"/>
                 </header>
                 <sheet>
@@ -49,7 +49,7 @@
                             <field name="pdf_file" filename="pdf_filename" widget="binary"/>
                             <field name="pdf_filename" invisible="1"/>
                             <field name="attachment_id" invisible="1"/>
-                            <field name="filename"/>
+                            <field name="filename" invisible="1"/>
                             <field name="supplier_id"/>
                             <field name="invoice_number"/>
                             <field name="company_id" groups="base.group_multi_company"/>
@@ -62,7 +62,7 @@
                         </group>
                     </group>
                     <notebook>
-                        <page string="Invoice Lines" name="lines">
+                        <page string="Riadky faktúry" name="lines">
                             <field name="line_ids">
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle"/>
@@ -78,16 +78,13 @@
                             <group class="oe_subtotal_footer oe_right">
                                 <field name="total_untaxed" widget="monetary"/>
                                 <field name="total_tax" widget="monetary"/>
-                                <div class="oe_subtotal_footer_separator oe_inline">
-                                    <label for="total_amount"/>
-                                </div>
                                 <field name="total_amount" class="oe_subtotal_footer_separator" widget="monetary"/>
                             </group>
                         </page>
-                        <page string="Extracted Text" name="extracted_text" invisible="not extracted_text">
+                        <page string="Text" name="extracted_text" invisible="not extracted_text">
                             <field name="extracted_text" widget="text"/>
                         </page>
-                        <page string="Notes" name="notes">
+                        <page string="Poznámky" name="notes">
                             <field name="notes" placeholder="Add any notes here..."/>
                         </page>
                         <page string="Error" name="error" invisible="state != 'error'">
@@ -105,7 +102,7 @@
         <field name="name">supplier.invoice.processor.search</field>
         <field name="model">supplier.invoice.processor</field>
         <field name="arch" type="xml">
-            <search string="Supplier Invoice Processor">
+            <search string="Processor 3000">
                 <field name="name"/>
                 <field name="supplier_id"/>
                 <field name="invoice_number"/>
@@ -128,25 +125,25 @@
 
     <!-- Action -->
     <record id="action_supplier_invoice_processor" model="ir.actions.act_window">
-        <field name="name">Invoice Processor</field>
+        <field name="name">Processor 3000</field>
         <field name="res_model">supplier.invoice.processor</field>
         <field name="view_mode">list,form</field>
         <field name="context">{'search_default_no_invoice': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
-                Upload a supplier invoice PDF to process
+                Nahrajte PDF faktúru dodávateľa na spracovanie
             </p>
             <p>
-                This tool will extract invoice data from PDF files and help you create supplier invoices automatically.
+                Tento nástroj extrahuje údaje z PDF faktúr a pomôže vám automaticky vytvoriť faktúry dodávateľov.
             </p>
         </field>
     </record>
 
     <!-- Menu -->
     <menuitem id="menu_supplier_invoice_processor"
-              name="Invoice Processor"
+              name="Processor 3000"
               parent="account.menu_finance_payables"
               action="action_supplier_invoice_processor"
-              sequence="50"/>
+              sequence="30"/>
 
 </odoo>
