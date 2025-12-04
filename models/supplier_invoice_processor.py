@@ -20,8 +20,22 @@ except ImportError:
 class SupplierInvoiceProcessor(models.Model):
     _name = 'supplier.invoice.processor'
     _description = 'Supplier Invoice Processor'
-    _inherit = ['mail.thread', 'mail.activity.mixin']
+    _inherit = ['mail.thread', 'mail.activity.mixin', 'mail.alias.mixin']
     _order = 'create_date desc'
+
+    def _get_alias_model_name(self, vals):
+        """Return the model name for the alias"""
+        return 'supplier.invoice.processor'
+
+    def _alias_get_creation_values(self):
+        """Return values to create the alias"""
+        values = super()._alias_get_creation_values()
+        values['alias_model_id'] = self.env['ir.model']._get('supplier.invoice.processor').id
+        if self.id:
+            values['alias_force_thread_id'] = self.id
+        values['alias_parent_model_id'] = self.env['ir.model']._get('supplier.invoice.processor').id
+        values['alias_parent_thread_id'] = self.id
+        return values
 
     name = fields.Char(
         string='Referencia',
@@ -248,7 +262,7 @@ class SupplierInvoiceProcessor(models.Model):
                 })
             
             self.state = 'extracted'
-            self.message_post(body=_('PDF processed successfully. %s lines extracted.') % len(self.line_ids))
+            self.message_post(body=_('PDF načítalo %s riadkov.') % len(self.line_ids))
             
         except Exception as e:
             _logger.exception("Error processing PDF: %s", str(e))
@@ -814,6 +828,61 @@ class SupplierInvoiceProcessor(models.Model):
         self.ensure_one()
         self.state = 'draft'
         self.error_message = False
+
+    @api.model
+    def message_new(self, msg_dict, custom_values=None):
+        """
+        Override to automatically create processor from incoming email.
+        This is called when an email arrives at the alias email address.
+        """
+        if custom_values is None:
+            custom_values = {}
+        
+        # Get email subject and sender
+        subject = msg_dict.get('subject', 'Invoice from email')
+        email_from = msg_dict.get('from', msg_dict.get('email_from', ''))
+        
+        # Create the processor record
+        custom_values['name'] = _('New')
+        custom_values['notes'] = f'Received from: {email_from}\nSubject: {subject}'
+        
+        processor = super().message_new(msg_dict, custom_values=custom_values)
+        
+        return processor
+    
+    def message_post(self, **kwargs):
+        """Override to process attachments when message is posted"""
+        res = super().message_post(**kwargs)
+        
+        # If this is a new record in draft state and has no attachment_id yet
+        if self.state == 'draft' and not self.attachment_id:
+            _logger.info(f"Checking for PDF attachments on record {self.id}")
+            # Check if there are PDF attachments now
+            pdf_attachments = self.env['ir.attachment'].search([
+                ('res_model', '=', 'supplier.invoice.processor'),
+                ('res_id', '=', self.id),
+                ('mimetype', '=', 'application/pdf'),
+            ])
+            
+            _logger.info(f"Found {len(pdf_attachments)} PDF attachments")
+            
+            if pdf_attachments and not self.attachment_id:
+                # Use the first PDF found
+                first_pdf = pdf_attachments[0]
+                _logger.info(f"Processing PDF: {first_pdf.name}")
+                self.write({
+                    'attachment_id': first_pdf.id,
+                    'pdf_filename': first_pdf.name,
+                })
+                
+                # Automatically process the PDF
+                try:
+                    self.action_process_pdf()
+                    _logger.info("PDF processing successful")
+                except Exception as e:
+                    _logger.exception("Auto-processing PDF failed: %s", str(e))
+        
+        return res
 
 
 class SupplierInvoiceProcessorLine(models.Model):

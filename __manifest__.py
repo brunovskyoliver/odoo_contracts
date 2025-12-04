@@ -80,6 +80,7 @@
         'views/contract_menu.xml',
         'data/contract_sequence.xml',
         'data/supplier_invoice_processor_sequence.xml',
+        'data/supplier_invoice_processor_alias.xml',
         'security/stock_rules.xml',
         'views/account_move_stock_view.xml',
     ],

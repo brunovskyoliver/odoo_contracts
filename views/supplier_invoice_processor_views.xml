@@ -136,6 +136,9 @@
             <p>
                 Tento nástroj extrahuje údaje z PDF faktúr a pomôže vám automaticky vytvoriť faktúry dodávateľov.
             </p>
+            <p>
+                <strong>Tip:</strong> Môžete tiež posielať faktúry emailom na <strong>dodavatelia@novem.sk</strong> a budú automaticky spracované.
+            </p>
         </field>
     </record>
 
