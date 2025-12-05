@@ -19,7 +19,7 @@ except ImportError:
 
 class SupplierInvoiceProcessor(models.Model):
     _name = 'supplier.invoice.processor'
-    _description = 'Supplier Invoice Processor'
+    _description = 'Processor 3000'
     _inherit = ['mail.thread', 'mail.activity.mixin', 'mail.alias.mixin']
     _order = 'create_date desc'
 
@@ -98,6 +98,12 @@ class SupplierInvoiceProcessor(models.Model):
     invoice_due_date = fields.Date(
         string='Dátum splatnosti',
         tracking=True,
+    )
+    
+    is_refund = fields.Boolean(
+        string='Je to dobropis',
+        default=False,
+        help='True if this is a credit note/refund (Opravný daňový doklad)',
     )
     
     currency_id = fields.Many2one(
@@ -242,6 +248,7 @@ class SupplierInvoiceProcessor(models.Model):
                 if supplier:
                     self.supplier_id = supplier.id
             
+            self.is_refund = invoice_data.get('is_refund', False)
             self.invoice_number = invoice_data.get('invoice_number')
             self.invoice_date = invoice_data.get('invoice_date')
             self.invoice_due_date = invoice_data.get('invoice_due_date')
@@ -320,23 +327,34 @@ class SupplierInvoiceProcessor(models.Model):
         
         # Check if this is an Alza invoice
         is_alza = 'Predávajúci: Alza.sk' in text or 'Alza.sk' in text
+        is_westech = 'westech' in text.lower()
         
-        if not is_alza:
-            raise UserError(_('This processor only handles Alza.sk invoices. Please check the PDF file.'))
+        if not is_alza and not is_westech:
+            raise UserError(_('This processor only handles Alza.sk and Westech invoices. Please check the PDF file.'))
+        
+        # Check if this is a credit note (dobropis/opravný doklad)
+        is_refund = 'Opravný daňový doklad' in text or 'Dobropis' in text
         
         data = {
             'lines': [],
-            'is_alza': True,
-            'supplier_id': 21,  # Alza supplier ID
+            'is_alza': is_alza,
+            'is_westech': is_westech,
+            'is_refund': is_refund,
         }
+        if is_alza:
+            data.update({ 'supplier_id': 21,})
+        elif is_westech:
+            data.update({ 'supplier_id': 1583,})
         
         # Extract invoice number (common patterns)
         invoice_patterns = [
-            r'Faktúra\s*-\s*daňový\s*doklad\s*-\s*(\d+)',
-            r'Invoice\s*#?\s*:?\s*(\S+)',
-            r'Faktura\s*č\.\s*:?\s*(\S+)',
-            r'Invoice\s*Number\s*:?\s*(\S+)',
-            r'Číslo\s*faktúry\s*:?\s*(\S+)',
+            r'Opravný\s+daňový\s+doklad\s*-\s*(\d+)',  # Alza credit note / corrective invoice number
+            r'FAKTÚRA\s+(\d+)',  # WESTech format: "FAKTÚRA 1102526327"
+            r'Faktúra\s*-\s*daňový\s*doklad\s*-\s*(\d+)',  # Alza invoice format
+            r'Invoice\s*#?\s*:?:?\s*(\S+)',
+            r'Faktura\s*č\.\s*:?:?\s*(\S+)',
+            r'Invoice\s*Number\s*:?:?\s*(\S+)',
+            r'Číslo\s*faktúry\s*:?:?\s*(\S+)',
         ]
         for pattern in invoice_patterns:
             match = re.search(pattern, text, re.IGNORECASE)
@@ -370,15 +388,16 @@ class SupplierInvoiceProcessor(models.Model):
             data['supplier_name'] = name_match.group(1).strip()
         
         # Extract amounts from tax breakdown section
-        # Look for "Vyčíslenie DPH v EUR:" section which has the accurate breakdown
-        # Pattern: "23 % 15,65 3,60" or "0 % 0,00 0,00"
+        # Look for "Vyčíslenie DPH v EUR:" (Alza) or "DPH% Základ DPH(zaokr.)" (WESTech) section
+        # Alza pattern: "23 % 15,65 3,60" (comma decimals)
+        # WESTech pattern: "23% 286.18 65.82 352.00" (dot decimals)
         # We need to sum all base amounts and tax amounts
         
         total_untaxed = 0.0
         total_tax = 0.0
         
-        # Find the tax breakdown section
-        vat_breakdown_pattern = r'(\d+)\s*%\s+([\d\s]+,\d+)\s+([\d\s]+,\d+)'
+        # Find the tax breakdown section - support both comma and dot decimals
+        vat_breakdown_pattern = r'(\d+)\s*%\s+([\d\s]+[,\.]\d+)\s+([\d\s]+[,\.]\d+)'
         vat_matches = re.findall(vat_breakdown_pattern, text)
         
         for match in vat_matches:
@@ -397,6 +416,7 @@ class SupplierInvoiceProcessor(models.Model):
         
         # Extract total amount (should match untaxed + tax)
         amount_patterns = [
+            r'Celkom k úhrade\s*:?\s*€?\s*([\d\s,]+\.?\d*)',  # WESTech format
             r'Celkom\s*:?\s*€?\s*([\d\s,]+\.?\d*)\s*EUR',
             r'Total\s*:?\s*€?\s*([\d\s,]+\.?\d*)',
             r'Amount\s*:?\s*€?\s*([\d\s,]+\.?\d*)',
@@ -431,7 +451,10 @@ class SupplierInvoiceProcessor(models.Model):
         
         # Fallback: parse lines from text if table extraction didn't work or gave bad results
         if not data['lines'] or len(data['lines']) > 20:  # Too many lines usually means bad parsing
-            data['lines'] = self._parse_lines_from_text(text)
+            if data.get('is_westech'):
+                data['lines'] = self._parse_westech_lines_from_text(text)
+            else:
+                data['lines'] = self._parse_lines_from_text(text)
         
         return data
 
@@ -658,6 +681,153 @@ class SupplierInvoiceProcessor(models.Model):
 
         return items
 
+    def _parse_westech_lines_from_text(self, text):
+        """
+        WESTech invoice parser - handles products with format:
+        Kód Názov produktu PočetHmotnosťkg Cena/MJ RP L/S Cena DPH % Celkom
+        Example: NTWUB-U6-IW Ubiquiti UniFi AP 6 InWall
+                 24 mesiacov 2 1.216 142.962 0.13 0.00 286.18 23% 352.01
+        """
+        rows = [r.strip() for r in text.split("\n")]
+        items = []
+        i = 0
+        in_items = False
+        
+        # Pattern to identify product code (alphanumeric, typically starts with letters)
+        CODE_RE = re.compile(r'^[A-Z0-9]{3,}')
+        # Pattern for numeric data line - look for the distinctive DPH% pattern and work from there
+        # Example: "12 mesiacov 1 2.428 849.940 0.42 6.05 856.41 23% 1 053.38"
+        # Example: "12 mesiacov 1 3.018 1 060.200 0.42 6.05 1 066.67 23% 1 312.00"
+        # The line format is: [warranty info] Počet Hmotnosť Cena/MJ RP L/S Cena DPH% Celkom
+        # Numbers with spaces (like "1 060.200") need special handling
+        # Use \b for word boundaries and allow optional spaces within numbers for thousands
+        DATA_PATTERN = re.compile(r'(\d+)\s+([\d.]+)\s+((?:\d+\s)*\d+\.[\d]+)\s+([\d.]+)\s+([\d.]+)\s+((?:\d+\s)*\d+\.[\d]+)\s+(\d+)%')
+
+        while i < len(rows):
+            line = rows[i]
+
+            # Start when we reach header
+            if not in_items:
+                if "Kód" in line and "Názov produktu" in line:
+                    in_items = True
+                i += 1
+                continue
+
+            # Stop at totals or summary sections
+            if any(stop in line for stop in ["Z celkovej sumy", "DPH%", "Základ", "Prevzal"]):
+                break
+
+            if not line:
+                i += 1
+                continue
+
+            # Check if line starts with product code
+            tokens = line.split()
+            if not tokens:
+                i += 1
+                continue
+            
+            first = tokens[0]
+            
+            if CODE_RE.match(first):
+                # This is a product line
+                # Collect description (current line and next lines until we hit data)
+                description_parts = [' '.join(tokens[1:])]  # Rest of first line after code
+                
+                j = i + 1
+                while j < len(rows):
+                    next_line = rows[j].strip()
+                    if not next_line:
+                        break
+                    
+                    # Check if this line has the data pattern
+                    if DATA_PATTERN.search(next_line):
+                        # Parse the data
+                        data_match = DATA_PATTERN.search(next_line)
+                        if data_match:
+                            # Extract and clean the values
+                            qty_str = data_match.group(1).strip()
+                            weight_str = data_match.group(2).strip()
+                            price_str = data_match.group(3).strip()  # May contain spaces like "1 060.200"
+                            rp_str = data_match.group(4).strip()
+                            ls_str = data_match.group(5).strip()
+                            cena_str = data_match.group(6).strip()
+                            vat_str = data_match.group(7).strip()
+                            
+                            # Remove spaces from numbers (thousands separators)
+                            qty = float(qty_str)
+                            price = float(cena_str.replace(' ', ''))  # Group 6 is "Cena/MJ" (price per unit without DPH)
+                            vat_rate = float(vat_str)  # Group 7 is DPH%
+                            
+                            _logger.info(f"Parsed: qty={qty}, price={price}, vat={vat_rate}% from line: {next_line}")
+                            
+                            # Before the data pattern might be warranty info - skip it
+                            # (e.g., "24 mesiacov" before the numeric data)
+                            
+                            full_description = ' '.join(description_parts).strip()
+                            
+                            items.append({
+                                "description": full_description,
+                                "quantity": qty,
+                                "price_unit": price,
+                                "vat_rate": vat_rate,
+                            })
+                        
+                        i = j
+                        break
+                    else:
+                        # This is part of description
+                        # Check if this line starts with a new product code - if so, stop
+                        next_tokens = next_line.split()
+                        if next_tokens and CODE_RE.match(next_tokens[0]):
+                            # This is a new product, don't include it in description
+                            break
+                        
+                        # Skip serial numbers, warranty info, and other metadata
+                        if not any(skip in next_line for skip in ["mesiacov", "Sériové", ";"]):
+                            description_parts.append(next_line)
+                    
+                    j += 1
+                    i = j - 1
+
+            i += 1
+
+        # Extract recycling fee (Recyklačný poplatok) if present
+        # Pattern: "Recyklačný poplatok (DPH 23%): 0.84 EUR"
+        # recycling_pattern = r'Recyklačný poplatok\s*\(DPH\s*(\d+)%\)\s*:\s*([\d.]+)\s*EUR'
+        # recycling_match = re.search(recycling_pattern, text, re.IGNORECASE)
+        
+        # if recycling_match:
+        #     vat_rate = float(recycling_match.group(1))
+        #     total_amount = float(recycling_match.group(2))
+        #     price_unit = total_amount
+            
+        #     items.append({
+        #         "description": f"Recyklačný poplatok (DPH {int(vat_rate)}%)",
+        #         "quantity": 1,
+        #         "price_unit": round(price_unit, 2),
+        #         "vat_rate": vat_rate,
+        #     })
+        
+        # # Extract SOZA fee (SOZA poplatok) if present
+        # # Pattern: "SOZA poplatok (DPH 23%): 12.10 EUR"
+        # soza_pattern = r'SOZA poplatok\s*\(DPH\s*(\d+)%\)\s*:\s*([\d.]+)\s*EUR'
+        # soza_match = re.search(soza_pattern, text, re.IGNORECASE)
+        
+        # if soza_match:
+        #     vat_rate = float(soza_match.group(1))
+        #     total_amount = float(soza_match.group(2))
+        #     price_unit = total_amount
+            
+        #     items.append({
+        #         "description": f"SOZA poplatok (DPH {int(vat_rate)}%)",
+        #         "quantity": 1,
+        #         "price_unit": round(price_unit, 2),
+        #         "vat_rate": vat_rate,
+        #     })
+
+        return items
+
 
     def _parse_date(self, date_str):
         """Parse date string to date object"""
@@ -717,9 +887,12 @@ class SupplierInvoiceProcessor(models.Model):
             raise UserError(_('No invoice lines found. Please process the PDF first.'))
         
         try:
+            # Determine move type based on whether it's a refund
+            move_type = 'in_refund' if self.is_refund else 'in_invoice'
+            
             # Prepare invoice values
             invoice_vals = {
-                'move_type': 'in_invoice',
+                'move_type': move_type,
                 'partner_id': self.supplier_id.id,
                 'invoice_date': self.invoice_date or fields.Date.today(),
                 'invoice_date_due': self.invoice_due_date,
