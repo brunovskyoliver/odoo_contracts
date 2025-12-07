@@ -5,7 +5,7 @@
         <field name="name">supplier.invoice.processor.list</field>
         <field name="model">supplier.invoice.processor</field>
         <field name="arch" type="xml">
-            <list string="Supplier Invoice Processor" decoration-info="state=='draft'" decoration-success="state=='done'" decoration-warning="state in ('processing','extracted')" decoration-danger="state=='error'">
+            <list string="Supplier Invoice Processor" decoration-info="state=='draft'" decoration-success="state=='done'" decoration-warning="state in ('processing','extracted','pairing')" decoration-danger="state=='error'">
                 <field name="name"/>
                 <field name="filename"/>
                 <field name="supplier_id"/>
@@ -13,7 +13,7 @@
                 <field name="invoice_date"/>
                 <field name="total_amount" sum="Total"/>
                 <field name="currency_id" column_invisible="1"/>
-                <field name="state" widget="badge" decoration-info="state=='draft'" decoration-success="state=='done'" decoration-warning="state in ('processing','extracted')" decoration-danger="state=='error'"/>
+                <field name="state" widget="badge" decoration-info="state=='draft'" decoration-success="state=='done'" decoration-warning="state in ('processing','extracted','pairing')" decoration-danger="state=='error'"/>
                 <field name="invoice_id"/>
             </list>
         </field>
@@ -27,10 +27,10 @@
             <form string="Processor 3000">
                 <header>
                     <button name="action_process_pdf" string="Načítať PDF" type="object" class="btn-primary" invisible="state not in ('draft', 'error')"/>
-                    <button name="action_create_invoice" string="Vytvoriť faktúru" type="object" class="btn-primary" invisible="state != 'extracted'"/>
+                    <button name="action_create_invoice" string="Vytvoriť faktúru" type="object" class="btn-primary" invisible="state not in ('extracted', 'pairing')"/>
                     <button name="action_view_invoice" string="Zobraziť faktúru" type="object" class="btn-primary" invisible="not invoice_id"/>
                     <button name="action_reset_to_draft" string="Vrátiť do konceptu" type="object" invisible="state == 'draft'"/>
-                    <field name="state" widget="statusbar" statusbar_visible="draft,processing,extracted,done"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,processing,pairing,extracted,done"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
@@ -64,7 +64,7 @@
                     <notebook>
                         <page string="Riadky faktúry" name="lines">
                             <field name="line_ids">
-                                <list editable="bottom">
+                                <list editable="bottom" decoration-warning="not product_id">
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
                                     <field name="product_id"/>
@@ -72,7 +72,18 @@
                                     <field name="price_unit"/>
                                     <field name="vat_rate" string="DPH %"/>
                                     <field name="price_subtotal"/>
+                                    <field name="needs_pairing" column_invisible="1"/>
                                     <field name="currency_id" column_invisible="1"/>
+                                    <button name="action_pair_with_product" 
+                                            type="object" 
+                                            string="Spárovať" 
+                                            icon="fa-link"
+                                            invisible="product_id"/>
+                                    <button name="action_create_product" 
+                                            type="object" 
+                                            string="Vytvoriť" 
+                                            icon="fa-plus"
+                                            invisible="product_id"/>
                                 </list>
                             </field>
                             <group class="oe_subtotal_footer oe_right">
@@ -128,7 +139,7 @@
         <field name="name">Processor 3000</field>
         <field name="res_model">supplier.invoice.processor</field>
         <field name="view_mode">list,form</field>
-        <field name="context">{'search_default_no_invoice': 1}</field>
+        <field name="context">{}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Nahrajte PDF faktúru dodávateľa na spracovanie

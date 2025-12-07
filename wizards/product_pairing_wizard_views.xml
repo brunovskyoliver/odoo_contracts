@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Product Pairing Wizard Form -->
+    <record id="view_product_pairing_wizard_form" model="ir.ui.view">
+        <field name="name">product.pairing.wizard.form</field>
+        <field name="model">product.pairing.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Spárovať s produktom">
+                <group>
+                    <group>
+                        <field name="line_id" invisible="1"/>
+                        <field name="description" readonly="1"/>
+                        <field name="supplier_id"/>
+                    </group>
+                    <group>
+                        <field name="product_id" 
+                               options="{'no_create': False, 'no_open': True}"
+                               context="{'default_purchase_ok': True, 'default_sale_ok': False}"/>
+                    </group>
+                </group>
+                <group>
+                    <field name="create_pairing_rule"/>
+                    <field name="apply_to_all"/>
+                </group>
+                <footer>
+                    <button string="Spárovať" name="action_pair" type="object" class="btn-primary"/>
+                    <button string="Zrušiť" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

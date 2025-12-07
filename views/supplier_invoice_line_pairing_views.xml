@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Unpaired Lines Tree View (special view showing all unpaired lines) -->
+    <record id="view_supplier_invoice_line_unpaired_list" model="ir.ui.view">
+        <field name="name">supplier.invoice.processor.line.unpaired.list</field>
+        <field name="model">supplier.invoice.processor.line</field>
+        <field name="arch" type="xml">
+            <list string="Nepárované riadky faktúr" 
+                  decoration-danger="needs_pairing"
+                  create="false"
+                  delete="false">
+                <field name="processor_id"/>
+                <field name="name"/>
+                <field name="quantity"/>
+                <field name="price_unit"/>
+                <field name="vat_rate"/>
+                <field name="price_subtotal" sum="Celkom"/>
+                <field name="product_id"/>
+                <field name="needs_pairing" invisible="1"/>
+                <button name="action_pair_with_product" 
+                        type="object" 
+                        string="Spárovať" 
+                        icon="fa-link"
+                        class="btn-primary"/>
+                <button name="action_create_product" 
+                        type="object" 
+                        string="Vytvoriť produkt" 
+                        icon="fa-plus"
+                        class="btn-success"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Unpaired Lines Form View -->
+    <record id="view_supplier_invoice_line_unpaired_form" model="ir.ui.view">
+        <field name="name">supplier.invoice.processor.line.unpaired.form</field>
+        <field name="model">supplier.invoice.processor.line</field>
+        <field name="arch" type="xml">
+            <form string="Riadok faktúry">
+                <header>
+                    <button name="action_pair_with_product" 
+                            type="object" 
+                            string="Spárovať s produktom" 
+                        class="btn-primary"
+                        invisible="product_id"/>
+                    <button name="action_create_product" 
+                            type="object" 
+                            string="Vytvoriť nový produkt" 
+                        class="btn-success"
+                        invisible="product_id"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="toggle_active" type="object" class="oe_stat_button" icon="fa-archive" invisible="1">
+                            <field name="needs_pairing" widget="boolean_button"/>
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="processor_id" readonly="1"/>
+                            <field name="name"/>
+                            <field name="product_id"/>
+                        </group>
+                        <group>
+                            <field name="quantity"/>
+                            <field name="price_unit"/>
+                            <field name="vat_rate"/>
+                            <field name="price_subtotal"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Unpaired Lines Search View -->
+    <record id="view_supplier_invoice_line_unpaired_search" model="ir.ui.view">
+        <field name="name">supplier.invoice.processor.line.unpaired.search</field>
+        <field name="model">supplier.invoice.processor.line</field>
+        <field name="arch" type="xml">
+            <search string="Vyhľadať nepárované riadky">
+                <field name="name"/>
+                <field name="processor_id"/>
+                <field name="product_id"/>
+                <filter string="Nepárované" name="unpaired" domain="[('product_id', '=', False)]"/>
+                <filter string="Spárované" name="paired" domain="[('product_id', '!=', False)]"/>
+                <group expand="0" string="Zoskupiť podľa">
+                    <filter string="Faktúra" name="group_processor" context="{'group_by': 'processor_id'}"/>
+                    <filter string="Produkt" name="group_product" context="{'group_by': 'product_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action for Unpaired Lines -->
+    <record id="action_unpaired_invoice_lines" model="ir.actions.act_window">
+        <field name="name">Nepárované riadky faktúr</field>
+        <field name="res_model">supplier.invoice.processor.line</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('product_id', '=', False), ('processor_id.is_refund', '=', False)]</field>
+        <field name="context">{'search_default_unpaired': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Žiadne nepárované riadky faktúr
+            </p>
+            <p>
+                Tu sa zobrazujú všetky riadky faktúr, ktoré ešte nemajú priradený produkt.
+                Môžete ich spárovať s existujúcim produktom alebo vytvoriť nový produkt.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item for Unpaired Lines -->
+    <menuitem 
+        id="menu_unpaired_invoice_lines"
+        name="Nepárované riadky"
+        parent="account.menu_finance_payables"
+        action="action_unpaired_invoice_lines"
+        sequence="60"/>
+
+</odoo>

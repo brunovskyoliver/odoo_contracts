@@ -49,6 +49,7 @@ class SupplierInvoiceProcessor(models.Model):
     state = fields.Selection([
         ('draft', 'Koncept'),
         ('processing', 'Spracovávanie'),
+        ('pairing', 'Vyžaduje párovanie'),
         ('extracted', 'Údaje extrahované'),
         ('done', 'Faktúra vytvorená'),
         ('error', 'Chyba'),
@@ -265,10 +266,11 @@ class SupplierInvoiceProcessor(models.Model):
                     'quantity': line_data.get('quantity', 1.0),
                     'price_unit': line_data.get('price_unit', 0.0),
                     'vat_rate': line_data.get('vat_rate', 0.0),
-                    'product_id': self._find_product(line_data.get('description')),
+                    'product_id': self._find_product(line_data.get('description'), self.supplier_id.id if self.supplier_id else None),
                 })
-            
-            self.state = 'extracted'
+
+            # Set state based on matching status
+            self._update_pairing_state()
             self.message_post(body=_('PDF načítalo %s riadkov.') % len(self.line_ids))
             
         except Exception as e:
@@ -316,6 +318,27 @@ class SupplierInvoiceProcessor(models.Model):
         
         if not text:
             raise UserError(_('PDF text extraction failed. Please install PyPDF2 or pdfplumber, or the PDF may be image-based and requires OCR.'))
+
+    def _update_pairing_state(self):
+        """Set processor state to pairing if any lines lack a product."""
+        self.ensure_one()
+
+        if self.state == 'done':
+            return
+
+        # Skip pairing requirement for refunds - they should auto-create
+        if self.is_refund:
+            if self.state in ('processing', 'pairing', 'draft', 'extracted'):
+                self.state = 'extracted'
+            return
+
+        has_unmatched = any(not line.product_id for line in self.line_ids)
+        if has_unmatched:
+            self.state = 'pairing'
+        else:
+            # Only move to extracted if we're not already further along
+            if self.state in ('processing', 'pairing', 'draft', 'extracted'):
+                self.state = 'extracted'
 
     def _parse_invoice_data(self, text, pdf_data):
         """
@@ -865,11 +888,19 @@ class SupplierInvoiceProcessor(models.Model):
         
         return supplier
 
-    def _find_product(self, description):
-        """Try to find existing product by name"""
+    def _find_product(self, description, supplier_id=None):
+        """Try to find existing product by name or pairing rule"""
         if not description:
             return False
         
+        # First try pairing rules
+        product = self.env['product.pairing.rule'].find_product_for_description(
+            description, supplier_id
+        )
+        if product:
+            return product.id
+        
+        # Fallback to direct product search
         product = self.env['product.product'].search([
             ('name', 'ilike', description)
         ], limit=1)
@@ -1052,6 +1083,18 @@ class SupplierInvoiceProcessor(models.Model):
                 try:
                     self.action_process_pdf()
                     _logger.info("PDF processing successful")
+                    
+                    # AUTO-CREATE INVOICE:
+                    # - Always for refunds (skip pairing requirement)
+                    # - For regular invoices: only if ALL lines are matched with products
+                    if self.state == 'extracted':  # All lines are matched OR is_refund
+                        _logger.info(f"Auto-creating invoice for {self.name} (refund={self.is_refund})")
+                        self.action_create_invoice()
+                    else:
+                        # Some lines are unmatched - stay in pairing state
+                        _logger.info(f"Unmatched lines detected. Staying in pairing state for {self.name}")
+                        self.message_post(body=_('PDF načítané, ale niektoré riadky vyžadujú párovanie s produktom.\nPrejdite na "Nepárované riadky" a spárujte ich alebo vytvorte nové produkty.'))
+                        
                 except Exception as e:
                     _logger.exception("Auto-processing PDF failed: %s", str(e))
         
@@ -1107,6 +1150,12 @@ class SupplierInvoiceProcessorLine(models.Model):
         compute='_compute_price_subtotal',
         store=True,
     )
+
+    needs_pairing = fields.Boolean(
+        string='Vyžaduje párovanie',
+        compute='_compute_needs_pairing',
+        store=True,
+    )
     
     currency_id = fields.Many2one(
         related='processor_id.currency_id',
@@ -1118,3 +1167,115 @@ class SupplierInvoiceProcessorLine(models.Model):
     def _compute_price_subtotal(self):
         for line in self:
             line.price_subtotal = line.quantity * line.price_unit
+
+    @api.depends('product_id')
+    def _compute_needs_pairing(self):
+        for line in self:
+            line.needs_pairing = not bool(line.product_id)
+
+    @api.model
+    def create(self, vals):
+        line = super().create(vals)
+        if line.processor_id:
+            line.processor_id._update_pairing_state()
+        return line
+
+    def write(self, vals):
+        res = super().write(vals)
+        # If product was added/removed, refresh processor pairing state
+        if 'product_id' in vals:
+            for line in self:
+                if line.processor_id:
+                    line.processor_id._update_pairing_state()
+        return res
+
+    def unlink(self):
+        processors = self.mapped('processor_id')
+        res = super().unlink()
+        for processor in processors:
+            processor._update_pairing_state()
+        return res
+    
+    def action_pair_with_product(self):
+        """Open wizard to pair this line with a product"""
+        self.ensure_one()
+        return {
+            'name': _('Spárovať s produktom'),
+            'type': 'ir.actions.act_window',
+            'res_model': 'product.pairing.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_line_id': self.id,
+                'default_description': self.name,
+                'default_supplier_id': self.processor_id.supplier_id.id if self.processor_id.supplier_id else False,
+            },
+        }
+    
+    def action_create_product(self):
+        """Create a new product from this line and pair it, plus all matching unpaired lines"""
+        self.ensure_one()
+        
+        # Use absolute value of price (in case of credit notes with negative prices)
+        price = abs(self.price_unit)
+        
+        # Create product with prices from invoice line
+        product_template = self.env['product.template'].create({
+            'name': self.name,
+            'type': 'consu',  # Consumable product
+            'purchase_ok': True,
+            'sale_ok': True,
+            'list_price': price,  # Selling price
+            'standard_price': price,  # Cost price (same as invoice)
+        })
+        
+        # Get the product variant (product.product)
+        product = product_template.product_variant_ids[0] if product_template.product_variant_ids else None
+        
+        if not product:
+            raise UserError(_('Nepodarilo sa vytvoriť variantu produktu'))
+        
+        # Create pairing rule
+        self.env['product.pairing.rule'].create_pairing(
+            self.name,
+            product.id,
+            self.processor_id.supplier_id.id if self.processor_id.supplier_id else None,
+        )
+        
+        # Pair current line
+        self.product_id = product.id
+        
+        # Find and pair ALL matching unpaired lines with the same description
+        matching_lines = self.env['supplier.invoice.processor.line'].search([
+            ('name', '=', self.name),
+            ('product_id', '=', False),
+            ('id', '!=', self.id),
+        ])
+        
+        matched_count = len(matching_lines)
+        if matching_lines:
+            matching_lines.write({'product_id': product.id})
+        
+        self.processor_id.message_post(
+            body=_('Nový produkt vytvorený: %s (Cena: %s %s). Spárovaných riadkov: %d') % (
+                product.name,
+                price,
+                self.processor_id.currency_id.name,
+                matched_count + 1
+            )
+        )
+        
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Produkt vytvorený a spárovaný'),
+                'message': _('Produkt "%s" bol vytvorený s cenou %s %s.\nSpárovaných celkom: %d riadkov.') % (
+                    product.name,
+                    price,
+                    self.processor_id.currency_id.name,
+                    matched_count + 1
+                ),
+                'type': 'success',
+            },
+        }
