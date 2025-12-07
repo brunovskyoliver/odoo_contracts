@@ -351,9 +351,10 @@ class SupplierInvoiceProcessor(models.Model):
         # Check if this is an Alza invoice
         is_alza = 'Predávajúci: Alza.sk' in text or 'Alza.sk' in text
         is_westech = 'westech' in text.lower()
+        is_tes = 'tes - slovakia' in text.lower()
         
-        if not is_alza and not is_westech:
-            raise UserError(_('This processor only handles Alza.sk and Westech invoices. Please check the PDF file.'))
+        if not is_alza and not is_westech and not is_tes:
+            raise UserError(_('This processor only handles Alza.sk, Westech, and TES Slovakia invoices. Please check the PDF file.'))
         
         # Check if this is a credit note (dobropis/opravný doklad)
         is_refund = 'Opravný daňový doklad' in text or 'Dobropis' in text
@@ -362,16 +363,19 @@ class SupplierInvoiceProcessor(models.Model):
             'lines': [],
             'is_alza': is_alza,
             'is_westech': is_westech,
+            'is_tes': is_tes,
             'is_refund': is_refund,
         }
         if is_alza:
             data.update({ 'supplier_id': 21,})
         elif is_westech:
             data.update({ 'supplier_id': 1583,})
-        
+        elif is_tes:
+            data.update({ 'supplier_id': 1649,})
         # Extract invoice number (common patterns)
         invoice_patterns = [
             r'Opravný\s+daňový\s+doklad\s*-\s*(\d+)',  # Alza credit note / corrective invoice number
+            r'FAKTÚRA\s+číslo\s+(\d+)',  # TES format: "FAKTÚRA číslo 2512298"
             r'FAKTÚRA\s+(\d+)',  # WESTech format: "FAKTÚRA 1102526327"
             r'Faktúra\s*-\s*daňový\s*doklad\s*-\s*(\d+)',  # Alza invoice format
             r'Invoice\s*#?\s*:?:?\s*(\S+)',
@@ -439,6 +443,7 @@ class SupplierInvoiceProcessor(models.Model):
         
         # Extract total amount (should match untaxed + tax)
         amount_patterns = [
+            r'Celková hodnota faktúry\s*:?\s*([\d\s,]+\.?\d*)',  # TES format
             r'Celkom k úhrade\s*:?\s*€?\s*([\d\s,]+\.?\d*)',  # WESTech format
             r'Celkom\s*:?\s*€?\s*([\d\s,]+\.?\d*)\s*EUR',
             r'Total\s*:?\s*€?\s*([\d\s,]+\.?\d*)',
@@ -476,6 +481,8 @@ class SupplierInvoiceProcessor(models.Model):
         if not data['lines'] or len(data['lines']) > 20:  # Too many lines usually means bad parsing
             if data.get('is_westech'):
                 data['lines'] = self._parse_westech_lines_from_text(text)
+            elif data.get('is_tes'):
+                data['lines'] = self._parse_tes_lines_from_text(text)
             else:
                 data['lines'] = self._parse_lines_from_text(text)
         
@@ -851,6 +858,106 @@ class SupplierInvoiceProcessor(models.Model):
 
         return items
 
+    def _parse_tes_lines_from_text(self, text):
+        """
+        TES-Slovakia invoice parser - handles products with format:
+        Kód Názov produktu Počet MJ Cena/MJ DPH% Základ DPH Celkom
+        Example: S04072 Ubiquiti 10G SFP+ DAC kábel, pasívny, DDM, 1m 5 ks 11.2194 23% 56.10 12.90 69.00
+        """
+        rows = [r.strip() for r in text.split("\n")]
+        items = []
+        i = 0
+        in_items = False
+        
+        # Pattern to identify product code (starts with letter/number, followed by digits)
+        CODE_RE = re.compile(r'^[A-Z]\d{5}')  # TES codes like S04072
+        # Pattern for numeric data line - Počet MJ Cena/MJ DPH% Základ DPH Celkom
+        # Example: "5 ks 11.2194 23% 56.10 12.90 69.00"
+        DATA_PATTERN = re.compile(r'(\d+)\s+ks\s+([\d.]+)\s+(\d+)%\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)')
+
+        while i < len(rows):
+            line = rows[i]
+
+            # Start when we reach header
+            if not in_items:
+                if "Kód" in line and "Názov produktu" in line:
+                    in_items = True
+                i += 1
+                continue
+
+            # Stop at totals or summary sections (but continue to parse RECFEE lines)
+            if any(stop in line for stop in ["Celková hodnota", "Už zaplatené", "Celkom k úhrade", "Rozpis DPH"]):
+                # But don't break if this is a RECFEE line
+                if "RECFEE" not in line:
+                    break
+
+            if not line:
+                i += 1
+                continue
+
+            # Check if this line contains product data
+            data_match = DATA_PATTERN.search(line)
+            
+            if data_match:
+                # This line has product data - it's a product line
+                # Everything before the numbers is the description
+                desc_part = line[:data_match.start()].strip()
+                
+                # Collect continuation lines (lines without product data pattern)
+                j = i + 1
+                continuation_lines = []
+                while j < len(rows):
+                    next_line = rows[j].strip()
+                    if not next_line:
+                        break
+                    
+                    # Stop at totals (but not on RECFEE lines)
+                    if any(stop in next_line for stop in ["Celková hodnota", "Už zaplatené", "Celkom k úhrade", "Rozpis DPH"]):
+                        if "RECFEE" not in next_line:
+                            break
+                    
+                    # If next line has product data pattern, it's a new product
+                    if DATA_PATTERN.search(next_line):
+                        break
+                    
+                    # This is a continuation line - add to description
+                    if next_line and "(RECFEE)" not in next_line:
+                        continuation_lines.append(next_line)
+                    
+                    i = j
+                    j += 1
+                
+                # Build full description
+                full_description = desc_part
+                if continuation_lines:
+                    full_description += ' ' + ' '.join(continuation_lines)
+                
+                # Remove product code from start if present
+                tokens = full_description.split()
+                if tokens and CODE_RE.match(tokens[0]):
+                    full_description = ' '.join(tokens[1:])
+                
+                # Skip DOP UPS lines (free shipping)
+                if "DOP UPS" in full_description:
+                    _logger.info(f"Skipping special line: {full_description[:50]}")
+                    i += 1
+                    continue
+                
+                # Extract quantity and price from the match
+                qty = float(data_match.group(1))
+                price = float(data_match.group(2))
+                vat_rate = float(data_match.group(3))
+                
+                items.append({
+                    "description": full_description.strip(),
+                    "quantity": qty,
+                    "price_unit": price,
+                    "vat_rate": vat_rate,
+                })
+
+            i += 1
+
+        return items
 
     def _parse_date(self, date_str):
         """Parse date string to date object"""
@@ -1150,11 +1257,16 @@ class SupplierInvoiceProcessorLine(models.Model):
         compute='_compute_price_subtotal',
         store=True,
     )
-
     needs_pairing = fields.Boolean(
         string='Vyžaduje párovanie',
         compute='_compute_needs_pairing',
         store=True,
+    )
+    
+    should_ignore = fields.Boolean(
+        string='Ignorovať párovanie',
+        compute='_compute_should_ignore',
+        help='Táto línka sa ignoruje pri párovaní (napr. poplatky, doprava)',
     )
     
     currency_id = fields.Many2one(
@@ -1168,10 +1280,23 @@ class SupplierInvoiceProcessorLine(models.Model):
         for line in self:
             line.price_subtotal = line.quantity * line.price_unit
 
-    @api.depends('product_id')
+    @api.depends('product_id', 'name', 'processor_id.supplier_id')
     def _compute_needs_pairing(self):
         for line in self:
-            line.needs_pairing = not bool(line.product_id)
+            # If line should be ignored, it doesn't need pairing
+            if line.should_ignore:
+                line.needs_pairing = False
+            else:
+                # Otherwise, it needs pairing if it doesn't have a product
+                line.needs_pairing = not bool(line.product_id)
+
+    @api.depends('name', 'processor_id.supplier_id')
+    def _compute_should_ignore(self):
+        """Check if this line should be ignored based on ignore rules."""
+        ignore_rule_model = self.env['pairing.ignore.rule']
+        for line in self:
+            supplier_id = line.processor_id.supplier_id.id if line.processor_id.supplier_id else None
+            line.should_ignore = ignore_rule_model.should_ignore_line(line.name, supplier_id)
 
     @api.model
     def create(self, vals):
@@ -1276,6 +1401,34 @@ class SupplierInvoiceProcessorLine(models.Model):
                     self.processor_id.currency_id.name,
                     matched_count + 1
                 ),
+                'type': 'success',
+            },
+        }
+    
+    def action_mark_ignore(self):
+        """Mark this line description as one to ignore in pairing"""
+        self.ensure_one()
+        
+        # Create or update ignore rule for this description
+        ignore_rule_model = self.env['pairing.ignore.rule']
+        supplier_id = self.processor_id.supplier_id.id if self.processor_id.supplier_id else None
+        
+        ignore_rule = ignore_rule_model.create_ignore_rule(
+            description=self.name,
+            supplier_id=supplier_id,
+            match_type='contains'
+        )
+        
+        self.processor_id.message_post(
+            body=_('Popis "%s" bol pridaný do pravidiel na ignorovanie. Podobné riadky sa už nebudú zobrazovať pri párovaní.') % self.name
+        )
+        
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Pravidlo na ignorovanie vytvorené'),
+                'message': _('Popis "%s" sa bude ignorovať pri párovaní.') % self.name,
                 'type': 'success',
             },
         }

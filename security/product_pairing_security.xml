@@ -12,6 +12,17 @@
             <field name="perm_unlink" eval="True"/>
         </record>
 
+        <!-- Security for Pairing Ignore Rule -->
+        <record id="access_pairing_ignore_rule_user" model="ir.model.access">
+            <field name="name">pairing.ignore.rule.user</field>
+            <field name="model_id" ref="model_pairing_ignore_rule"/>
+            <field name="group_id" ref="base.group_user"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+
         <!-- Security for Product Pairing Wizard -->
         <record id="access_product_pairing_wizard_user" model="ir.model.access">
             <field name="name">product.pairing.wizard.user</field>

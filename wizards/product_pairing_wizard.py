@@ -41,7 +41,7 @@ class ProductPairingWizard(models.TransientModel):
     
     apply_to_all = fields.Boolean(
         string='Aplikovať na všetky rovnaké riadky',
-        default=False,
+        default=True,
         help='Spáruje všetky nepárované riadky s rovnakým popisom',
     )
     

@@ -48,6 +48,11 @@
                             string="Vytvoriť nový produkt" 
                         class="btn-success"
                         invisible="product_id"/>
+                    <button name="action_mark_ignore"
+                            type="object"
+                            string="Ignorovať párovanie"
+                        class="btn-warning"
+                        invisible="product_id"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
@@ -66,6 +71,7 @@
                             <field name="price_unit"/>
                             <field name="vat_rate"/>
                             <field name="price_subtotal"/>
+                            <field name="should_ignore" readonly="1"/>
                             <field name="currency_id" invisible="1"/>
                         </group>
                     </group>
@@ -83,7 +89,7 @@
                 <field name="name"/>
                 <field name="processor_id"/>
                 <field name="product_id"/>
-                <filter string="Nepárované" name="unpaired" domain="[('product_id', '=', False)]"/>
+                <filter string="Nepárované" name="unpaired" domain="[('needs_pairing', '=', True)]"/>
                 <filter string="Spárované" name="paired" domain="[('product_id', '!=', False)]"/>
                 <group expand="0" string="Zoskupiť podľa">
                     <filter string="Faktúra" name="group_processor" context="{'group_by': 'processor_id'}"/>
@@ -98,7 +104,7 @@
         <field name="name">Nepárované riadky faktúr</field>
         <field name="res_model">supplier.invoice.processor.line</field>
         <field name="view_mode">list,form</field>
-        <field name="domain">[('product_id', '=', False), ('processor_id.is_refund', '=', False)]</field>
+        <field name="domain">[('needs_pairing', '=', True), ('processor_id.is_refund', '=', False)]</field>
         <field name="context">{'search_default_unpaired': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">

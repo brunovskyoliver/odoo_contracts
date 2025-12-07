@@ -79,6 +79,7 @@
         'views/contract_mobile_invoice_views.xml',
         'views/supplier_invoice_processor_views.xml',
         'views/product_pairing_rule_views.xml',
+        'views/pairing_ignore_rule_views.xml',
         'views/supplier_invoice_line_pairing_views.xml',
         'wizards/product_pairing_wizard_views.xml',
         'views/contract_menu.xml',
