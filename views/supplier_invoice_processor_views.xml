@@ -139,7 +139,7 @@
         <field name="name">Processor 3000</field>
         <field name="res_model">supplier.invoice.processor</field>
         <field name="view_mode">list,form</field>
-        <field name="context">{}</field>
+        <field name="context">{'search_default_no_invoice': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Nahrajte PDF faktúru dodávateľa na spracovanie

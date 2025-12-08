@@ -171,9 +171,14 @@ class ContractContract(models.Model):
         compute="_compute_has_inventory_products",
         store=True,
     )
-    nadspotreba = fields.Boolean(string="Nadspotreba", default=False, store=True)
+    nadspotreba = fields.Boolean(string="Nadspotreba", default=False, store=True, compute="_compute_nadspotreba")
 
     show_nadspotreba = fields.Boolean(compute="_compute_show_nadspotreba")
+
+    @api.depends('x_contract_type')
+    def _compute_nadspotreba(self):
+        for rec in self:
+            rec.nadspotreba = rec.x_contract_type == 'Mobilky'
 
     def _compute_show_nadspotreba(self):
         for rec in self:

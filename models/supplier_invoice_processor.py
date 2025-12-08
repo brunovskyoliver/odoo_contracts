@@ -608,10 +608,11 @@ class SupplierInvoiceProcessor(models.Model):
         in_items = False
         
         # Pattern to identify product data line: Qty (int) Price (decimal) Price (decimal)
-        # Example: "1 837,02 837,02 192,51 23 1 029,53 24"
-        PRODUCT_DATA_PATTERN = re.compile(r'\s+(\d+)\s+(-?\d+,\d+)\s+(-?\d+,\d+)')
-        CODE_RE = re.compile(r'^[A-Z]{2}[A-Z0-9]{2,}')  # Product codes like NA626e, SL190r
-
+        # # Example: "1 837,02 837,02 192,51 23 1 029,53 24"
+        # PRODUCT_DATA_PATTERN = re.compile(r'\s+(\d+)\s+(-?\d+,\d+)\s+(-?\d+,\d+)')
+        # CODE_RE = re.compile(r'^[A-Z]{2}[A-Z0-9]{2,}')  # Product codes like NA626e, SL190r
+        PRODUCT_DATA_PATTERN = re.compile(r'\s+(\d+)\s+(-?(?:\d+\s)*\d+,\d+)\s+(-?(?:\d+\s)*\d+,\d+)')
+        CODE_RE = re.compile(r'^[A-Za-z0-9]{3,}(?=\s)')  
         while i < len(rows):
             line = rows[i]
 
@@ -685,7 +686,8 @@ class SupplierInvoiceProcessor(models.Model):
                 
                 # Extract quantity and price from the match
                 qty = float(data_match.group(1))
-                price = float(data_match.group(2).replace(',', '.'))
+                # Remove spaces (thousands separators) and convert comma to dot
+                price = float(data_match.group(2).replace(' ', '').replace(',', '.'))
                 
                 # Extract VAT rate from remaining numbers
                 # After Qty Price Price, pattern is: DPH_Amount VAT% Total Warranty
