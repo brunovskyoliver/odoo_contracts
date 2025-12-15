@@ -161,6 +161,13 @@ class SupplierInvoiceProcessor(models.Model):
         required=True,
     )
     
+    default_account_id = fields.Many2one(
+        'account.account',
+        string='Predvolené konto',
+        help='Predvolené konto na výdaje, ktoré sa bude používať pre faktúry dodávateľov ak nie je špecifické konto nájdené',
+        domain=[('account_type', '=', 'expense')],
+    )
+    
     notes = fields.Text(
         string='Poznámky',
     )
@@ -1073,25 +1080,29 @@ class SupplierInvoiceProcessor(models.Model):
                 
                 # If no account set yet, try to find default expense account
                 if 'account_id' not in line_vals:
-                    # Try different approaches to find an expense account
-                    account = self.env['account.account'].search([
-                        ('account_type', '=', 'expense'),
-                    ], limit=1)
-                    
-                    if not account:
-                        # Fallback: search for any account with "expense" in internal_group
+                    # First try to use the processor's default account
+                    if self.default_account_id:
+                        line_vals['account_id'] = self.default_account_id.id
+                    else:
+                        # Try different approaches to find an expense account
                         account = self.env['account.account'].search([
-                            ('internal_group', '=', 'expense'),
+                            ('account_type', '=', 'expense'),
                         ], limit=1)
-                    
-                    if not account:
-                        # Last resort: find any account with code starting with 5 (expense accounts in Slovak COA)
-                        account = self.env['account.account'].search([
-                            ('code', '=like', '5%'),
-                        ], limit=1)
-                    
-                    if account:
-                        line_vals['account_id'] = account.id
+                        
+                        if not account:
+                            # Fallback: search for any account with "expense" in internal_group
+                            account = self.env['account.account'].search([
+                                ('internal_group', '=', 'expense'),
+                            ], limit=1)
+                        
+                        if not account:
+                            # Last resort: find any account with code starting with 5 (expense accounts in Slovak COA)
+                            account = self.env['account.account'].search([
+                                ('code', '=like', '5%'),
+                            ], limit=1)
+                        
+                        if account:
+                            line_vals['account_id'] = account.id
                 
                 invoice_vals['invoice_line_ids'].append((0, 0, line_vals))
             

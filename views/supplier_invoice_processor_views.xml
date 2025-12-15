@@ -53,6 +53,7 @@
                             <field name="supplier_id"/>
                             <field name="invoice_number"/>
                             <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="default_account_id"/>
                         </group>
                         <group>
                             <field name="invoice_date"/>
