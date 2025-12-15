@@ -52,6 +52,25 @@ class ProductPairingWizard(models.TransientModel):
         if not self.product_id:
             raise UserError(_('Vyberte produkt!'))
         
+        # Get the current line price (absolute value for credit notes)
+        line_price = abs(self.line_id.price_unit)
+        
+        # Check if we need to update the product price
+        current_product_cost = self.product_id.standard_price
+        # Use max to ensure we always have the highest price
+        new_cost = max(current_product_cost, line_price)
+        
+        if new_cost != current_product_cost:
+            # Update product with new prices: cost = max(current, new), selling = cost * 1.05
+            new_selling_price = new_cost * 1.05
+            self.product_id.write({
+                'standard_price': new_cost,
+                'list_price': new_selling_price,
+            })
+            update_message = _(' (Cena produktu aktualizovaná na %s + 5%%)') % new_cost
+        else:
+            update_message = ''
+        
         # Create pairing rule if requested
         if self.create_pairing_rule:
             self.env['product.pairing.rule'].create_pairing(
@@ -78,8 +97,8 @@ class ProductPairingWizard(models.TransientModel):
                     'tag': 'display_notification',
                     'params': {
                         'title': _('Úspech'),
-                        'message': _('%d riadkov bolo spárovaných s produktom %s') % (
-                            len(matching_lines) + 1, self.product_id.name
+                        'message': _('%d riadkov bolo spárovaných s produktom %s%s') % (
+                            len(matching_lines) + 1, self.product_id.name, update_message
                         ),
                         'type': 'success',
                     },

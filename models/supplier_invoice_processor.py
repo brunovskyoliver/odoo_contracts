@@ -1072,37 +1072,22 @@ class SupplierInvoiceProcessor(models.Model):
                     else:
                         _logger.warning(f"No purchase tax found with rate {line.vat_rate}% for company {self.company_id.name}")
                 
-                # If product is set, get account from product
-                if line.product_id:
-                    accounts = line.product_id.product_tmpl_id.get_product_accounts()
-                    if accounts and accounts.get('expense'):
-                        line_vals['account_id'] = accounts['expense'].id
+                # Always use account 501000 (Spotreba materiálu) for all invoice lines
+                account_501000 = self.env['account.account'].search([
+                    ('code', '=', '501000'),
+                ], limit=1)
                 
-                # If no account set yet, try to find default expense account
-                if 'account_id' not in line_vals:
-                    # First try to use the processor's default account
-                    if self.default_account_id:
-                        line_vals['account_id'] = self.default_account_id.id
-                    else:
-                        # Try different approaches to find an expense account
-                        account = self.env['account.account'].search([
-                            ('account_type', '=', 'expense'),
-                        ], limit=1)
-                        
-                        if not account:
-                            # Fallback: search for any account with "expense" in internal_group
-                            account = self.env['account.account'].search([
-                                ('internal_group', '=', 'expense'),
-                            ], limit=1)
-                        
-                        if not account:
-                            # Last resort: find any account with code starting with 5 (expense accounts in Slovak COA)
-                            account = self.env['account.account'].search([
-                                ('code', '=like', '5%'),
-                            ], limit=1)
-                        
-                        if account:
-                            line_vals['account_id'] = account.id
+                if account_501000:
+                    line_vals['account_id'] = account_501000.id
+                else:
+                    # Fallback if account doesn't exist
+                    _logger.warning(f"Account 501000 not found. Using default expense account.")
+                    account = self.env['account.account'].search([
+                        ('account_type', '=', 'expense'),
+                    ], limit=1)
+                    
+                    if account:
+                        line_vals['account_id'] = account.id
                 
                 invoice_vals['invoice_line_ids'].append((0, 0, line_vals))
             
@@ -1357,13 +1342,16 @@ class SupplierInvoiceProcessorLine(models.Model):
         # Use absolute value of price (in case of credit notes with negative prices)
         price = abs(self.price_unit)
         
+        # Calculate price with 5% markup
+        price_with_markup = price * 1.05
+        
         # Create product with prices from invoice line
         product_template = self.env['product.template'].create({
             'name': self.name,
             'type': 'consu',  # Consumable product
             'purchase_ok': True,
             'sale_ok': True,
-            'list_price': price,  # Selling price
+            'list_price': price_with_markup,  # Selling price with 5% markup
             'standard_price': price,  # Cost price (same as invoice)
         })
         
@@ -1395,9 +1383,10 @@ class SupplierInvoiceProcessorLine(models.Model):
             matching_lines.write({'product_id': product.id})
         
         self.processor_id.message_post(
-            body=_('Nový produkt vytvorený: %s (Cena: %s %s). Spárovaných riadkov: %d') % (
+            body=_('Nový produkt vytvorený: %s (Nákladová cena: %s, Predajná cena: %s %s). Spárovaných riadkov: %d') % (
                 product.name,
                 price,
+                price_with_markup,
                 self.processor_id.currency_id.name,
                 matched_count + 1
             )
