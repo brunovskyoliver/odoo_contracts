@@ -60,7 +60,12 @@
                 <strong>Názov</strong>
                 </th>
                   <th>
-                    <strong>Popis</strong>
+                    <t t-if="o.x_contract_type == 'Prenájom'">
+                      <strong>Dátum viazanosti produktu</strong>
+                    </t>
+                    <t t-if="o.x_contract_type != 'Prenájom'">
+                      <strong>Popis</strong>
+                    </t>
                   </th>
                   <th class="text-right">
                     <strong>Množstvo</strong>
@@ -87,7 +92,8 @@
                           <span t-field="l.product_id"/>
                         </td>
                         <td>
-                          <span t-field="l.name"/>
+                          <span t-field="l.x_datum_viazanosti_produktu" t-if="o.x_contract_type == 'Prenájom'"/>
+                          <span t-field="l.name" t-if="o.x_contract_type != 'Prenájom'"/>
                         </td>
                         <td class="text-right">
                           <span t-field="l.quantity"/>
@@ -188,7 +194,7 @@
           <br></br>
           <p>Dátum odovzdania predmetu nájmu: <span t-field="o.x_datum_prenajom"></span></p>
         </div>
-        <div class="row" t-if="o.x_datum_viazanost">
+        <div class="row" t-if="o.x_datum_viazanost and o.x_contract_type != 'Prenájom'">
           <br></br>
           <p>Doba viazanosti do: <span t-field="o.x_datum_viazanost"></span></p>
         </div>

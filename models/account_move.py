@@ -101,7 +101,8 @@ class AccountMove(models.Model):
         supplier_location = self.env.ref('stock.stock_location_suppliers')
         pickings_by_warehouse = {}
         
-        for line in self.invoice_line_ids.filtered(lambda l: l.product_id or l.name):
+        # Filter lines: must have product AND account number must be 501000
+        for line in self.invoice_line_ids.filtered(lambda l: l.product_id and l.account_id.code == '501000'):
             # Determine warehouse for this line
             warehouse = line.where_to_move or default_warehouse
             
@@ -120,16 +121,6 @@ class AccountMove(models.Model):
             else:
                 picking = pickings_by_warehouse[warehouse]
             
-            # Create product if needed
-            if not line.product_id:
-                line.product_id = self.env['product.product'].create({
-                    'name': line.name,
-                    'type': 'product',
-                    'standard_price': line.price_unit,
-                    'list_price': line.price_unit,
-                    'uom_id': line.product_uom_id.id or self.env.ref('uom.product_uom_unit').id,
-                })
-                
             # Create stock move
             self.env['stock.move'].create({
                 'name': line.name or line.product_id.name,

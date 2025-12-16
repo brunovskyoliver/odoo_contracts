@@ -359,9 +359,10 @@ class SupplierInvoiceProcessor(models.Model):
         is_alza = 'Predávajúci: Alza.sk' in text or 'Alza.sk' in text
         is_westech = 'westech' in text.lower()
         is_tes = 'tes - slovakia' in text.lower()
+        is_tss = 'tss' in text.lower()
         
-        if not is_alza and not is_westech and not is_tes:
-            raise UserError(_('This processor only handles Alza.sk, Westech, and TES Slovakia invoices. Please check the PDF file.'))
+        if not is_alza and not is_westech and not is_tes and not is_tss:
+            raise UserError(_('This processor only handles Alza.sk, Westech, TES Slovakia, and TSS Group invoices. Please check the PDF file.'))
         
         # Check if this is a credit note (dobropis/opravný doklad)
         is_refund = 'Opravný daňový doklad' in text or 'Dobropis' in text
@@ -372,6 +373,7 @@ class SupplierInvoiceProcessor(models.Model):
             'is_westech': is_westech,
             'is_tes': is_tes,
             'is_refund': is_refund,
+            'is_tss': is_tss,
         }
         if is_alza:
             data.update({ 'supplier_id': 21,})
@@ -379,8 +381,11 @@ class SupplierInvoiceProcessor(models.Model):
             data.update({ 'supplier_id': 1583,})
         elif is_tes:
             data.update({ 'supplier_id': 1649,})
+        elif is_tss:
+            data.update({ 'supplier_id': 1661,})
         # Extract invoice number (common patterns)
         invoice_patterns = [
+            r'Faktúra\s*-\s*daňový\s*doklad\s*č\.\s*:\s*(?:.*?)([A-Z]{2}-\d+/\d+)',  # TSS format: "Faktúra - daňový doklad č.: ... FV-3336/2025"
             r'Opravný\s+daňový\s+doklad\s*-\s*(\d+)',  # Alza credit note / corrective invoice number
             r'FAKTÚRA\s+číslo\s+(\d+)',  # TES format: "FAKTÚRA číslo 2512298"
             r'FAKTÚRA\s+(\d+)',  # WESTech format: "FAKTÚRA 1102526327"
@@ -450,28 +455,46 @@ class SupplierInvoiceProcessor(models.Model):
         
         # Extract total amount (should match untaxed + tax)
         amount_patterns = [
+            r'Sumy v EUR.*?Celkom\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)',  # TSS format: "Celkom 104,28 23,98 128,26"
             r'Celková hodnota faktúry\s*:?\s*([\d\s,]+\.?\d*)',  # TES format
             r'Celkom k úhrade\s*:?\s*€?\s*([\d\s,]+\.?\d*)',  # WESTech format
             r'Celkom\s*:?\s*€?\s*([\d\s,]+\.?\d*)\s*EUR',
             r'Total\s*:?\s*€?\s*([\d\s,]+\.?\d*)',
             r'Amount\s*:?\s*€?\s*([\d\s,]+\.?\d*)',
         ]
-        for pattern in amount_patterns:
-            match = re.search(pattern, text, re.IGNORECASE)
-            if match:
-                amount_str = match.group(1).replace(' ', '').replace(',', '.')
-                try:
-                    data['total_amount'] = float(amount_str)
-                except ValueError:
-                    pass
-                break
+        
+        # Try TSS format first (has 3 values: untaxed, tax, total)
+        tss_match = re.search(amount_patterns[0], text, re.IGNORECASE | re.DOTALL)
+        if tss_match:
+            try:
+                untaxed_str = tss_match.group(1).replace(' ', '').replace(',', '.')
+                tax_str = tss_match.group(2).replace(' ', '').replace(',', '.')
+                total_str = tss_match.group(3).replace(' ', '').replace(',', '.')
+                
+                data['total_untaxed'] = float(untaxed_str)
+                data['total_tax'] = float(tax_str)
+                data['total_amount'] = float(total_str)
+            except (ValueError, IndexError):
+                pass
+        
+        # Try other patterns if TSS pattern didn't work
+        if 'total_amount' not in data:
+            for pattern in amount_patterns[1:]:
+                match = re.search(pattern, text, re.IGNORECASE)
+                if match:
+                    amount_str = match.group(1).replace(' ', '').replace(',', '.')
+                    try:
+                        data['total_amount'] = float(amount_str)
+                    except ValueError:
+                        pass
+                    break
         
         # If total_amount not found, calculate it
         if 'total_amount' not in data and total_untaxed > 0:
             data['total_amount'] = total_untaxed + total_tax
         
         # Try to extract table data using pdfplumber for better accuracy
-        if pdfplumber:
+        if pdfplumber and not data.get('is_tss'):
             try:
                 import io
                 pdf_file = io.BytesIO(pdf_data)
@@ -485,7 +508,9 @@ class SupplierInvoiceProcessor(models.Model):
                 _logger.warning("Table extraction failed: %s", str(e))
         
         # Fallback: parse lines from text if table extraction didn't work or gave bad results
-        if not data['lines'] or len(data['lines']) > 20:  # Too many lines usually means bad parsing
+        if data.get('is_tss'):
+            data['lines'] = self._parse_tss_lines_from_text(text)
+        elif not data['lines'] or len(data['lines']) > 20:  # Too many lines usually means bad parsing
             if data.get('is_westech'):
                 data['lines'] = self._parse_westech_lines_from_text(text)
             elif data.get('is_tes'):
@@ -968,7 +993,88 @@ class SupplierInvoiceProcessor(models.Model):
 
         return items
 
+    def _parse_tss_lines_from_text(self, text):
+        """
+        TSS Group invoice parser
+
+        Rule:
+        - A NEW item exists ONLY if the line contains the FULL numeric signature:
+        x,xxxks  price  discount%  unit_after_discount  subtotal  VAT%  total_with_vat
+        - Any other line = description continuation of the previous item
+        - Recycling fee lines are ignored
+        """
+
+        rows = [r.strip() for r in text.split("\n")]
+        items = []
+
+        # STRICT numeric signature of a real product line
+        PRICE_PATTERN = re.compile(
+            r'(?P<qty>\d+),\d+ks\s+'
+            r'(?P<orig>[\d,]+)\s+'
+            r'(?P<disc>\d+)%\s+'
+            r'(?P<unit>[\d,]+)\s+'
+            r'(?P<subtotal>[\d,]+)\s+'
+            r'(?P<vat>\d+)%\s+'
+            r'(?P<total>[\d,]+)'
+        )
+
+        current_item = None
+
+        for row in rows:
+            if not row:
+                continue
+
+            # stop ONLY after at least one product was parsed
+            if current_item and any(x in row for x in [
+                'Dodacie listy',
+                'Objednávky',
+                'Sumy v EUR',
+                'Celková zľava',
+                'Celková cena recyklačného',
+                'Vystavil',
+            ]):
+                break
+
+
+            # ignore recycling fee
+            if 'recyklačný poplatok' in row.lower():
+                continue
+
+            match = PRICE_PATTERN.search(row)
+
+            if match:
+                # flush previous item
+                if current_item:
+                    items.append(current_item)
+
+                quantity = int(match.group('qty'))  # IMPORTANT: ignore decimal part
+                price_unit = float(match.group('unit').replace(',', '.'))
+                vat_rate = int(match.group('vat'))
+
+                description = row[:match.start()].strip()
+
+                current_item = {
+                    "description": description,
+                    "quantity": quantity,
+                    "price_unit": round(price_unit, 2),
+                    "vat_rate": vat_rate,
+                }
+            else:
+                # description continuation
+                if current_item:
+                    current_item["description"] += " " + row
+
+        # flush last item
+        if current_item:
+            items.append(current_item)
+
+        return items
+
+
+
+
     def _parse_date(self, date_str):
+
         """Parse date string to date object"""
         try:
             from datetime import datetime
