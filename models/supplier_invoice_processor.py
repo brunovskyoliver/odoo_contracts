@@ -247,6 +247,23 @@ class SupplierInvoiceProcessor(models.Model):
             # Parse invoice data
             invoice_data = self._parse_invoice_data(extracted_text, pdf_data)
             
+            # Check if invoice number already exists (before updating)
+            if invoice_data.get('invoice_number'):
+                existing = self.search([
+                    ('invoice_number', '=', invoice_data['invoice_number']),
+                    ('id', '!=', self.id),  # Exclude current record
+                    ('state', '!=', 'error'),  # Ignore error records
+                ])
+                if existing:
+                    self._send_error_notification_email(invoice_data['invoice_number'])
+                    raise UserError(
+                        _('Faktúra č. %s už bola importovaná.\nExistujúci záznam: %s (ID: %s)') % (
+                            invoice_data['invoice_number'],
+                            existing[0].name,
+                            existing[0].id,
+                        )
+                    )
+            
             # Update header fields
             # Set Alza as supplier if detected
             if invoice_data.get('supplier_id'):
@@ -365,8 +382,9 @@ class SupplierInvoiceProcessor(models.Model):
         if not is_alza and not is_westech and not is_tes and not is_tss and not is_asbis:
             raise UserError(_('This processor only handles Alza.sk, Westech, TES Slovakia, TSS Group, and Asbis invoices. Please check the PDF file.'))
         
-        # Check if this is a credit note (dobropis/opravný doklad)
-        is_refund = 'Opravný daňový doklad' in text or 'Dobropis' in text
+        # Check if this is a credit note (dobropis/opravný doklad) - check both filename and text
+        filename_lower = self.filename.lower() if self.filename else ''
+        is_refund = ('dobropis' in filename_lower or 'opravný' in text.lower() or 'dobropis' in text.lower() or 'dôvod storna' in text.lower())
         
         data = {
             'lines': [],
@@ -439,8 +457,9 @@ class SupplierInvoiceProcessor(models.Model):
         total_untaxed = 0.0
         total_tax = 0.0
         
-        # Find the tax breakdown section - support both comma and dot decimals
-        vat_breakdown_pattern = r'(\d+)\s*%\s+([\d\s]+[,\.]\d+)\s+([\d\s]+[,\.]\d+)'
+        # Find the tax breakdown section - support both comma and dot decimals, including negative values
+        # Pattern supports: "23% 715.09 164.47" or "23% -715.09 -164.47"
+        vat_breakdown_pattern = r'(\d+)\s*%\s+(-?[\d\s]+[,\.]\d+)\s+(-?[\d\s]+[,\.]\d+)'
         vat_matches = re.findall(vat_breakdown_pattern, text)
         
         for match in vat_matches:
@@ -460,11 +479,11 @@ class SupplierInvoiceProcessor(models.Model):
         # Extract total amount (should match untaxed + tax)
         amount_patterns = [
             r'Sumy v EUR.*?Celkom\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)',  # TSS format: "Celkom 104,28 23,98 128,26"
-            r'Celková hodnota faktúry\s*:?\s*([\d\s,]+\.?\d*)',  # TES format
-            r'Celkom k úhrade\s*:?\s*€?\s*([\d\s,]+\.?\d*)',  # WESTech format
-            r'Celkom\s*:?\s*€?\s*([\d\s,]+\.?\d*)\s*EUR',
-            r'Total\s*:?\s*€?\s*([\d\s,]+\.?\d*)',
-            r'Amount\s*:?\s*€?\s*([\d\s,]+\.?\d*)',
+            r'Celková hodnota faktúry\s*:?\s*(-?[\d\s,]+\.?\d*)',  # TES format (supports negative)
+            r'Celkom k úhrade\s*:?\s*€?\s*(-?[\d\s,]+\.?\d*)',  # WESTech format
+            r'Celkom\s*:?\s*€?\s*(-?[\d\s,]+\.?\d*)\s*EUR',
+            r'Total\s*:?\s*€?\s*(-?[\d\s,]+\.?\d*)',
+            r'Amount\s*:?\s*€?\s*(-?[\d\s,]+\.?\d*)',
         ]
         
         # Try TSS format first (has 3 values: untaxed, tax, total)
@@ -520,7 +539,28 @@ class SupplierInvoiceProcessor(models.Model):
             if data.get('is_westech'):
                 data['lines'] = self._parse_westech_lines_from_text(text)
             elif data.get('is_tes'):
-                data['lines'] = self._parse_tes_lines_from_text(text)
+                data['lines'] = self._parse_tes_lines_from_text(text, is_refund=data.get('is_refund'))
+                # Extract TES-specific VAT summary
+                vat_header_start = text.lower().find('rozpis dph')
+                if vat_header_start != -1:
+                    vat_section = text[vat_header_start:vat_header_start + 500]
+                    vat_breakdown_pattern = r'(\d+)\s*%\s+(-?[\d\s]+[,\.]\d+)\s+(-?[\d\s]+[,\.]\d+)'
+                    vat_matches = re.findall(vat_breakdown_pattern, vat_section)
+                    
+                    total_untaxed = 0.0
+                    total_tax = 0.0
+                    for match in vat_matches:
+                        base_amount = match[1].replace(' ', '').replace(',', '.')
+                        tax_amount = match[2].replace(' ', '').replace(',', '.')
+                        try:
+                            total_untaxed += float(base_amount)
+                            total_tax += float(tax_amount)
+                        except ValueError:
+                            pass
+                    
+                    if total_untaxed != 0:
+                        data['total_untaxed'] = total_untaxed
+                        data['total_tax'] = total_tax
             else:
                 data['lines'] = self._parse_lines_from_text(text)
         
@@ -895,7 +935,7 @@ class SupplierInvoiceProcessor(models.Model):
 
         return items
 
-    def _parse_tes_lines_from_text(self, text):
+    def _parse_tes_lines_from_text(self, text, is_refund=False):
         """
         TES-Slovakia invoice parser - handles products with format:
         Kód Názov produktu Počet MJ Cena/MJ DPH% Základ DPH Celkom
@@ -909,8 +949,9 @@ class SupplierInvoiceProcessor(models.Model):
         # Pattern to identify product code (starts with letter/number, followed by digits)
         CODE_RE = re.compile(r'^[A-Z]\d{5}')  # TES codes like S04072
         # Pattern for numeric data line - Počet MJ Cena/MJ DPH% Základ DPH Celkom
-        # Example: "5 ks 11.2194 23% 56.10 12.90 69.00"
-        DATA_PATTERN = re.compile(r'(\d+)\s+ks\s+([\d.]+)\s+(\d+)%\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)')
+        # Handles both positive and negative quantities and amounts
+        # Example: "5 ks 11.2194 23% 56.10 12.90 69.00" or "-1 bal. 715.0000 23% -715.00 -164.45 -879.45"
+        DATA_PATTERN = re.compile(r'(-?\d+)\s+(?:ks|bal\.|kus|ks\.)\s+([\d.]+)\s+(\d+)%\s+([-\d.\s]+?)\s+([-\d.\s]+?)\s+([-\d.\s]+?)(?:\s|$)')
 
         while i < len(rows):
             line = rows[i]
@@ -982,15 +1023,26 @@ class SupplierInvoiceProcessor(models.Model):
                 
                 # Extract quantity and price from the match
                 qty = float(data_match.group(1))
-                price = float(data_match.group(2))
-                vat_rate = float(data_match.group(3))
+                price_str = data_match.group(2).replace(' ', '')  # Remove spaces from number
+                price = float(price_str)
+                vat_rate = int(data_match.group(3))
                 
-                items.append({
-                    "description": full_description.strip(),
-                    "quantity": qty,
-                    "price_unit": price,
-                    "vat_rate": vat_rate,
-                })
+                # For refunds, ensure price is negative; for regular invoices, ensure it's positive
+                if is_refund:
+                    if price > 0:
+                        price = -price
+                else:
+                    if price < 0:
+                        price = -price
+                
+                # Only add if we have a valid description
+                if full_description and full_description.strip():
+                    items.append({
+                        "description": full_description.strip(),
+                        "quantity": abs(qty),
+                        "price_unit": price,
+                        "vat_rate": vat_rate,
+                    })
 
             i += 1
 
@@ -1382,10 +1434,64 @@ class SupplierInvoiceProcessor(models.Model):
                         _logger.info(f"Unmatched lines detected. Staying in pairing state for {self.name}")
                         self.message_post(body=_('PDF načítané, ale niektoré riadky vyžadujú párovanie s produktom.\nPrejdite na "Nepárované riadky" a spárujte ich alebo vytvorte nové produkty.'))
                         
+                except UserError as e:
+                    # Send alert email for user errors (duplicates, etc.)
+                    _logger.exception("User error during PDF processing: %s", str(e))
+                    self._send_error_notification_email(str(e))
+                    raise
                 except Exception as e:
+                    # Send alert email for other exceptions
                     _logger.exception("Auto-processing PDF failed: %s", str(e))
+                    self._send_error_notification_email(str(e))
         
         return res
+    
+    def _send_error_notification_email(self, error_message):
+        """Send email alert when invoice import fails or is duplicated"""
+        self.ensure_one()
+        
+        try:
+            # Prepare email body
+            email_body = f'''
+            <html>
+            <body style="font-family: Arial, sans-serif; color: #333;">
+                <h2 style="color: #d32f2f;">Chyba pri importe faktúry</h2>
+                
+                <h3>Podrobnosti:</h3>
+                <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">
+                    <tr style="background-color: #ffebee;">
+                        <td style="padding: 8px;"><b>Chybová správa:</b></td>
+                        <td style="padding: 8px; color: #d32f2f;"><b>{error_message}</b></td>
+                    </tr>
+                    <tr style="background-color: #f5f5f5;">
+                        <td style="padding: 8px;"><b>Zdrojový súbor:</b></td>
+                        <td style="padding: 8px;">{self.filename or (self.attachment_id.name if self.attachment_id else 'N/A')}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px;"><b>Procesor ID:</b></td>
+                        <td style="padding: 8px;">{self.name} (ID: {self.id})</td>
+                    </tr>
+                </table>
+                
+                <p style="color: #d32f2f;"><b>Vyžaduje sa manuálne riešenie!</b></p>
+                <p>Prosím, skontrolujte záznam v systéme a vyrieďte problém.</p>
+                <p style="font-size: 12px; color: #999;">Tento email bol generovaný automaticky pri neúspechu importe faktúry.</p>
+            </body>
+            </html>
+            '''
+            
+            # Send email alert
+            mail_values = {
+                'email_from': self.env.company.email,
+                'email_to': 'obrunovsky7@gmail.com,oliver.brunovsky@novem.sk,tomas.juricek@novem.sk',
+                'subject': f'CHYBA: Import faktúry zlyhal - {self.filename or "Neznámy súbor"}',
+                'body_html': email_body,
+            }
+            self.env['mail.mail'].create(mail_values).send()
+            _logger.info(f"Error notification email sent for {self.name}")
+            
+        except Exception as e:
+            _logger.warning(f"Failed to send error notification email: {str(e)}")
 
 
 class SupplierInvoiceProcessorLine(models.Model):
