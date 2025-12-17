@@ -360,9 +360,10 @@ class SupplierInvoiceProcessor(models.Model):
         is_westech = 'westech' in text.lower()
         is_tes = 'tes - slovakia' in text.lower()
         is_tss = 'tss' in text.lower()
+        is_asbis = 'info@asbis.sk' in text.lower()
         
-        if not is_alza and not is_westech and not is_tes and not is_tss:
-            raise UserError(_('This processor only handles Alza.sk, Westech, TES Slovakia, and TSS Group invoices. Please check the PDF file.'))
+        if not is_alza and not is_westech and not is_tes and not is_tss and not is_asbis:
+            raise UserError(_('This processor only handles Alza.sk, Westech, TES Slovakia, TSS Group, and Asbis invoices. Please check the PDF file.'))
         
         # Check if this is a credit note (dobropis/opravný doklad)
         is_refund = 'Opravný daňový doklad' in text or 'Dobropis' in text
@@ -374,6 +375,7 @@ class SupplierInvoiceProcessor(models.Model):
             'is_tes': is_tes,
             'is_refund': is_refund,
             'is_tss': is_tss,
+            'is_asbis': is_asbis,
         }
         if is_alza:
             data.update({ 'supplier_id': 21,})
@@ -383,6 +385,8 @@ class SupplierInvoiceProcessor(models.Model):
             data.update({ 'supplier_id': 1649,})
         elif is_tss:
             data.update({ 'supplier_id': 1661,})
+        elif is_asbis:
+            data.update({ 'supplier_id': 19,})
         # Extract invoice number (common patterns)
         invoice_patterns = [
             r'Faktúra\s*-\s*daňový\s*doklad\s*č\.\s*:\s*(?:.*?)([A-Z]{2}-\d+/\d+)',  # TSS format: "Faktúra - daňový doklad č.: ... FV-3336/2025"
@@ -510,6 +514,8 @@ class SupplierInvoiceProcessor(models.Model):
         # Fallback: parse lines from text if table extraction didn't work or gave bad results
         if data.get('is_tss'):
             data['lines'] = self._parse_tss_lines_from_text(text)
+        elif data.get('is_asbis'):
+            data['lines'] = self._parse_asbis_lines_from_text(text)
         elif not data['lines'] or len(data['lines']) > 20:  # Too many lines usually means bad parsing
             if data.get('is_westech'):
                 data['lines'] = self._parse_westech_lines_from_text(text)
@@ -640,10 +646,10 @@ class SupplierInvoiceProcessor(models.Model):
         in_items = False
         
         # Pattern to identify product data line: Qty (int) Price (decimal) Price (decimal)
-        # # Example: "1 837,02 837,02 192,51 23 1 029,53 24"
-        # PRODUCT_DATA_PATTERN = re.compile(r'\s+(\d+)\s+(-?\d+,\d+)\s+(-?\d+,\d+)')
-        # CODE_RE = re.compile(r'^[A-Z]{2}[A-Z0-9]{2,}')  # Product codes like NA626e, SL190r
-        PRODUCT_DATA_PATTERN = re.compile(r'\s+(\d+)\s+(-?(?:\d+\s)*\d+,\d+)\s+(-?(?:\d+\s)*\d+,\d+)')
+        # Qty should be 1-3 digits (rarely more than 999 items per line)
+        # This prevents matching product names like "AMPERE 1000" as quantity
+        # Example: "1 97,43 97,43 22,41 23 119,84 84"
+        PRODUCT_DATA_PATTERN = re.compile(r'\s+(\d{1,3})\s+(-?(?:\d+\s)*\d+,\d+)\s+(-?(?:\d+\s)*\d+,\d+)')
         CODE_RE = re.compile(r'^[A-Za-z0-9]{3,}(?=\s)')  
         while i < len(rows):
             line = rows[i]
@@ -671,6 +677,9 @@ class SupplierInvoiceProcessor(models.Model):
                 # Everything before the numbers is the description
                 desc_part = line[:data_match.start()].strip()
                 
+                parts = desc_part.split(None, 1)
+                desc_part = parts[1] if len(parts) > 1 else ""
+                
                 # Collect continuation lines (lines without product data pattern)
                 j = i + 1
                 continuation_lines = []
@@ -688,14 +697,7 @@ class SupplierInvoiceProcessor(models.Model):
                         break
                     
                     # This is a continuation line - add to description
-                    # Remove any leading codes/numbers from continuation
-                    parts = next_line.split()
-                    if parts and re.search(r'\d', parts[0]):
-                        # First token has digits, skip it
-                        if len(parts) > 1:
-                            continuation_lines.append(' '.join(parts[1:]))
-                    else:
-                        continuation_lines.append(next_line)
+                    continuation_lines.append(next_line)
                     
                     i = j
                     j += 1
@@ -705,13 +707,14 @@ class SupplierInvoiceProcessor(models.Model):
                 if continuation_lines:
                     full_description += ' ' + ' '.join(continuation_lines)
                 
-                # Remove product code from start if present
-                tokens = full_description.split()
-                if tokens and CODE_RE.match(tokens[0]):
-                    full_description = ' '.join(tokens[1:])
+                # Skip free items (ZADARMO) regardless of product type
+                if "zadarmo sim karta" in full_description.lower():
+                    _logger.info(f"Skipping free item: {full_description[:50]}")
+                    i += 1
+                    continue
                 
-                # Skip lines with "Nehmotný produkt"
-                if "Nehmotný produkt" in full_description:
+                # Skip only shipping and discount intangible products
+                if "Nehmotný produkt" in full_description and any(skip in full_description.lower() for skip in ["doprava", "zľava"]):
                     _logger.info(f"Skipping intangible product: {full_description[:50]}")
                     i += 1
                     continue
@@ -1071,9 +1074,83 @@ class SupplierInvoiceProcessor(models.Model):
         return items
 
 
+    def _parse_asbis_lines_from_text(self, text):
+        """
+        ASBIS invoice parser - handles products with format:
+        Code Qty Unit Cena/MJ RP L/S/NOAZ Cena/MJ_s_popl DPH% Total (one line)
+        Description (next line)
+        
+        Example:
+        SKSSVERTEXPx-1200 1 ks 227.52 0.13 0.00 227.65 23% 280.01
+        Zdroj 1200W, Seasonic VERTEX PX-1200 Platinum, retail
+        
+        Key: Extract Cena/MJ (second price group, right before VAT%)
+        Pattern groups: (qty) (cena_mj) (rp) (l_s) (cena_mj_s_popl) (vat%) (total)
+        """
+        rows = [r.strip() for r in text.split("\n")]
+        items = []
+        i = 0
+        
+        # Pattern to identify the full product data line with VAT%
+        # Code Qty Unit Cena/MJ RP L/S/NOAZ Cena/MJ_s_popl VAT% Total
+        # Groups: qty, price_per_unit, rp, ls, price_with_fees, vat%, total
+        PRODUCT_DATA_PATTERN = re.compile(
+            r'(\d{1,3})\s+ks\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+(\d+)%\s+([\d.]+)'
+        )
+        
+        while i < len(rows):
+            row = rows[i]
+            
+            # Skip empty lines and headers
+            if not row or 'Kód' in row or 'Počet' in row or 'Názov produktu' in row:
+                i += 1
+                continue
+            
+            # Stop at totals section
+            if any(x in row for x in ['Celková hodnota', 'Už zaplatené', 'Celkom k úhrade', 
+                                        'Rozpis DPH', 'Z celkovej sumy', 'Poplatky celkom',
+                                        'Vystavil:', 'QR kód']):
+                break
+            
+            # Check if this row contains the product data line (has VAT% pattern)
+            match = PRODUCT_DATA_PATTERN.search(row)
+            if match:
+                # Extract data from the match
+                quantity = int(match.group(1))
+                
+                # Use Cena/MJ (second price group, right before VAT)
+                price_unit = float(match.group(5))
+                
+                # VAT rate
+                vat_rate = int(match.group(6))
+                
+                # Extract description - everything before the quantity pattern (the code)
+                code_part = row[:match.start()].strip()
+                
+                # Get description from next line
+                description = code_part  # Start with code part as fallback
+                if i + 1 < len(rows):
+                    next_line = rows[i + 1].strip()
+                    # If next line doesn't contain product data pattern, it's a description
+                    if next_line and not PRODUCT_DATA_PATTERN.search(next_line):
+                        description = next_line
+                        i += 1  # Skip the description line
+                
+                if description:
+                    items.append({
+                        "description": description,
+                        "quantity": float(quantity),
+                        "price_unit": round(price_unit, 2),
+                        "vat_rate": vat_rate,
+                    })
+            
+            i += 1
+        
+        return items
 
 
     def _parse_date(self, date_str):
+
 
         """Parse date string to date object"""
         try:
@@ -1260,8 +1337,7 @@ class SupplierInvoiceProcessor(models.Model):
         # Create the processor record
         custom_values['name'] = _('New')
         custom_values['notes'] = f'Received from: {email_from}\nSubject: {subject}'
-        
-        processor = super().message_new(msg_dict, custom_values=custom_values)
+        processor = super().message_new(msg_dict, custom_values) 
         
         return processor
     
