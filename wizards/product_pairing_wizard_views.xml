@@ -16,6 +16,7 @@
                         <field name="product_id" 
                                options="{'no_create': False, 'no_open': True}"
                                context="{'default_purchase_ok': True, 'default_sale_ok': False}"/>
+                        <field name="pack_qty" help="Počet jednotiek v balíčku. Množstvo z faktúry sa vynásobí týmto číslom."/>
                     </group>
                 </group>
                 <group>

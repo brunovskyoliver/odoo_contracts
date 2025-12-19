@@ -8,6 +8,7 @@
             <list string="Pravidlá párovania produktov" decoration-muted="not active">
                 <field name="name"/>
                 <field name="product_id"/>
+                <field name="pack_qty"/>
                 <field name="supplier_id"/>
                 <field name="usage_count"/>
                 <field name="last_used_date"/>
@@ -32,6 +33,7 @@
                         <group>
                             <field name="name"/>
                             <field name="product_id"/>
+                            <field name="pack_qty" help="Počet jednotiek v balíčku. Množstvo z faktúry sa vynásobí týmto číslom."/>
                         </group>
                         <group>
                             <field name="supplier_id"/>

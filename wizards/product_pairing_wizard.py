@@ -33,6 +33,12 @@ class ProductPairingWizard(models.TransientModel):
         help='Vyberte produkt, ktorý zodpovedá tomuto popisu',
     )
     
+    pack_qty = fields.Integer(
+        string='Množstvo v balíčku',
+        default=1,
+        help='Počet jednotiek produktu v jednom balíčku (napr. 5 pre 5-pack). Množstvo z faktúry sa vynásobí týmto číslom.',
+    )
+    
     create_pairing_rule = fields.Boolean(
         string='Zapamätať párovanie',
         default=True,
@@ -77,10 +83,15 @@ class ProductPairingWizard(models.TransientModel):
                 self.description,
                 self.product_id.id,
                 self.supplier_id.id if self.supplier_id else None,
+                pack_qty=self.pack_qty,
             )
         
-        # Apply to current line
+        # Apply to current line with quantity multiplication by pack_qty
         self.line_id.product_id = self.product_id.id
+        self.line_id.quantity = self.line_id.quantity * self.pack_qty
+        # Divide price by pack_qty to keep the same total value
+        if self.pack_qty > 1:
+            self.line_id.price_unit = self.line_id.price_unit / self.pack_qty
         
         # Apply to all matching lines if requested
         if self.apply_to_all:
@@ -89,7 +100,13 @@ class ProductPairingWizard(models.TransientModel):
                 ('product_id', '=', False),
                 ('id', '!=', self.line_id.id),
             ])
-            matching_lines.write({'product_id': self.product_id.id})
+            # Multiply quantity and divide price for each line
+            for line in matching_lines:
+                line.write({
+                    'product_id': self.product_id.id,
+                    'quantity': line.quantity * self.pack_qty,
+                    'price_unit': line.price_unit / self.pack_qty if self.pack_qty > 1 else line.price_unit,
+                })
             
             if matching_lines:
                 return {
@@ -97,8 +114,8 @@ class ProductPairingWizard(models.TransientModel):
                     'tag': 'display_notification',
                     'params': {
                         'title': _('Úspech'),
-                        'message': _('%d riadkov bolo spárovaných s produktom %s%s') % (
-                            len(matching_lines) + 1, self.product_id.name, update_message
+                        'message': _('%d riadkov bolo spárovaných s produktom %s (vynásobeno %d x)%s') % (
+                            len(matching_lines) + 1, self.product_id.name, self.pack_qty, update_message
                         ),
                         'type': 'success',
                     },

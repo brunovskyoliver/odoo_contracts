@@ -284,13 +284,23 @@ class SupplierInvoiceProcessor(models.Model):
             # Create invoice lines
             self.line_ids.unlink()  # Clear existing lines
             for line_data in invoice_data.get('lines', []):
+                product_id, pack_qty = self._find_product(
+                    line_data.get('description'), 
+                    self.supplier_id.id if self.supplier_id else None
+                )
+                # Multiply quantity by pack_qty and divide price by pack_qty to keep same total
+                quantity = line_data.get('quantity', 1.0) * pack_qty
+                price_unit = line_data.get('price_unit', 0.0)
+                if pack_qty > 1:
+                    price_unit = price_unit / pack_qty
+                
                 self.env['supplier.invoice.processor.line'].create({
                     'processor_id': self.id,
                     'name': line_data.get('description'),
-                    'quantity': line_data.get('quantity', 1.0),
-                    'price_unit': line_data.get('price_unit', 0.0),
+                    'quantity': quantity,
+                    'price_unit': price_unit,
                     'vat_rate': line_data.get('vat_rate', 0.0),
-                    'product_id': self._find_product(line_data.get('description'), self.supplier_id.id if self.supplier_id else None),
+                    'product_id': product_id,
                 })
 
             # Set state based on matching status
@@ -754,7 +764,7 @@ class SupplierInvoiceProcessor(models.Model):
                     continue
                 
                 # Skip only shipping and discount intangible products
-                if "Nehmotný produkt" in full_description and any(skip in full_description.lower() for skip in ["doprava", "zľava"]):
+                if "Nehmotný produkt" in full_description and any(skip in full_description.lower() for skip in ["doprava", "na doručenie"]):
                     _logger.info(f"Skipping intangible product: {full_description[:50]}")
                     i += 1
                     continue
@@ -1240,23 +1250,40 @@ class SupplierInvoiceProcessor(models.Model):
         return supplier
 
     def _find_product(self, description, supplier_id=None):
-        """Try to find existing product by name or pairing rule"""
+        """Try to find existing product by name or pairing rule
+        Returns tuple: (product_id, pack_qty)
+        """
         if not description:
-            return False
+            return False, 1
         
         # First try pairing rules
-        product = self.env['product.pairing.rule'].find_product_for_description(
-            description, supplier_id
-        )
-        if product:
-            return product.id
+        pairing_rule = self.env['product.pairing.rule'].search([
+            ('name', '=ilike', description),
+            ('active', '=', True),
+        ], limit=1)
         
-        # Fallback to direct product search
+        if pairing_rule:
+            # If we have a pairing rule with exact match, use it
+            if supplier_id and pairing_rule.supplier_id.id == supplier_id:
+                return pairing_rule.product_id.id, pairing_rule.pack_qty
+            elif not supplier_id and not pairing_rule.supplier_id:
+                return pairing_rule.product_id.id, pairing_rule.pack_qty
+            
+            # Try supplier-specific match
+            supplier_rule = self.env['product.pairing.rule'].search([
+                ('name', '=ilike', description),
+                ('supplier_id', '=', supplier_id),
+                ('active', '=', True),
+            ], limit=1)
+            if supplier_rule:
+                return supplier_rule.product_id.id, supplier_rule.pack_qty
+        
+        # Fallback to direct product search (no pack qty)
         product = self.env['product.product'].search([
             ('name', 'ilike', description)
         ], limit=1)
         
-        return product.id if product else False
+        return (product.id if product else False), 1
 
     def action_create_invoice(self):
         """Create supplier invoice from extracted data"""
@@ -1289,7 +1316,7 @@ class SupplierInvoiceProcessor(models.Model):
                 line_vals = {
                     'name': line.name or 'Invoice Line',
                     'quantity': line.quantity,
-                    'price_unit': line.price_unit,
+                    'price_unit': abs(line.price_unit) if move_type == 'in_refund' else line.price_unit,
                     'product_id': line.product_id.id if line.product_id else False,
                 }
                 

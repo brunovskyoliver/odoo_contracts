@@ -56,6 +56,12 @@ class ProductPairingRule(models.Model):
         readonly=True,
     )
     
+    pack_qty = fields.Integer(
+        string='Množstvo v balíčku',
+        default=1,
+        help='Počet jednotiek produktu v jednom balíčku (napr. 5 pre 5-pack). Používa sa na vynásobenie množstva z faktúry.',
+    )
+    
     _sql_constraints = [
         ('unique_pairing', 
          'unique(name, supplier_id)', 
@@ -116,7 +122,7 @@ class ProductPairingRule(models.Model):
         return False
     
     @api.model
-    def create_pairing(self, description, product_id, supplier_id=None):
+    def create_pairing(self, description, product_id, supplier_id=None, pack_qty=1):
         """Create a new pairing rule."""
         if not description or not product_id:
             raise ValidationError(_('Popis a produkt sú povinné!'))
@@ -132,6 +138,7 @@ class ProductPairingRule(models.Model):
             existing.write({
                 'product_id': product_id,
                 'active': True,
+                'pack_qty': pack_qty,
             })
             return existing
         
@@ -140,4 +147,5 @@ class ProductPairingRule(models.Model):
             'name': description,
             'product_id': product_id,
             'supplier_id': supplier_id,
+            'pack_qty': pack_qty,
         })
