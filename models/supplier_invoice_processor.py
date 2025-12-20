@@ -1095,15 +1095,26 @@ class SupplierInvoiceProcessor(models.Model):
         items = []
 
         # STRICT numeric signature of a real product line
-        PRICE_PATTERN = re.compile(
-            r'(?P<qty>\d+),\d+ks\s+'
-            r'(?P<orig>[\d,]+)\s+'
-            r'(?P<disc>\d+)%\s+'
-            r'(?P<unit>[\d,]+)\s+'
-            r'(?P<subtotal>[\d,]+)\s+'
-            r'(?P<vat>\d+)%\s+'
-            r'(?P<total>[\d,]+)'
-        )
+        # Handles numbers with spaces as thousands separators (e.g., 2 440,00)
+        # Supports units: ks, set, bal., kus, etc.
+        # Looks for: qty + unit + [anything] + LAST_vat% + total
+        # Uses greedy matching (.*) to consume up to the last %
+        # PRICE_PATTERN = re.compile(
+        #     r'(?P<qty>\d+),\d+(?:ks|set|bal\.|kus|bal|piece|pieces)\s+'
+        #     r'.*?'  # Greedy match everything (prices, discounts, etc)
+        #     r'(?P<vat>\d+)%\s+'
+        #     r'(?P<total>[\d,\s]+?)(?:\s|$)'
+        # )
+        TSS_LINE_PATTERN = re.compile(
+    r'(?P<qty>\d+),\d+(?P<unit>ks|set|bal\.|kus|bal)\s+'
+    r'(?P<orig_price>[\d,]+)\s+'
+    r'(?P<discount>\d+)%\s+'
+    r'(?P<unit_after_discount>[\d,]+)\s+'
+    r'(?P<subtotal>[\d,]+)\s+'
+    r'(?P<vat>\d+)%\s+'
+    r'(?P<total>[\d,]+)'
+)
+
 
         current_item = None
 
@@ -1126,29 +1137,79 @@ class SupplierInvoiceProcessor(models.Model):
             # ignore recycling fee
             if 'recyklačný poplatok' in row.lower():
                 continue
+            # transport / shipping cost
+            if any(x in row.lower() for x in [
+                'náklady spojené s prepravou',
+                'transport',
+                'doprava',
+            ]):
+                m = re.search(r'(\d+),\d+ks\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)\s+(\d+)%\s+([\d,]+)', row)
+                if m:
+                    qty = int(m.group(1))
+                    price_unit = float(m.group(2).replace(',', '.'))
+                    vat_rate = int(m.group(5))
 
-            match = PRICE_PATTERN.search(row)
+                    items.append({
+                        "description": "Náklady spojené s prepravou",
+                        "quantity": qty,
+                        "price_unit": price_unit,
+                        "vat_rate": vat_rate,
+                    })
+                continue
+
+
+            match = TSS_LINE_PATTERN.search(row)
 
             if match:
                 # flush previous item
                 if current_item:
                     items.append(current_item)
 
-                quantity = int(match.group('qty'))  # IMPORTANT: ignore decimal part
-                price_unit = float(match.group('unit').replace(',', '.'))
+                quantity = int(match.group('qty'))
+                price_unit = float(match.group('unit_after_discount').replace(',', '.'))
                 vat_rate = int(match.group('vat'))
 
+                # Get description - everything before the numeric pattern
                 description = row[:match.start()].strip()
+                
+                # Check if there are multiple product codes in the description
+                # Pattern for product codes: letters followed by digits/hyphens
+                code_pattern = re.compile(r'([A-Z][A-Z0-9-]{4,})')
+                codes = list(code_pattern.finditer(description))
+                
+                if len(codes) > 1:
+                    # Multiple product codes found - keep only the last one and its description
+                    last_code_pos = codes[-1].start()
+                    description = description[last_code_pos:]
+                
+                # Remove warranty/guarantee info and anything after it
+                # Stop at "Záruka:", "Garancia:", "Warranty:" etc.
+                warranty_match = re.search(r'\s*(?:Záruka|Garancia|Warranty):', description, re.IGNORECASE)
+                if warranty_match:
+                    description = description[:warranty_match.start()].strip()
 
                 current_item = {
                     "description": description,
                     "quantity": quantity,
-                    "price_unit": round(price_unit, 2),
+                    "price_unit": price_unit,
                     "vat_rate": vat_rate,
                 }
             else:
-                # description continuation
-                if current_item:
+                # Check if this line starts with a product code (e.g., NVR5416-XI)
+                # Product codes are typically: letters followed by digits/hyphens
+                tokens = row.split()
+                starts_with_code = (
+                    tokens and 
+                    re.match(r'^[A-Z][A-Z0-9-]{4,}', tokens[0])  # Code like NVR5416-XI or PFB205W-E
+                )
+                
+                if starts_with_code and current_item:
+                    # This is a new product starting, but split across multiple lines
+                    # The numeric data (qty/price) is on this new line, just not parsed yet
+                    # Add to current_item's description for now
+                    current_item["description"] += " " + row
+                elif current_item:
+                    # description continuation
                     current_item["description"] += " " + row
 
         # flush last item
@@ -1156,6 +1217,7 @@ class SupplierInvoiceProcessor(models.Model):
             items.append(current_item)
 
         return items
+
 
 
     def _parse_asbis_lines_from_text(self, text):
