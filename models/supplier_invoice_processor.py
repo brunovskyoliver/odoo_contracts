@@ -886,7 +886,7 @@ class SupplierInvoiceProcessor(models.Model):
                             items.append({
                                 "description": full_description,
                                 "quantity": qty,
-                                "price_unit": price,
+                                "price_unit": price / qty if qty != 0 else price,
                                 "vat_rate": vat_rate,
                             })
                         
@@ -961,7 +961,8 @@ class SupplierInvoiceProcessor(models.Model):
         # Pattern for numeric data line - Počet MJ Cena/MJ DPH% Základ DPH Celkom
         # Handles both positive and negative quantities and amounts
         # Example: "5 ks 11.2194 23% 56.10 12.90 69.00" or "-1 bal. 715.0000 23% -715.00 -164.45 -879.45"
-        DATA_PATTERN = re.compile(r'(-?\d+)\s+(?:ks|bal\.|kus|ks\.)\s+([\d.]+)\s+(\d+)%\s+([-\d.\s]+?)\s+([-\d.\s]+?)\s+([-\d.\s]+?)(?:\s|$)')
+        # Also handles units like: ks, bal., kus, ks., m, km, kg, l, dní (days), hod. (hours), etc.
+        DATA_PATTERN = re.compile(r'(-?\d+)\s+(?:ks|bal\.|kus|ks\.|m|km|kg|l|dní|hod\.|hod|deň|dni)\s+([\d.]+)\s+(\d+)%\s+([-\d.\s]+?)\s+([-\d.\s]+?)\s+([-\d.\s]+?)(?:\s|$)')
 
         while i < len(rows):
             line = rows[i]
@@ -991,6 +992,24 @@ class SupplierInvoiceProcessor(models.Model):
                 # Everything before the numbers is the description
                 desc_part = line[:data_match.start()].strip()
                 
+                # Check if description contains a product code in the middle/end
+                # This indicates that a previous product code got concatenated
+                # Pattern: look for product code not at the beginning
+                code_matches = list(CODE_RE.finditer(desc_part))
+                if len(code_matches) > 1:
+                    # Multiple product codes found - this is a merge of two lines
+                    # Find the last product code and everything from there is the next product
+                    last_code_match = code_matches[-1]
+                    # Extract only up to the last product code
+                    desc_part = desc_part[:last_code_match.start()].strip()
+                elif len(code_matches) == 1 and code_matches[0].start() > 0:
+                    # Single product code but not at start - likely from concatenation
+                    # Check if there's meaningful text before it
+                    before_code = desc_part[:code_matches[0].start()].strip()
+                    if before_code and ' ' in before_code:
+                        # There's text before the code, likely a different product
+                        desc_part = before_code
+                
                 # Collect continuation lines (lines without product data pattern)
                 j = i + 1
                 continuation_lines = []
@@ -1006,6 +1025,11 @@ class SupplierInvoiceProcessor(models.Model):
                     
                     # If next line has product data pattern, it's a new product
                     if DATA_PATTERN.search(next_line):
+                        break
+                    
+                    # If next line starts with a product code, it's a new product
+                    next_tokens = next_line.split()
+                    if next_tokens and CODE_RE.match(next_tokens[0]):
                         break
                     
                     # This is a continuation line - add to description
@@ -1024,18 +1048,16 @@ class SupplierInvoiceProcessor(models.Model):
                 tokens = full_description.split()
                 if tokens and CODE_RE.match(tokens[0]):
                     full_description = ' '.join(tokens[1:])
-                
-                # Skip DOP UPS lines (free shipping)
-                if "DOP UPS" in full_description:
-                    _logger.info(f"Skipping special line: {full_description[:50]}")
-                    i += 1
-                    continue
+
                 
                 # Extract quantity and price from the match
                 qty = float(data_match.group(1))
                 price_str = data_match.group(2).replace(' ', '')  # Remove spaces from number
                 price = float(price_str)
                 vat_rate = int(data_match.group(3))
+                
+                # Debug logging
+                _logger.info(f"TES Parser - Line {i}: desc='{full_description}' qty={qty} price={price} vat={vat_rate}%")
                 
                 # For refunds, ensure price is negative; for regular invoices, ensure it's positive
                 if is_refund:
