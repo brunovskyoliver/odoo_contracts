@@ -16,7 +16,7 @@ class ContractAbstractContractLine(models.AbstractModel):
     _name = "contract.abstract.contract.line"
     _description = "Abstract Recurring Contract Line"
 
-    product_id = fields.Many2one("product.product", string="Položka")
+    product_id = fields.Many2one("product.product", string="Položka", domain="[('active', '=', True)]")
     name = fields.Text(string="Popis", required=True)
     partner_id = fields.Many2one(
         comodel_name="res.partner", related="contract_id.partner_id"
