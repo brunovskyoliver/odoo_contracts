@@ -695,12 +695,15 @@ class SupplierInvoiceProcessor(models.Model):
         i = 0
         in_items = False
         
-        # Pattern to identify product data line: Qty (int) Price (decimal) Price (decimal)
-        # Qty should be 1-3 digits (rarely more than 999 items per line)
-        # This prevents matching product names like "AMPERE 1000" as quantity
-        # Example: "1 97,43 97,43 22,41 23 119,84 84"
-        PRODUCT_DATA_PATTERN = re.compile(r'\s+(\d{1,3})\s+(-?(?:\d+\s)*\d+,\d+)\s+(-?(?:\d+\s)*\d+,\d+)')
-        CODE_RE = re.compile(r'^[A-Za-z0-9]{3,}(?=\s)')  
+        # For Alza invoices: Look for VAT rate (0,5,10,15,17,18,19,20,23,25) and work backwards
+        # This is robust because prices can have spaces and split into multiple tokens
+        # Pattern (backwards from VAT rate): ... Price_with_spaces VAT_amount VAT_rate ...
+        
+        CODE_RE = re.compile(r'^[A-Za-z0-9]{3,}$')  # 3+ alphanumerics
+        PRICE_RE = re.compile(r'^-?\d+[,\.]\d+')    # Decimal with comma/dot (may be negative)
+        QTY_RE = re.compile(r'^\d{1,3}$')           # 1-3 digits only
+        VAT_RATE_RE = re.compile(r'^(0|5|10|15|17|18|19|20|23|25)$')  # Valid VAT rates
+        
         while i < len(rows):
             line = rows[i]
 
@@ -719,80 +722,141 @@ class SupplierInvoiceProcessor(models.Model):
                 i += 1
                 continue
 
-            # Check if this line contains product data (Qty Price Price...)
-            data_match = PRODUCT_DATA_PATTERN.search(line)
+            # Token-based approach: Find VAT rate and work backwards
+            # This handles prices with spaces that split into multiple tokens
+            tokens = line.split()
+            if not tokens:
+                i += 1
+                continue
             
-            if data_match:
-                # This line has product data - it's a product line
-                # Everything before the numbers is the description
-                desc_part = line[:data_match.start()].strip()
-                
-                parts = desc_part.split(None, 1)
-                desc_part = parts[1] if len(parts) > 1 else ""
-                
-                # Collect continuation lines (lines without product data pattern)
-                j = i + 1
-                continuation_lines = []
-                while j < len(rows):
-                    next_line = rows[j].strip()
-                    if not next_line:
-                        break
-                    
-                    # Stop at totals
-                    if any(stop in next_line for stop in ["Celkom:", "Vyčíslenie", "Nehraďte"]):
-                        break
-                    
-                    # If next line has product data pattern, it's a new product
-                    if PRODUCT_DATA_PATTERN.search(next_line):
-                        break
-                    
-                    # This is a continuation line - add to description
-                    continuation_lines.append(next_line)
-                    
-                    i = j
-                    j += 1
-                
-                # Build full description
-                full_description = desc_part
-                if continuation_lines:
-                    full_description += ' ' + ' '.join(continuation_lines)
-                
-                # Skip free items (ZADARMO) regardless of product type
-                if "zadarmo sim karta" in full_description.lower():
-                    _logger.info(f"Skipping free item: {full_description[:50]}")
-                    i += 1
-                    continue
-                
-                # Skip only shipping and discount intangible products
-                if "Nehmotný produkt" in full_description and any(skip in full_description.lower() for skip in ["doprava", "na doručenie"]):
-                    _logger.info(f"Skipping intangible product: {full_description[:50]}")
-                    i += 1
-                    continue
-                
-                # Extract quantity and price from the match
-                qty = float(data_match.group(1))
-                # Remove spaces (thousands separators) and convert comma to dot
-                price = float(data_match.group(2).replace(' ', '').replace(',', '.'))
-                
-                # Extract VAT rate from remaining numbers
-                # After Qty Price Price, pattern is: DPH_Amount VAT% Total Warranty
-                remaining = line[data_match.end():]
-                tokens = remaining.split()
-                vat_rate = 0.0
-                
-                for token in tokens:
-                    if token.isdigit():
-                        num = int(token)
-                        if 0 <= num <= 25:
-                            vat_rate = float(num)
+            # Find product data by searching for VAT rate (and checking it's preceded by prices)
+            product_data_start_idx = None
+            vat_idx = None
+            
+            for idx in range(len(tokens)):
+                if VAT_RATE_RE.match(tokens[idx]):
+                    # Check that this is really a VAT rate (preceded by price-like token)
+                    if idx > 0 and PRICE_RE.match(tokens[idx - 1]):
+                        # This looks like a real VAT rate in a product line
+                        vat_idx = idx
+                        
+                        # Now search backwards for Qty (1-3 digits)
+                        # Skip over prices and other numeric data
+                        for search_idx in range(idx - 1, -1, -1):
+                            if QTY_RE.match(tokens[search_idx]):
+                                # Found a potential qty - check if next token is price-like
+                                if search_idx + 1 < len(tokens):
+                                    next_token = tokens[search_idx + 1]
+                                    # Next should be a price (with comma) or a single digit (part of multi-token price)
+                                    if PRICE_RE.match(next_token) or next_token.isdigit():
+                                        product_data_start_idx = search_idx
+                                        break
+                        
+                        if product_data_start_idx is not None:
                             break
+            
+            if product_data_start_idx is None:
+                i += 1
+                continue
+            
+            # Extract description (everything before product data)
+            code = None
+            desc_tokens = tokens[:product_data_start_idx]
+            
+            if desc_tokens and CODE_RE.match(desc_tokens[0]):
+                code = desc_tokens[0]
+                desc_tokens = desc_tokens[1:]
+            
+            desc_part = ' '.join(desc_tokens)
+            
+            # Collect continuation lines (lines without product data pattern)
+            j = i + 1
+            continuation_lines = []
+            while j < len(rows):
+                next_line = rows[j].strip()
+                if not next_line:
+                    break
                 
-                items.append({
-                    "description": full_description.strip(),
-                    "quantity": qty,
-                    "price_unit": price,
-                    "vat_rate": vat_rate,
-                })
+                # Stop at totals
+                if any(stop in next_line for stop in ["Celkom:", "Vyčíslenie", "Nehraďte"]):
+                    break
+                
+                # If next line has product data pattern, it's a new product
+                next_tokens = next_line.split()
+                is_next_product = False
+                for idx in range(len(next_tokens)):
+                    if VAT_RATE_RE.match(next_tokens[idx]) and idx > 0 and PRICE_RE.match(next_tokens[idx - 1]):
+                        is_next_product = True
+                        break
+                
+                if is_next_product:
+                    break
+                
+                # This is a continuation line - add to description
+                continuation_lines.append(next_line)
+                
+                i = j
+                j += 1
+            
+            # Build full description
+            full_description = desc_part
+            if continuation_lines:
+                full_description += ' ' + ' '.join(continuation_lines)
+            
+            # Skip free items (ZADARMO) regardless of product type
+            if "zadarmo sim karta" in full_description.lower():
+                _logger.info(f"Skipping free item: {full_description[:50]}")
+                i += 1
+                continue
+            
+            # Skip only shipping and discount intangible products
+            if "Nehmotný produkt" in full_description and any(skip in full_description.lower() for skip in ["doprava", "na doručenie"]):
+                _logger.info(f"Skipping intangible product: {full_description[:50]}")
+                i += 1
+                continue
+            
+            # Extract quantity and price from the tokens
+            qty = float(tokens[product_data_start_idx])
+            
+            # Price extraction needs to handle multi-token prices (with spaces as thousands separators)
+            # Examples: "1 088,62" becomes ["1", "088,62"] or "250,38" stays as one token
+            # Key insight: If qty is 1-3 digits and next token is "XXX,YY" (starts with leading 0 or is 3 digits),
+            # it's likely part of a multi-token price like "1 088,62"
+            price_token = tokens[product_data_start_idx + 1]
+            
+            # Check if this is a partial price token (starts with "0" suggesting it's thousands group)
+            is_partial_price = (
+                price_token and 
+                re.match(r'^0\d*,', price_token) and  # Starts with "0" before decimal (e.g., "088,62")
+                product_data_start_idx + 2 < len(tokens)
+            )
+            
+            if is_partial_price:
+                # Combine with previous token (which is qty but forms the beginning of price)
+                # This is a bit of a hack, but we need to treat qty+next as forming the price
+                # Since qty was "1" and next is "088,62", together they make "1088,62"
+                price_str = str(int(qty)) + tokens[product_data_start_idx + 1]
+            elif price_token.isdigit():
+                # This is just the thousands part (like "1" from "1 088,62")
+                # Next token should have the decimal
+                if product_data_start_idx + 2 < len(tokens):
+                    price_str = price_token + tokens[product_data_start_idx + 2]
+                else:
+                    price_str = price_token
+            else:
+                # This token has a decimal (comma or dot) and doesn't start with 0
+                price_str = price_token
+            
+            price = float(price_str.replace(' ', '').replace(',', '.'))
+            # VAT rate is already found and validated
+            vat_rate = float(tokens[vat_idx])
+            
+            items.append({
+                "description": full_description.strip(),
+                "quantity": qty,
+                "price_unit": price,
+                "vat_rate": vat_rate,
+            })
 
             i += 1
 
