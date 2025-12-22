@@ -388,13 +388,20 @@ class SupplierInvoiceProcessor(models.Model):
         is_tes = 'tes - slovakia' in text.lower()
         is_tss = 'tss' in text.lower()
         is_asbis = 'info@asbis.sk' in text.lower()
+        is_upc = 'upc broadband' in text.lower() or 'upc slovakia' in text.lower()
+        is_vamont = 'va-mont' in text.lower() or 'vamont' in text.lower()
         
-        if not is_alza and not is_westech and not is_tes and not is_tss and not is_asbis:
-            raise UserError(_('This processor only handles Alza.sk, Westech, TES Slovakia, TSS Group, and Asbis invoices. Please check the PDF file.'))
+        if not is_alza and not is_westech and not is_tes and not is_tss and not is_asbis and not is_upc and not is_vamont:
+            raise UserError(_('This processor only handles Alza.sk, Westech, TES Slovakia, TSS Group, Asbis, UPC Broadband, and Va-Mont Finance invoices. Please check the PDF file.'))
         
         # Check if this is a credit note (dobropis/opravný doklad) - check both filename and text
         filename_lower = self.filename.lower() if self.filename else ''
-        is_refund = ('dobropis' in filename_lower or 'opravný' in text.lower() or 'dobropis' in text.lower() or 'dôvod storna' in text.lower())
+        # Look for stronger indicators: document title line starting with these words, not just appearing anywhere
+        is_refund = (
+            'dobropis' in filename_lower or 
+            re.search(r'^(?:dobropis|opravný\s+daňový\s+doklad)', text.lower(), re.MULTILINE) or
+            'dôvod storna' in text.lower()
+        )
         
         data = {
             'lines': [],
@@ -404,6 +411,8 @@ class SupplierInvoiceProcessor(models.Model):
             'is_refund': is_refund,
             'is_tss': is_tss,
             'is_asbis': is_asbis,
+            'is_upc': is_upc,
+            'is_vamont': is_vamont,
         }
         if is_alza:
             data.update({ 'supplier_id': 21,})
@@ -415,8 +424,14 @@ class SupplierInvoiceProcessor(models.Model):
             data.update({ 'supplier_id': 1661,})
         elif is_asbis:
             data.update({ 'supplier_id': 19,})
+        elif is_upc:
+            data.update({ 'supplier_id': 1648,})
+        elif is_vamont:
+            data.update({ 'supplier_id': 1179,})
         # Extract invoice number (common patterns)
         invoice_patterns = [
+            r'Faktúra\s+(\d+)',  # Va-Mont format: "Faktúra 12500024"
+            r'Poradové\s+číslo\s+faktúry\s*:\s*(\d+)',  # UPC format: "Poradové číslo faktúry: 214095500"
             r'Faktúra\s*-\s*daňový\s*doklad\s*č\.\s*:\s*(?:.*?)([A-Z]{2}-\d+/\d+)',  # TSS format: "Faktúra - daňový doklad č.: ... FV-3336/2025"
             r'Opravný\s+daňový\s+doklad\s*-\s*(\d+)',  # Alza credit note / corrective invoice number
             r'FAKTÚRA\s+číslo\s+(\d+)',  # TES format: "FAKTÚRA číslo 2512298"
@@ -545,6 +560,10 @@ class SupplierInvoiceProcessor(models.Model):
             data['lines'] = self._parse_tss_lines_from_text(text)
         elif data.get('is_asbis'):
             data['lines'] = self._parse_asbis_lines_from_text(text)
+        elif data.get('is_upc'):
+            data['lines'] = self._parse_upc_lines_from_text(text)
+        elif data.get('is_vamont'):
+            data['lines'] = self._parse_vamont_lines_from_text(text)
         elif not data['lines'] or len(data['lines']) > 20:  # Too many lines usually means bad parsing
             if data.get('is_westech'):
                 data['lines'] = self._parse_westech_lines_from_text(text)
@@ -1358,6 +1377,161 @@ class SupplierInvoiceProcessor(models.Model):
         
         return items
 
+    def _parse_upc_lines_from_text(self, text):
+        """
+        UPC Broadband Slovakia invoice parser - handles products with format:
+        Description Period BaseAmount TaxAmount TotalAmount
+        Example: "Prístup do siete internet 11.12.2025 - 10.01.2026 24,44 5,63 30,07"
+        """
+        rows = [r.strip() for r in text.split("\n")]
+        items = []
+        vat_rate = 23  # Default VAT rate
+        
+        # Extract VAT rate from "Sadzba 23%" pattern
+        for row in rows:
+            vat_match = re.search(r'Sadzba\s+(\d+)%', row)
+            if vat_match:
+                vat_rate = int(vat_match.group(1))
+                break
+        
+        in_items = False
+        for row in rows:
+            # Look for section start indicator
+            if 'Pravidelné poplatky' in row or 'Obdobie' in row:
+                in_items = True
+                continue
+            
+            # Stop at summary sections
+            if any(x in row for x in ['Sadzba', 'Spolu za DPH', 'Vyúčtovanie', 'Sumy bez DPH']):
+                # But continue if we're still in items section and this is VAT rate line
+                if 'Sadzba' in row:
+                    continue
+                else:
+                    break
+            
+            if not in_items or not row:
+                continue
+            
+            # Skip header rows and section labels
+            if any(x in row for x in ['Suma bez DPH', 'DPH', 'Suma s DPH', 'Položka', 'Popis']):
+                continue
+            
+            # Pattern to match: Description DateRange BaseAmount TaxAmount TotalAmount
+            # The key is to find the date range pattern (dd.mm.yyyy - dd.mm.yyyy) and work from there
+            # Example: "Prístup do siete internet 11.12.2025 - 10.01.2026 24,44 5,63 30,07"
+            # Group 1: Description (everything before date)
+            # Group 2: Start date
+            # Group 3: End date  
+            # Group 4: Base amount
+            # Group 5: Tax amount
+            # Group 6: Total amount
+            date_range_pattern = r'^(.+?)\s+(\d{1,2}\.\d{1,2}\.\d{4})\s*-\s*(\d{1,2}\.\d{1,2}\.\d{4})\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)$'
+            match = re.search(date_range_pattern, row)
+            
+            if match:
+                try:
+                    description = match.group(1).strip()
+                    # Skip rows that are clearly not items
+                    if any(x in description for x in ['Součet', 'Celkem', 'Spolu', 'Suma']):
+                        continue
+                    
+                    base_amount = float(match.group(4).replace(',', '.'))
+                    # Tax amount is the second number
+                    tax_amount = float(match.group(5).replace(',', '.'))
+                    # Total amount (for validation)
+                    total_amount = float(match.group(6).replace(',', '.'))
+                    
+                    # For monthly services, quantity is 1
+                    # Price unit is the base amount (without tax)
+                    quantity = 1.0
+                    price_unit = base_amount
+                    
+                    items.append({
+                        "description": description,
+                        "quantity": quantity,
+                        "price_unit": price_unit,
+                        "vat_rate": vat_rate,
+                    })
+                except (ValueError, AttributeError):
+                    pass
+        
+        return items
+
+    def _parse_vamont_lines_from_text(self, text):
+        """
+        Va-Mont Finance invoice parser - handles products with format:
+        Description Quantity Unit Price Total
+        Example: "Účtovníctvo 6/2025 1,00 200,00 200,00"
+        """
+        rows = [r.strip() for r in text.split("\n")]
+        items = []
+        
+        # Check if this is a non-VAT payer invoice
+        is_non_vat_payer = 'NIE SME PLATITELIA DPH' in text
+        vat_rate = 0 if is_non_vat_payer else 20  # 0% for non-VAT payers, 20% otherwise
+        
+        # Extract VAT rate if available (fallback for VAT payers)
+        if not is_non_vat_payer:
+            vat_patterns = [
+                r'(?:DPH|VAT|sadzba)\s+(\d+)\s*%',
+                r'(\d+)\s*%\s+(?:DPH|VAT)',
+            ]
+            for row in rows:
+                for pattern in vat_patterns:
+                    vat_match = re.search(pattern, row, re.IGNORECASE)
+                    if vat_match:
+                        vat_rate = int(vat_match.group(1))
+                        break
+        
+        in_items = False
+        for row in rows:
+            # Look for section start - the header line with "Označenie dodávky", "Počet", etc.
+            if 'Označenie dodávky' in row or 'Katalóg. označenie' in row or 'Cena za m. j.' in row:
+                in_items = True
+                continue
+            
+            # Stop at summary/footer sections
+            if any(x in row for x in ['Zaokrúhlenie', 'Zľava', 'Spolu na úhradu', 'Zaplatený preddavok', 
+                                        'Zostáva uhradiť', 'Pečiatka', 'Spracované systémom', 'Vytlačil']):
+                in_items = False
+                continue
+            
+            if not in_items or not row:
+                continue
+            
+            # Skip divider lines
+            if row.startswith('.') or row.startswith('-') or len(row) < 5:
+                continue
+            
+            # Pattern: Description followed by numbers (Qty, Unit Price, Total)
+            # Format: "Description 1,00 200,00 200,00"
+            # The key is: Description can have spaces, followed by 1-2 space-separated numbers
+            # Groups: Description (1), Quantity (2), Price per unit (3), Total (4)
+            pattern = r'^(.+?)\s+([\d,\.]+)\s+([\d,\.]+)\s+([\d,\.]+)\s*$'
+            match = re.search(pattern, row)
+            
+            if match:
+                try:
+                    description = match.group(1).strip()
+                    
+                    # Skip if description is too short or is a known skip word
+                    if len(description) < 2:
+                        continue
+                    
+                    quantity = float(match.group(2).replace(',', '.'))
+                    price_unit = float(match.group(3).replace(',', '.'))
+                    # Total is match.group(4) - could be used for validation if needed
+                    
+                    items.append({
+                        "description": description,
+                        "quantity": quantity,
+                        "price_unit": price_unit,
+                        "vat_rate": vat_rate,
+                    })
+                except ValueError:
+                    pass
+        
+        return items
 
     def _parse_date(self, date_str):
 
