@@ -76,7 +76,7 @@ class AccountMove(models.Model):
     )
 
     prenos_danovej_povinnosti = fields.Boolean(
-        string='Prenos danovej povinnosti',
+        string='Prenos daňovej povinnosti',
         default=False,
         help='When enabled, all invoice lines will be without VAT rate (VAT liability transfer)',
     )
