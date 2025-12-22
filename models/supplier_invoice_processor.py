@@ -366,6 +366,12 @@ class SupplierInvoiceProcessor(models.Model):
                 self.state = 'extracted'
             return
 
+        # Skip pairing requirement for Va-Mont Finance - always auto-create without product matching
+        if self.supplier_id and self.supplier_id.id == 1179:  # Va-Mont Finance supplier ID
+            if self.state in ('processing', 'pairing', 'draft', 'extracted'):
+                self.state = 'extracted'
+            return
+
         has_unmatched = any(not line.product_id for line in self.line_ids)
         if has_unmatched:
             self.state = 'pairing'
