@@ -43,6 +43,8 @@
                        decoration-warning="stock_state == 'partial'"
                        decoration-success="stock_state == 'done'"
                        decoration-muted="stock_state == 'no_stock'"/>
+                <field name="prenos_danovej_povinnosti" 
+                       invisible="move_type not in ('out_invoice', 'out_refund')"/>
             </field>
         </field>
     </record>

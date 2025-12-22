@@ -75,6 +75,19 @@ class AccountMove(models.Model):
         default=_get_default_invoice_date_due,
     )
 
+    prenos_danovej_povinnosti = fields.Boolean(
+        string='Prenos danovej povinnosti',
+        default=False,
+        help='When enabled, all invoice lines will be without VAT rate (VAT liability transfer)',
+    )
+
+    @api.onchange('prenos_danovej_povinnosti')
+    def _onchange_prenos_danovej_povinnosti(self):
+        """Clear VAT taxes from invoice lines when transfer of tax liability is enabled"""
+        if self.prenos_danovej_povinnosti:
+            for line in self.invoice_line_ids:
+                line.tax_ids = [(5, 0, 0)]  # Clear all taxes
+
     def action_create_stock_moves(self):
         """Open wizard to select storage location"""
         self.ensure_one()
