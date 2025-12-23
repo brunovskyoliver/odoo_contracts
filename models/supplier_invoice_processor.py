@@ -240,8 +240,16 @@ class SupplierInvoiceProcessor(models.Model):
             # Get PDF data
             pdf_data = base64.b64decode(self.attachment_id.datas)
             
-            # Extract text
-            extracted_text = self._extract_text_from_pdf(pdf_data)
+            # Extract text from first page initially (for O2 detection)
+            extracted_text = self._extract_text_from_pdf(pdf_data, first_page_only=True)
+            
+            # Quick check: is this an O2 invoice?
+            is_o2_preliminary = 'o2 slovakia' in extracted_text.lower() or 'o2 sk' in extracted_text.lower()
+            
+            # If not O2, extract all pages instead
+            if not is_o2_preliminary:
+                extracted_text = self._extract_text_from_pdf(pdf_data, first_page_only=False)
+            
             self.extracted_text = extracted_text
             
             # Parse invoice data
@@ -315,8 +323,13 @@ class SupplierInvoiceProcessor(models.Model):
         
         return True
 
-    def _extract_text_from_pdf(self, pdf_data):
-        """Extract text from PDF using pdfplumber or PyPDF2"""
+    def _extract_text_from_pdf(self, pdf_data, first_page_only=False):
+        """Extract text from PDF using pdfplumber or PyPDF2
+        
+        Args:
+            pdf_data: Binary PDF data
+            first_page_only: If True, extract only first page (for O2). If False, extract all pages.
+        """
         if not pdf_data:
             raise UserError(_('No PDF data found.'))
         
@@ -327,10 +340,18 @@ class SupplierInvoiceProcessor(models.Model):
                 import io
                 pdf_file = io.BytesIO(pdf_data)
                 with pdfplumber.open(pdf_file) as pdf:
-                    for page in pdf.pages:
-                        page_text = page.extract_text()
-                        if page_text:
-                            text += page_text
+                    if first_page_only:
+                        # Extract only first page
+                        if len(pdf.pages) > 0:
+                            page_text = pdf.pages[0].extract_text()
+                            if page_text:
+                                text = page_text
+                    else:
+                        # Extract all pages
+                        for page in pdf.pages:
+                            page_text = page.extract_text()
+                            if page_text:
+                                text += page_text
                 if text:
                     return text
             except Exception as e:
@@ -341,10 +362,18 @@ class SupplierInvoiceProcessor(models.Model):
                 import io
                 pdf_file = io.BytesIO(pdf_data)
                 pdf_reader = PyPDF2.PdfReader(pdf_file)
-                for page in pdf_reader.pages:
-                    page_text = page.extract_text()
-                    if page_text:
-                        text += page_text
+                if first_page_only:
+                    # Extract only first page
+                    if len(pdf_reader.pages) > 0:
+                        page_text = pdf_reader.pages[0].extract_text()
+                        if page_text:
+                            text = page_text
+                else:
+                    # Extract all pages
+                    for page in pdf_reader.pages:
+                        page_text = page.extract_text()
+                        if page_text:
+                            text += page_text
                 if text:
                     return text
             except Exception as e:
@@ -396,9 +425,12 @@ class SupplierInvoiceProcessor(models.Model):
         is_asbis = 'info@asbis.sk' in text.lower()
         is_upc = 'upc broadband' in text.lower() or 'upc slovakia' in text.lower()
         is_vamont = 'va-mont' in text.lower() or 'vamont' in text.lower()
+        is_telekom = 'telekom' in text.lower()
+        is_o2 = 'o2 slovakia' in text.lower() or 'o2 sk' in text.lower()
+
         
-        if not is_alza and not is_westech and not is_tes and not is_tss and not is_asbis and not is_upc and not is_vamont:
-            raise UserError(_('This processor only handles Alza.sk, Westech, TES Slovakia, TSS Group, Asbis, UPC Broadband, and Va-Mont Finance invoices. Please check the PDF file.'))
+        if not is_alza and not is_westech and not is_tes and not is_tss and not is_asbis and not is_upc and not is_vamont and not is_telekom and not is_o2:
+            raise UserError(_('This processor only handles Alza.sk, Westech, TES Slovakia, TSS Group, Asbis, UPC Broadband, Va-Mont Finance, Telekom, and O2 Slovakia invoices. Please check the PDF file.'))
         
         # Check if this is a credit note (dobropis/opravný doklad) - check both filename and text
         filename_lower = self.filename.lower() if self.filename else ''
@@ -419,6 +451,8 @@ class SupplierInvoiceProcessor(models.Model):
             'is_asbis': is_asbis,
             'is_upc': is_upc,
             'is_vamont': is_vamont,
+            'is_telekom': is_telekom,
+            'is_o2': is_o2, 
         }
         if is_alza:
             data.update({ 'supplier_id': 21,})
@@ -434,6 +468,8 @@ class SupplierInvoiceProcessor(models.Model):
             data.update({ 'supplier_id': 1648,})
         elif is_vamont:
             data.update({ 'supplier_id': 1179,})
+        elif is_o2:
+            data.update({ 'supplier_id': 1653,})
         # Extract invoice number (common patterns)
         invoice_patterns = [
             r'Faktúra\s+(\d+)',  # Va-Mont format: "Faktúra 12500024"
@@ -455,12 +491,24 @@ class SupplierInvoiceProcessor(models.Model):
                 break
         
         # Extract dates
-        date_pattern = r'(\d{1,2}[./-]\d{1,2}[./-]\d{2,4})'
-        dates = re.findall(date_pattern, text)
-        if dates:
-            data['invoice_date'] = self._parse_date(dates[0])
-            if len(dates) > 1:
-                data['invoice_due_date'] = self._parse_date(dates[1])
+        if data.get('is_tss'):
+            # TSS-specific date extraction: "Dátum vystavenia dokladu: 22.12.2025"
+            tss_date_match = re.search(r'Dátum vystavenia dokladu\s*:\s*(\d{1,2}\.\d{1,2}\.\d{4})', text)
+            if tss_date_match:
+                data['invoice_date'] = self._parse_date(tss_date_match.group(1))
+            
+            # TSS due date: "Dátum splatnosti: 05.01.2026"
+            due_date_match = re.search(r'Dátum splatnosti\s*:\s*(\d{1,2}\.\d{1,2}\.\d{4})', text)
+            if due_date_match:
+                data['invoice_due_date'] = self._parse_date(due_date_match.group(1))
+        else:
+            # Generic date extraction for other suppliers
+            date_pattern = r'(\d{1,2}[./-]\d{1,2}[./-]\d{2,4})'
+            dates = re.findall(date_pattern, text)
+            if dates:
+                data['invoice_date'] = self._parse_date(dates[0])
+                if len(dates) > 1:
+                    data['invoice_due_date'] = self._parse_date(dates[1])
         
         # Extract VAT/IČO (Slovak format)
         vat_patterns = [
@@ -548,7 +596,7 @@ class SupplierInvoiceProcessor(models.Model):
             data['total_amount'] = total_untaxed + total_tax
         
         # Try to extract table data using pdfplumber for better accuracy
-        if pdfplumber and not data.get('is_tss'):
+        if pdfplumber and not data.get('is_tss') and not data.get('is_o2'):
             try:
                 import io
                 pdf_file = io.BytesIO(pdf_data)
@@ -570,6 +618,8 @@ class SupplierInvoiceProcessor(models.Model):
             data['lines'] = self._parse_upc_lines_from_text(text)
         elif data.get('is_vamont'):
             data['lines'] = self._parse_vamont_lines_from_text(text)
+        elif data.get('is_o2'):
+            data['lines'] = self._parse_o2_lines_from_text(text)
         elif not data['lines'] or len(data['lines']) > 20:  # Too many lines usually means bad parsing
             if data.get('is_westech'):
                 data['lines'] = self._parse_westech_lines_from_text(text)
@@ -1460,6 +1510,83 @@ class SupplierInvoiceProcessor(models.Model):
                     })
                 except (ValueError, AttributeError):
                     pass
+        
+        return items
+
+    def _parse_o2_lines_from_text(self, text):
+        """
+        O2 Slovakia invoice parser - extracts line items from VAT summary section.
+        
+        Since O2 invoices don't provide per-line VAT breakdown in the summary,
+        we create one line per VAT rate using the base amounts (Základ dane)
+        from the "Rekapitulácia DPH" section.
+        
+        Example:
+        Rekapitulácia DPH
+        Sadzba DPH | Základ dane | DPH | Celkom
+        DPH 0%    | 99,69 €     | 0,00 € | 99,69 €
+        DPH 23%   | 1.163,27 €  | 267,55 € | 1.430,82 €
+        
+        Creates:
+        - "DPH 0%" with amount 99.69 and vat_rate 0
+        - "DPH 23%" with amount 1163.27 and vat_rate 23
+        """
+        items = []
+        
+        # Find Rekapitulácia DPH section
+        recap_start = text.lower().find('rekapitulácia dph')
+        if recap_start == -1:
+            _logger.warning("Could not find 'Rekapitulácia DPH' section in O2 invoice")
+            return items
+        
+        # Get text from Rekapitulácia onwards
+        recap_text = text[recap_start:]
+        rows = [r.strip() for r in recap_text.split("\n")]
+        
+        # Pattern to match DPH lines in recap section
+        # "DPH 0% 99,69 € 0,00 € 99,69 €"
+        # "DPH 23% (U) Tuzem. 1.163,27 € 267,55 € 1.430,82 €"
+        # Groups: (vat_rate) (base_amount)
+        dph_pattern = r'DPH\s+(\d+)%.*?([\d\s\.]+,\d+)\s*€'
+        
+        seen = set()
+        
+        for row in rows:
+            if not row or len(row) < 5:
+                continue
+            
+            # Stop when we reach company info section (after VAT recap)
+            if any(x in row for x in ['Slovakia, s.r.o.', 'E-mail:', 'Website:', 'IČO:']):
+                break
+            
+            # Skip header row
+            if 'Sadzba DPH' in row or 'Základ dane' in row:
+                continue
+            
+            # Match DPH line
+            match = re.search(dph_pattern, row)
+            if match:
+                vat_rate = int(match.group(1))
+                base_amount_str = match.group(2).strip()
+                
+                # Create a line for this VAT rate
+                desc = f"DPH {vat_rate}%"
+                
+                if desc not in seen:
+                    try:
+                        # Convert "1.163,27" to float
+                        base_amount = float(base_amount_str.replace(' ', '').replace('.', '').replace(',', '.'))
+                        if base_amount > 0:
+                            items.append({
+                                "description": desc,
+                                "quantity": 1.0,
+                                "price_unit": base_amount,
+                                "vat_rate": vat_rate,
+                            })
+                            seen.add(desc)
+                            _logger.info(f"O2 Parser: Extracted {desc} with amount {base_amount}€ and VAT {vat_rate}%")
+                    except ValueError as e:
+                        _logger.warning(f"Could not parse O2 base amount '{base_amount_str}': {e}")
         
         return items
 
