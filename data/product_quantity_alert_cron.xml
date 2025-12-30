@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Cron Job for Product Quantity Alerts -->
+        <record id="ir_cron_product_quantity_alert" model="ir.cron">
+            <field name="name">Check Product Quantity Alerts</field>
+            <field name="model_id" ref="model_product_quantity_alert"/>
+            <field name="state">code</field>
+            <field name="code">model._check_and_send_quantity_alerts()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="nextcall">2024-01-01 08:00:00</field>
+        </record>
+    </data>
+</odoo>

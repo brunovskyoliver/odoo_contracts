@@ -30,3 +30,4 @@ from . import account_move_line
 from . import product_pairing_rule
 from . import pairing_ignore_rule
 from . import supplier_invoice_processor
+from . import product_quantity_alert
