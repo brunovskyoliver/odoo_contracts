@@ -9,7 +9,7 @@
         
         <!-- Mail Alias for Supplier Invoice Processor -->
         <record id="mail_alias_supplier_invoice" model="mail.alias">
-            <field name="alias_name">dodavatelia</field>
+            <field name="alias_name">dodavatel</field>
             <field name="alias_model_id" ref="model_supplier_invoice_processor"/>
             <field name="alias_defaults">{'state': 'draft'}</field>
             <field name="alias_contact">everyone</field>

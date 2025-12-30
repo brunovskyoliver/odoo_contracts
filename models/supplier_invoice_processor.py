@@ -240,14 +240,15 @@ class SupplierInvoiceProcessor(models.Model):
             # Get PDF data
             pdf_data = base64.b64decode(self.attachment_id.datas)
             
-            # Extract text from first page initially (for O2 detection)
+            # Extract text from first page initially (for O2 and Telekom detection)
             extracted_text = self._extract_text_from_pdf(pdf_data, first_page_only=True)
             
-            # Quick check: is this an O2 invoice?
+            # Quick check: is this an O2 or Telekom invoice? (these only need first page)
             is_o2_preliminary = 'o2 slovakia' in extracted_text.lower() or 'o2 sk' in extracted_text.lower()
+            is_telekom_preliminary = 'slovak telekom' in extracted_text.lower()
             
-            # If not O2, extract all pages instead
-            if not is_o2_preliminary:
+            # If not O2 or Telekom, extract all pages instead
+            if not is_o2_preliminary and not is_telekom_preliminary:
                 extracted_text = self._extract_text_from_pdf(pdf_data, first_page_only=False)
             
             self.extracted_text = extracted_text
@@ -396,7 +397,7 @@ class SupplierInvoiceProcessor(models.Model):
             return
 
         # Skip pairing requirement for Va-Mont Finance - always auto-create without product matching
-        if self.supplier_id and self.supplier_id.id == 1179:  # Va-Mont Finance supplier ID
+        if self.supplier_id and (self.supplier_id.id == 1179 or self.supplier_id.id == 1662 or self.supplier_id.id == 1653):  # Va-Mont Finance supplier ID
             if self.state in ('processing', 'pairing', 'draft', 'extracted'):
                 self.state = 'extracted'
             return
@@ -425,7 +426,7 @@ class SupplierInvoiceProcessor(models.Model):
         is_asbis = 'info@asbis.sk' in text.lower()
         is_upc = 'upc broadband' in text.lower() or 'upc slovakia' in text.lower()
         is_vamont = 'va-mont' in text.lower() or 'vamont' in text.lower()
-        is_telekom = 'telekom' in text.lower()
+        is_telekom = 'slovak telekom' in text.lower()
         is_o2 = 'o2 slovakia' in text.lower() or 'o2 sk' in text.lower()
 
         
@@ -470,6 +471,8 @@ class SupplierInvoiceProcessor(models.Model):
             data.update({ 'supplier_id': 1179,})
         elif is_o2:
             data.update({ 'supplier_id': 1653,})
+        elif is_telekom:
+            data.update({ 'supplier_id': 1662,})
         # Extract invoice number (common patterns)
         invoice_patterns = [
             r'Faktúra\s+(\d+)',  # Va-Mont format: "Faktúra 12500024"
@@ -596,7 +599,7 @@ class SupplierInvoiceProcessor(models.Model):
             data['total_amount'] = total_untaxed + total_tax
         
         # Try to extract table data using pdfplumber for better accuracy
-        if pdfplumber and not data.get('is_tss') and not data.get('is_o2'):
+        if pdfplumber and not data.get('is_tss') and not data.get('is_o2') and not data.get('is_telekom'):
             try:
                 import io
                 pdf_file = io.BytesIO(pdf_data)
@@ -620,6 +623,8 @@ class SupplierInvoiceProcessor(models.Model):
             data['lines'] = self._parse_vamont_lines_from_text(text)
         elif data.get('is_o2'):
             data['lines'] = self._parse_o2_lines_from_text(text)
+        elif data.get('is_telekom'):
+            data['lines'] = self._parse_telekom_lines_from_text(text)
         elif not data['lines'] or len(data['lines']) > 20:  # Too many lines usually means bad parsing
             if data.get('is_westech'):
                 data['lines'] = self._parse_westech_lines_from_text(text)
@@ -1587,6 +1592,88 @@ class SupplierInvoiceProcessor(models.Model):
                             _logger.info(f"O2 Parser: Extracted {desc} with amount {base_amount}€ and VAT {vat_rate}%")
                     except ValueError as e:
                         _logger.warning(f"Could not parse O2 base amount '{base_amount_str}': {e}")
+        
+        return items
+
+    def _parse_telekom_lines_from_text(self, text):
+        """
+        Slovak Telekom invoice parser - extracts line items from charges summary.
+        
+        Telekom format has columns: Description | Base Amount | DPH Amount | Total
+        "Poplatky s DPH 23 % 2 076,7642 † 477,66 † 2 554,42 †"  → Base: 2076.76, VAT: 23%
+        "Poplatky, na ktoré sa neuplatňuje DPH 335,8700 † 0,00 † 335,87 †"  → Base: 335.87, VAT: 0%
+        
+        Processes only first page.
+        """
+        items = []
+        rows = [r.strip() for r in text.split("\n")]
+        
+        # Pattern 1: "Poplatky s DPH X %" - extract FIRST amount after %
+        # "Poplatky s DPH 23 % 2 076,7642 † 477,66 † 2 554,42 †"
+        # After the %, the first amount is the base
+        dph_pattern = r'Poplatky\s+s\s+DPH\s+(\d+)\s*%\s+([\d\s\.]+,\d+)'
+        
+        # Pattern 2: "Poplatky, na ktoré sa neuplatňuje DPH" - extract FIRST amount after description
+        # "Poplatky, na ktoré sa neuplatňuje DPH označené * 335,8700 † 0,00 † 335,87 †"
+        # The first amount after the text is the base
+        no_dph_pattern = r'Poplatky,\s+na\s+ktoré\s+sa\s+neuplatňuje\s+DPH[^0-9]+([\d\s\.]+,\d+)'
+        
+        seen = set()
+        
+        for row in rows:
+            if not row or len(row) < 5:
+                continue
+            
+            # Stop at various end markers
+            if any(x in row.lower() for x in ['banková', 'e-mail', 'website', 'kontakt', 'podpis', 'pečať', 'obchodný register']):
+                break
+            
+            # Match "Poplatky s DPH X%" pattern
+            match = re.search(dph_pattern, row)
+            if match:
+                vat_rate = int(match.group(1))
+                base_amount_str = match.group(2).strip()
+                
+                desc = f"Poplatky s DPH {vat_rate}%"
+                
+                if desc not in seen:
+                    try:
+                        # Convert "2 076,7642" to 2076.7642
+                        base_amount = float(base_amount_str.replace(' ', '').replace('.', '').replace(',', '.'))
+                        if base_amount > 0:
+                            items.append({
+                                "description": desc,
+                                "quantity": 1.0,
+                                "price_unit": base_amount,
+                                "vat_rate": vat_rate,
+                            })
+                            seen.add(desc)
+                            _logger.info(f"Telekom Parser: Extracted {desc} with amount {base_amount}€ and VAT {vat_rate}%")
+                    except ValueError as e:
+                        _logger.warning(f"Could not parse Telekom amount '{base_amount_str}': {e}")
+                continue
+            
+            # Match "Poplatky, na ktoré sa neuplatňuje DPH" pattern (0% VAT)
+            match = re.search(no_dph_pattern, row)
+            if match:
+                desc = "Poplatky bez DPH"
+                base_amount_str = match.group(1).strip()
+                
+                if desc not in seen:
+                    try:
+                        # Convert "335,8700" to 335.87
+                        base_amount = float(base_amount_str.replace(' ', '').replace('.', '').replace(',', '.'))
+                        if base_amount > 0:
+                            items.append({
+                                "description": desc,
+                                "quantity": 1.0,
+                                "price_unit": base_amount,
+                                "vat_rate": 0,
+                            })
+                            seen.add(desc)
+                            _logger.info(f"Telekom Parser: Extracted {desc} with amount {base_amount}€ and VAT 0%")
+                    except ValueError as e:
+                        _logger.warning(f"Could not parse Telekom no-DPH amount '{base_amount_str}': {e}")
         
         return items
 
