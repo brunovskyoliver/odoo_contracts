@@ -1855,10 +1855,19 @@ class SupplierInvoiceProcessor(models.Model):
             
             # Add invoice lines
             for line in self.line_ids:
+                # For refunds, ensure both quantity and price_unit are positive
+                # Odoo's in_refund move type will automatically reverse the accounting
+                if move_type == 'in_refund':
+                    quantity = abs(line.quantity) if line.quantity else 1.0
+                    price_unit = abs(line.price_unit)
+                else:
+                    quantity = line.quantity
+                    price_unit = line.price_unit
+                
                 line_vals = {
                     'name': line.name or 'Invoice Line',
-                    'quantity': line.quantity,
-                    'price_unit': abs(line.price_unit) if move_type == 'in_refund' else line.price_unit,
+                    'quantity': quantity,
+                    'price_unit': price_unit,
                     'product_id': line.product_id.id if line.product_id else False,
                 }
                 
