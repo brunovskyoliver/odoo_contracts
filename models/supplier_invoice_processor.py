@@ -422,7 +422,7 @@ class SupplierInvoiceProcessor(models.Model):
         is_alza = 'Predávajúci: Alza.sk' in text or 'Alza.sk' in text
         is_westech = 'westech' in text.lower()
         is_tes = 'tes - slovakia' in text.lower()
-        is_tss = 'tss' in text.lower()
+        is_tss = 'tss group' in text.lower() or 'tss sk' in text.lower()  # More specific to avoid false matches
         is_asbis = 'info@asbis.sk' in text.lower()
         is_upc = 'upc broadband' in text.lower() or 'upc slovakia' in text.lower()
         is_vamont = 'va-mont' in text.lower() or 'vamont' in text.lower()
@@ -461,6 +461,8 @@ class SupplierInvoiceProcessor(models.Model):
             data.update({ 'supplier_id': 1583,})
         elif is_tes:
             data.update({ 'supplier_id': 1649,})
+        elif is_telekom:
+            data.update({ 'supplier_id': 1662,})
         elif is_tss:
             data.update({ 'supplier_id': 1661,})
         elif is_asbis:
@@ -471,8 +473,6 @@ class SupplierInvoiceProcessor(models.Model):
             data.update({ 'supplier_id': 1179,})
         elif is_o2:
             data.update({ 'supplier_id': 1653,})
-        elif is_telekom:
-            data.update({ 'supplier_id': 1662,})
         # Extract invoice number (common patterns)
         invoice_patterns = [
             r'Faktúra\s+(\d+)',  # Va-Mont format: "Faktúra 12500024"
