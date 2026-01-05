@@ -497,13 +497,15 @@ class ContractMobileInvoice(models.Model):
                     service_name = row['Subscribers__Subscriber__InvoiceLines__UsageLines__Usage__UsageItemName']
                     volume = float(row['Subscribers__Subscriber__InvoiceLines__UsageLines__Usage__Volume'])
                     if pd.notna(service_name):
+                        # Convert Bytes to MB for consistency with Telekom reports
+                        volume_mb = volume / (1024 * 1024)
                         result.append({
                             'phone_number': phone_number,
                             'service_name': service_name,
                             'service_type': 'data',
                             'amount': 0.0,
-                            'quantity': volume,
-                            'unit': 'Byte',
+                            'quantity': volume_mb,
+                            'unit': 'MB',
                             'total': 0.0,
                             'is_excess_usage': False,
                         })
