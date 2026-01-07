@@ -293,10 +293,21 @@ class SupplierInvoiceProcessor(models.Model):
             # Create invoice lines
             self.line_ids.unlink()  # Clear existing lines
             for line_data in invoice_data.get('lines', []):
-                product_id, pack_qty = self._find_product(
-                    line_data.get('description'), 
-                    self.supplier_id.id if self.supplier_id else None
-                )
+                product_id = False
+                pack_qty = 1
+                
+                # Skip product finding for SETEM (auto-create without pairing)
+                if not invoice_data.get('is_setem'):
+                    try:
+                        product_id, pack_qty = self._find_product(
+                            line_data.get('description'), 
+                            self.supplier_id.id if self.supplier_id else None
+                        )
+                    except Exception as e:
+                        _logger.warning(f"Could not find product for '{line_data.get('description')}': {e}")
+                        product_id = False
+                        pack_qty = 1
+                
                 # Multiply quantity by pack_qty and divide price by pack_qty to keep same total
                 quantity = line_data.get('quantity', 1.0) * pack_qty
                 price_unit = line_data.get('price_unit', 0.0)
@@ -396,8 +407,8 @@ class SupplierInvoiceProcessor(models.Model):
                 self.state = 'extracted'
             return
 
-        # Skip pairing requirement for Va-Mont Finance - always auto-create without product matching
-        if self.supplier_id and (self.supplier_id.id == 1179 or self.supplier_id.id == 1662 or self.supplier_id.id == 1653):  # Va-Mont Finance supplier ID
+        # Skip pairing requirement for Va-Mont Finance, Telekom, O2, and SETEM - always auto-create without product matching
+        if self.supplier_id and self.supplier_id.id in (1179, 1662, 1653, 1625):  # Va-Mont Finance, Telekom, O2, SETEM supplier IDs
             if self.state in ('processing', 'pairing', 'draft', 'extracted'):
                 self.state = 'extracted'
             return
@@ -428,10 +439,11 @@ class SupplierInvoiceProcessor(models.Model):
         is_vamont = 'va-mont' in text.lower() or 'vamont' in text.lower()
         is_telekom = 'slovak telekom' in text.lower()
         is_o2 = 'o2 slovakia' in text.lower() or 'o2 sk' in text.lower()
+        is_setem = 'setem s.r.o.' in text.lower()
 
         
-        if not is_alza and not is_westech and not is_tes and not is_tss and not is_asbis and not is_upc and not is_vamont and not is_telekom and not is_o2:
-            raise UserError(_('This processor only handles Alza.sk, Westech, TES Slovakia, TSS Group, Asbis, UPC Broadband, Va-Mont Finance, Telekom, and O2 Slovakia invoices. Please check the PDF file.'))
+        if not is_alza and not is_westech and not is_tes and not is_tss and not is_asbis and not is_upc and not is_vamont and not is_telekom and not is_o2 and not is_setem:
+            raise UserError(_('This processor only handles Alza.sk, Westech, TES Slovakia, TSS Group, Asbis, UPC Broadband, Va-Mont Finance, Telekom, O2 Slovakia, and SETEM invoices. Please check the PDF file.'))
         
         # Check if this is a credit note (dobropis/opravný doklad) - check both filename and text
         filename_lower = self.filename.lower() if self.filename else ''
@@ -453,7 +465,8 @@ class SupplierInvoiceProcessor(models.Model):
             'is_upc': is_upc,
             'is_vamont': is_vamont,
             'is_telekom': is_telekom,
-            'is_o2': is_o2, 
+            'is_o2': is_o2,
+            'is_setem': is_setem,
         }
         if is_alza:
             data.update({ 'supplier_id': 21,})
@@ -473,9 +486,11 @@ class SupplierInvoiceProcessor(models.Model):
             data.update({ 'supplier_id': 1179,})
         elif is_o2:
             data.update({ 'supplier_id': 1653,})
+        elif is_setem:
+            data.update({ 'supplier_id': 1625,})
         # Extract invoice number (common patterns)
         invoice_patterns = [
-            r'Faktúra\s+(\d+)',  # Va-Mont format: "Faktúra 12500024"
+            r'Faktúra\s+(\S+)',  # SETEM format: "Faktúra FAK/2026/001" or Va-Mont format: "Faktúra 12500024"
             r'Poradové\s+číslo\s+faktúry\s*:\s*(\d+)',  # UPC format: "Poradové číslo faktúry: 214095500"
             r'Faktúra\s*-\s*daňový\s*doklad\s*č\.\s*:\s*(?:.*?)([A-Z]{2}-\d+/\d+)',  # TSS format: "Faktúra - daňový doklad č.: ... FV-3336/2025"
             r'Opravný\s+daňový\s+doklad\s*-\s*(\d+)',  # Alza credit note / corrective invoice number
@@ -504,6 +519,16 @@ class SupplierInvoiceProcessor(models.Model):
             due_date_match = re.search(r'Dátum splatnosti\s*:\s*(\d{1,2}\.\d{1,2}\.\d{4})', text)
             if due_date_match:
                 data['invoice_due_date'] = self._parse_date(due_date_match.group(1))
+        elif data.get('is_setem'):
+            # SETEM-specific date extraction: "Dátum faktúry 01.01.2026" and "Splatnosť 15.01.2026"
+            setem_date_match = re.search(r'Dátum faktúry\s+(\d{1,2}\.\d{1,2}\.\d{4})', text)
+            if setem_date_match:
+                data['invoice_date'] = self._parse_date(setem_date_match.group(1))
+            
+            # SETEM due date: "Splatnosť 15.01.2026"
+            setem_due_match = re.search(r'Splatnosť\s+(\d{1,2}\.\d{1,2}\.\d{4})', text)
+            if setem_due_match:
+                data['invoice_due_date'] = self._parse_date(setem_due_match.group(1))
         else:
             # Generic date extraction for other suppliers
             date_pattern = r'(\d{1,2}[./-]\d{1,2}[./-]\d{2,4})'
@@ -534,26 +559,46 @@ class SupplierInvoiceProcessor(models.Model):
         # Look for "Vyčíslenie DPH v EUR:" (Alza) or "DPH% Základ DPH(zaokr.)" (WESTech) section
         # Alza pattern: "23 % 15,65 3,60" (comma decimals)
         # WESTech pattern: "23% 286.18 65.82 352.00" (dot decimals)
+        # SETEM pattern: "DPH 23% 1 323,42 € 304,39 € 1 627,81 €"
         # We need to sum all base amounts and tax amounts
         
         total_untaxed = 0.0
         total_tax = 0.0
         
+        # SETEM-specific extraction: "DPH 23% base_amount € tax_amount € total_amount €"
+        if data.get('is_setem'):
+            setem_pattern = r'DPH\s+(\d+)\s*%\s+([\d\s]+,\d+)\s*€\s+([\d\s]+,\d+)\s*€\s+([\d\s]+,\d+)\s*€'
+            setem_match = re.search(setem_pattern, text)
+            if setem_match:
+                vat_rate = setem_match.group(1)
+                base_amount = setem_match.group(2).replace(' ', '').replace(',', '.')
+                tax_amount = setem_match.group(3).replace(' ', '').replace(',', '.')
+                total_amount = setem_match.group(4).replace(' ', '').replace(',', '.')
+                try:
+                    total_untaxed = float(base_amount)
+                    total_tax = float(tax_amount)
+                    data['total_amount'] = float(total_amount)
+                    _logger.info(f"SETEM totals extracted: Untaxed: {total_untaxed}, Tax: {total_tax}, Total: {data['total_amount']}")
+                except ValueError as e:
+                    _logger.warning(f"Could not parse SETEM totals: {e}")
+        
+        # Generic VAT breakdown pattern for other suppliers
         # Find the tax breakdown section - support both comma and dot decimals, including negative values
         # Pattern supports: "23% 715.09 164.47" or "23% -715.09 -164.47"
-        vat_breakdown_pattern = r'(\d+)\s*%\s+(-?[\d\s]+[,\.]\d+)\s+(-?[\d\s]+[,\.]\d+)'
-        vat_matches = re.findall(vat_breakdown_pattern, text)
-        
-        for match in vat_matches:
-            vat_rate = match[0]
-            base_amount = match[1].replace(' ', '').replace(',', '.')
-            tax_amount = match[2].replace(' ', '').replace(',', '.')
+        if not data.get('is_setem') or total_untaxed == 0:  # Fallback if SETEM extraction didn't work
+            vat_breakdown_pattern = r'(\d+)\s*%\s+(-?[\d\s]+[,\.]\d+)\s+(-?[\d\s]+[,\.]\d+)'
+            vat_matches = re.findall(vat_breakdown_pattern, text)
             
-            try:
-                total_untaxed += float(base_amount)
-                total_tax += float(tax_amount)
-            except ValueError:
-                pass
+            for match in vat_matches:
+                vat_rate = match[0]
+                base_amount = match[1].replace(' ', '').replace(',', '.')
+                tax_amount = match[2].replace(' ', '').replace(',', '.')
+                
+                try:
+                    total_untaxed += float(base_amount)
+                    total_tax += float(tax_amount)
+                except ValueError:
+                    pass
         
         data['total_untaxed'] = total_untaxed
         data['total_tax'] = total_tax
@@ -625,6 +670,8 @@ class SupplierInvoiceProcessor(models.Model):
             data['lines'] = self._parse_o2_lines_from_text(text)
         elif data.get('is_telekom'):
             data['lines'] = self._parse_telekom_lines_from_text(text)
+        elif data.get('is_setem'):
+            data['lines'] = self._parse_setem_lines_from_text(text)
         elif not data['lines'] or len(data['lines']) > 20:  # Too many lines usually means bad parsing
             if data.get('is_westech'):
                 data['lines'] = self._parse_westech_lines_from_text(text)
@@ -1675,6 +1722,92 @@ class SupplierInvoiceProcessor(models.Model):
                     except ValueError as e:
                         _logger.warning(f"Could not parse Telekom no-DPH amount '{base_amount_str}': {e}")
         
+        return items
+
+    def _parse_setem_lines_from_text(self, text):
+        """
+        SETEM s.r.o. invoice parser - extracts line items from invoice items section.
+        
+        SETEM format has rows with: Description | Quantity | Unit | Price per unit | VAT % | Base amount
+        Example: "Prenájom motorových vozidiel za mesiace 01-2026 1,00 Jednotky 250,0000 23% 250,00 €"
+        Example: "Prenájom - Reca za mesiace 01-2026 1,00 Jednotky 1 073,4200 23% 1 073,42 €"
+        
+        Note: Description may be split across multiple PDF lines.
+        """
+        items = []
+        
+        # Find the invoice items section - between "Popis" header and "Sadzba %" footer
+        popis_start = text.lower().find('popis')
+        sadzba_start = text.lower().find('sadzba %')
+        
+        if popis_start == -1 or sadzba_start == -1:
+            _logger.warning("SETEM Parser: Could not find Popis or Sadzba % sections")
+            return items
+        
+        # Extract the items section
+        items_section = text[popis_start:sadzba_start]
+        
+        _logger.info(f"SETEM Parser: Items section extracted:\n{items_section}")
+        
+        # Strategy: Find all occurrences of the pattern "quantity unit price VAT% amount €"
+        # This pattern is very specific and won't be broken by line breaks
+        # Pattern: digits,digits (quantity) whitespace Jednotky whitespace digits+ (price with spaces) whitespace digits% whitespace digits+ (amount) whitespace €
+        
+        # Replace newlines with spaces, but be more careful
+        items_section_normalized = items_section.replace('\n', ' ')
+        
+        # Pattern to match from quantity to end of line amount
+        # This pattern looks for: quantity Jednotky price VAT% amount €
+        # quantity: 1,00 or similar
+        # unit: Jednotky
+        # price: 250,0000 or 1 073,4200 (may have spaces)
+        # vat: 23%
+        # amount: 250,00 or 1 073,42 € (may have spaces)
+        line_pattern = r'(\d+,\d+)\s+Jednotky\s+([\d\s]+,\d+)\s+(\d+)\s*%\s+([\d\s]+,\d+)\s*€'
+        
+        matches = list(re.finditer(line_pattern, items_section_normalized, re.IGNORECASE))
+        
+        _logger.info(f"SETEM Parser: Found {len(matches)} line matches")
+        
+        for match_idx, match in enumerate(matches):
+            quantity_str = match.group(1).replace(',', '.')
+            price_str = match.group(2)
+            vat_rate = int(match.group(3))
+            base_amount_str = match.group(4).replace(' ', '').replace(',', '.')
+            
+            # Now find the description by looking backwards from the start of this match
+            match_start = match.start()
+            # Find the previous match end (or start of section if first match)
+            if match_idx > 0:
+                prev_match_end = matches[match_idx - 1].end()
+            else:
+                prev_match_end = items_section_normalized.find('Prenájom')  # First description starts here
+            
+            # Get text between previous match and current match
+            desc_text = items_section_normalized[prev_match_end:match_start].strip()
+            
+            # Clean up description - remove DPH, cena, etc header words
+            desc = re.sub(r'^(DPH|Jednotková|cena|bez|bez DPH|\d+)\s*', '', desc_text, flags=re.IGNORECASE).strip()
+            desc = re.sub(r'\s+', ' ', desc)  # Normalize whitespace in description
+            
+            _logger.info(f"SETEM Parser: Match {match_idx} - Desc: '{desc}', Qty: {quantity_str}, Price: {price_str}, VAT: {vat_rate}%, Amount: {base_amount_str}")
+            
+            try:
+                quantity = float(quantity_str)
+                base_amount = float(base_amount_str)
+                
+                if base_amount > 0 and desc and len(desc) > 3:  # Avoid very short descriptions
+                    items.append({
+                        "description": desc,
+                        "quantity": quantity,
+                        "price_unit": base_amount / quantity if quantity > 0 else base_amount,
+                        "vat_rate": vat_rate,
+                    })
+                    _logger.info(f"SETEM Parser: Added item '{desc}' - Qty: {quantity}, Unit price: {base_amount / quantity if quantity > 0 else base_amount}€, VAT: {vat_rate}%")
+            except (ValueError, ZeroDivisionError) as e:
+                _logger.warning(f"SETEM Parser: Could not parse values: {e}")
+        
+        _logger.info(f"SETEM Parser: Total items extracted: {len(items)}")
         return items
 
     def _parse_vamont_lines_from_text(self, text):
