@@ -5,6 +5,7 @@ from . import contract_mobile_invoice_import
 from . import stock_location_select
 from . import contract_date_update_wizard
 from . import product_pairing_wizard
+from . import supplier_invoice_regenerate_wizard
 
 from . import contract_inventory_bulk_return_wizard_line
 from . import contract_inventory_bulk_return_wizard

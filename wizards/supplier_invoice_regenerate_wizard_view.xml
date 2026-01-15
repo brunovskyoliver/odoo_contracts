@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Wizard Form View -->
+    <record id="view_supplier_invoice_regenerate_wizard_form" model="ir.ui.view">
+        <field name="name">supplier.invoice.regenerate.wizard.form</field>
+        <field name="model">supplier.invoice.regenerate.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Pregenerovat faktúru">
+                <group>
+                    <field name="processor_id" invisible="1"/>
+                    <field name="invoice_id" invisible="1"/>
+                    <p class="alert alert-info" role="alert">
+                        Nahrať nový PDF súbor. Všetky riadky existujúcej faktúry budú vymazané a nahradené riadkami extrahovanými z nového PDF.
+                    </p>
+                    <field name="pdf_file" filename="pdf_filename" widget="binary" required="1"/>
+                    <field name="pdf_filename" invisible="1"/>
+                </group>
+                <footer>
+                    <button name="action_regenerate" string="Pregenerovat" type="object" class="btn-primary"/>
+                    <button string="Zrušiť" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

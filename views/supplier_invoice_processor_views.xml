@@ -28,6 +28,7 @@
                 <header>
                     <button name="action_process_pdf" string="Načítať PDF" type="object" class="btn-primary" invisible="state not in ('draft', 'error')"/>
                     <button name="action_create_invoice" string="Vytvoriť faktúru" type="object" class="btn-primary" invisible="state not in ('extracted', 'pairing')"/>
+                    <button name="action_regenerate_invoice" string="Pregenerovat" type="object" class="btn-warning" invisible="not invoice_id or state != 'done'" title="Regenerates the invoice by replacing the old one with the same number"/>
                     <button name="action_view_invoice" string="Zobraziť faktúru" type="object" class="btn-primary" invisible="not invoice_id"/>
                     <button name="action_reset_to_draft" string="Vrátiť do konceptu" type="object" invisible="state == 'draft'"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,processing,pairing,extracted,done"/>

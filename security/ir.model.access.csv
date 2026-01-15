@@ -61,3 +61,5 @@
 "access_contract_date_update_wizard_user","Contract Date Update Wizard User","model_contract_date_update_wizard","account.group_account_invoice",1,1,1,1
 "access_product_quantity_alert_manager","Product Quantity Alert Manager","model_product_quantity_alert","account.group_account_manager",1,1,1,1
 "access_product_quantity_alert_user","Product Quantity Alert User","model_product_quantity_alert","account.group_account_invoice",1,0,0,0
+"access_supplier_invoice_regenerate_wizard_manager","Supplier Invoice Regenerate Wizard Manager","model_supplier_invoice_regenerate_wizard","account.group_account_manager",1,1,1,1
+"access_supplier_invoice_regenerate_wizard_user","Supplier Invoice Regenerate Wizard User","model_supplier_invoice_regenerate_wizard","account.group_account_invoice",1,1,1,1

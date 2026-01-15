@@ -83,6 +83,7 @@
         'views/supplier_invoice_line_pairing_views.xml',
         'views/product_template_view.xml',
         'wizards/product_pairing_wizard_views.xml',
+        'wizards/supplier_invoice_regenerate_wizard_view.xml',
         'views/contract_menu.xml',
         'data/contract_sequence.xml',
         'data/supplier_invoice_processor_sequence.xml',

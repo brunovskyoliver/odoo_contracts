@@ -502,27 +502,36 @@ class SupplierInvoiceProcessor(models.Model):
         elif is_lets_consult:
             data.update({ 'supplier_id': 1657,})
         # Extract invoice number (common patterns)
-        invoice_patterns = [
-            r'Invoice\s*No\.\s*:\s*(\S+)',  # Gamers Outlet format: "Invoice No.: INV-2022-003681996"
-            r'FAKTÚRA\s*ČÍSLO\s*:\s*(\d+)',  # Let's Consult format: "FAKTÚRA ČÍSLO : 5025131"
-            r'FAKTÚRA\s*č\.\s*(\d+)',  # ACS format: "FAKTÚRA č. 2613011"
-            r'Faktúra\s*-\s*daňový\s*doklad\s*-\s*(\d+)',  # Alza invoice format
-            r'Faktúra\s*-\s*daňový\s*doklad\s*č\.\s*:\s*(?:.*?)([A-Z]{2}-\d+/\d+)',  # TSS format: "Faktúra - daňový doklad č.: ... FV-3336/2025"
-            r'Opravný\s+daňový\s+doklad\s*-\s*(\d+)',  # Alza credit note / corrective invoice number
-            r'FAKTÚRA\s+číslo\s+(\d+)',  # TES format: "FAKTÚRA číslo 2512298"
-            r'FAKTÚRA\s+(\d+)',  # WESTech format: "FAKTÚRA 1102526327"
-            r'Faktúra\s+(\S+)',  # SETEM format: "Faktúra FAK/2026/001" or Va-Mont format: "Faktúra 12500024"
-            r'Poradové\s+číslo\s+faktúry\s*:\s*(\d+)',  # UPC format: "Poradové číslo faktúry: 214095500"
-            r'Invoice\s*#?\s*:?:?\s*(\S+)',
-            r'Faktura\s*č\.\s*:?:?\s*(\S+)',
-            r'Invoice\s*Number\s*:?:?\s*(\S+)',
-            r'Číslo\s*faktúry\s*:?:?\s*(\S+)',
-        ]
-        for pattern in invoice_patterns:
-            match = re.search(pattern, text, re.IGNORECASE)
+        # Extract invoice number - use supplier-specific patterns first
+        if data.get('is_upc'):
+            # UPC format: "Poradové číslo faktúry: 214095500"
+            upc_pattern = r'Poradové\s+číslo\s+faktúry\s*:\s*(\d+)'
+            match = re.search(upc_pattern, text, re.IGNORECASE)
             if match:
                 data['invoice_number'] = match.group(1)
-                break
+        
+        if not data.get('invoice_number'):
+            # Fallback to generic patterns
+            invoice_patterns = [
+                r'Invoice\s*No\.\s*:\s*(\S+)',  # Gamers Outlet format: "Invoice No.: INV-2022-003681996"
+                r'FAKTÚRA\s*ČÍSLO\s*:\s*(\d+)',  # Let's Consult format: "FAKTÚRA ČÍSLO : 5025131"
+                r'FAKTÚRA\s*č\.\s*(\d+)',  # ACS format: "FAKTÚRA č. 2613011"
+                r'Faktúra\s*-\s*daňový\s*doklad\s*-\s*(\d+)',  # Alza invoice format
+                r'Faktúra\s*-\s*daňový\s*doklad\s*č\.\s*:\s*(?:.*?)([A-Z]{2}-\d+/\d+)',  # TSS format: "Faktúra - daňový doklad č.: ... FV-3336/2025"
+                r'Opravný\s+daňový\s+doklad\s*-\s*(\d+)',  # Alza credit note / corrective invoice number
+                r'FAKTÚRA\s+číslo\s+(\d+)',  # TES format: "FAKTÚRA číslo 2512298"
+                r'FAKTÚRA\s+(\d+)',  # WESTech format: "FAKTÚRA 1102526327"
+                r'Faktúra\s+(\S+)',  # SETEM format: "Faktúra FAK/2026/001" or Va-Mont format: "Faktúra 12500024"
+                r'Invoice\s*#?\s*:?:?\s*(\S+)',
+                r'Faktura\s*č\.\s*:?:?\s*(\S+)',
+                r'Invoice\s*Number\s*:?:?\s*(\S+)',
+                r'Číslo\s*faktúry\s*:?:?\s*(\S+)',
+            ]
+            for pattern in invoice_patterns:
+                match = re.search(pattern, text, re.IGNORECASE)
+                if match:
+                    data['invoice_number'] = match.group(1)
+                    break
         
         # Extract dates
         if data.get('is_gamers_outlet'):
@@ -2501,6 +2510,25 @@ class SupplierInvoiceProcessor(models.Model):
             'res_id': self.invoice_id.id,
             'view_mode': 'form',
             'target': 'current',
+        }
+
+    def action_regenerate_invoice(self):
+        """Open wizard to upload new PDF and regenerate invoice lines"""
+        self.ensure_one()
+        
+        if not self.invoice_id:
+            raise UserError(_('No invoice to regenerate. Please create an invoice first.'))
+        
+        # Open wizard dialog for PDF upload
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'supplier.invoice.regenerate.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_processor_id': self.id,
+                'default_invoice_id': self.invoice_id.id,
+            }
         }
 
     def action_reset_to_draft(self):
