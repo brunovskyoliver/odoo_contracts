@@ -262,6 +262,7 @@ class SupplierInvoiceProcessor(models.Model):
                     ('invoice_number', '=', invoice_data['invoice_number']),
                     ('id', '!=', self.id),  # Exclude current record
                     ('state', '!=', 'error'),  # Ignore error records
+                    ('is_refund', '=', invoice_data.get('is_refund', False)),  # Only error if same type (invoice/refund)
                 ])
                 if existing:
                     self._send_error_notification_email(invoice_data['invoice_number'])
@@ -407,8 +408,8 @@ class SupplierInvoiceProcessor(models.Model):
                 self.state = 'extracted'
             return
 
-        # Skip pairing requirement for Va-Mont Finance, Telekom, O2, and SETEM - always auto-create without product matching
-        if self.supplier_id and self.supplier_id.id in (1179, 1662, 1653, 1625):  # Va-Mont Finance, Telekom, O2, SETEM supplier IDs
+        # Skip pairing requirement for Va-Mont Finance, Telekom, O2, SETEM, ACS, Gamers Outlet, and Let's Consult - always auto-create without product matching
+        if self.supplier_id and self.supplier_id.id in (1179, 1662, 1653, 1625, 1660, 1688, 1657):  # Va-Mont Finance, Telekom, O2, SETEM, ACS, Gamers Outlet, Let's Consult supplier IDs
             if self.state in ('processing', 'pairing', 'draft', 'extracted'):
                 self.state = 'extracted'
             return
@@ -440,10 +441,13 @@ class SupplierInvoiceProcessor(models.Model):
         is_telekom = 'slovak telekom' in text.lower()
         is_o2 = 'o2 slovakia' in text.lower() or 'o2 sk' in text.lower()
         is_setem = 'setem s.r.o.' in text.lower()
+        is_acs = 'acs spol. s r.o.' in text.lower() or 'www.acs.sk' in text.lower()
+        is_gamers_outlet = 'gamers outlet' in text.lower() or 'gamers-outlet' in text.lower()
+        is_lets_consult = "let's consult" in text.lower() or "letsconsult" in text.lower()
 
         
-        if not is_alza and not is_westech and not is_tes and not is_tss and not is_asbis and not is_upc and not is_vamont and not is_telekom and not is_o2 and not is_setem:
-            raise UserError(_('This processor only handles Alza.sk, Westech, TES Slovakia, TSS Group, Asbis, UPC Broadband, Va-Mont Finance, Telekom, O2 Slovakia, and SETEM invoices. Please check the PDF file.'))
+        if not is_alza and not is_westech and not is_tes and not is_tss and not is_asbis and not is_upc and not is_vamont and not is_telekom and not is_o2 and not is_setem and not is_acs and not is_gamers_outlet and not is_lets_consult:
+            raise UserError(_('This processor only handles Alza.sk, Westech, TES Slovakia, TSS Group, Asbis, UPC Broadband, Va-Mont Finance, Telekom, O2 Slovakia, SETEM, ACS, Gamers Outlet, and Let\'s Consult invoices. Please check the PDF file.'))
         
         # Check if this is a credit note (dobropis/opravný doklad) - check both filename and text
         filename_lower = self.filename.lower() if self.filename else ''
@@ -467,6 +471,9 @@ class SupplierInvoiceProcessor(models.Model):
             'is_telekom': is_telekom,
             'is_o2': is_o2,
             'is_setem': is_setem,
+            'is_acs': is_acs,
+            'is_gamers_outlet': is_gamers_outlet,
+            'is_lets_consult': is_lets_consult,
         }
         if is_alza:
             data.update({ 'supplier_id': 21,})
@@ -488,15 +495,24 @@ class SupplierInvoiceProcessor(models.Model):
             data.update({ 'supplier_id': 1653,})
         elif is_setem:
             data.update({ 'supplier_id': 1625,})
+        elif is_acs:
+            data.update({ 'supplier_id': 1660,})
+        elif is_gamers_outlet:
+            data.update({ 'supplier_id': 1688,})
+        elif is_lets_consult:
+            data.update({ 'supplier_id': 1657,})
         # Extract invoice number (common patterns)
         invoice_patterns = [
-            r'Faktúra\s+(\S+)',  # SETEM format: "Faktúra FAK/2026/001" or Va-Mont format: "Faktúra 12500024"
-            r'Poradové\s+číslo\s+faktúry\s*:\s*(\d+)',  # UPC format: "Poradové číslo faktúry: 214095500"
+            r'Invoice\s*No\.\s*:\s*(\S+)',  # Gamers Outlet format: "Invoice No.: INV-2022-003681996"
+            r'FAKTÚRA\s*ČÍSLO\s*:\s*(\d+)',  # Let's Consult format: "FAKTÚRA ČÍSLO : 5025131"
+            r'FAKTÚRA\s*č\.\s*(\d+)',  # ACS format: "FAKTÚRA č. 2613011"
+            r'Faktúra\s*-\s*daňový\s*doklad\s*-\s*(\d+)',  # Alza invoice format
             r'Faktúra\s*-\s*daňový\s*doklad\s*č\.\s*:\s*(?:.*?)([A-Z]{2}-\d+/\d+)',  # TSS format: "Faktúra - daňový doklad č.: ... FV-3336/2025"
             r'Opravný\s+daňový\s+doklad\s*-\s*(\d+)',  # Alza credit note / corrective invoice number
             r'FAKTÚRA\s+číslo\s+(\d+)',  # TES format: "FAKTÚRA číslo 2512298"
             r'FAKTÚRA\s+(\d+)',  # WESTech format: "FAKTÚRA 1102526327"
-            r'Faktúra\s*-\s*daňový\s*doklad\s*-\s*(\d+)',  # Alza invoice format
+            r'Faktúra\s+(\S+)',  # SETEM format: "Faktúra FAK/2026/001" or Va-Mont format: "Faktúra 12500024"
+            r'Poradové\s+číslo\s+faktúry\s*:\s*(\d+)',  # UPC format: "Poradové číslo faktúry: 214095500"
             r'Invoice\s*#?\s*:?:?\s*(\S+)',
             r'Faktura\s*č\.\s*:?:?\s*(\S+)',
             r'Invoice\s*Number\s*:?:?\s*(\S+)',
@@ -509,7 +525,43 @@ class SupplierInvoiceProcessor(models.Model):
                 break
         
         # Extract dates
-        if data.get('is_tss'):
+        if data.get('is_gamers_outlet'):
+            # Gamers Outlet-specific date extraction: "Date Added: 01/12/2026" (MM/DD/YYYY format)
+            go_date_match = re.search(r'Date\s+Added\s*:\s*(\d{1,2}/\d{1,2}/\d{4})', text)
+            if go_date_match:
+                date_str = go_date_match.group(1)
+                # Convert MM/DD/YYYY to DD.MM.YYYY
+                parts = date_str.split('/')
+                data['invoice_date'] = self._parse_date(f"{parts[1]}.{parts[0]}.{parts[2]}")
+            
+            # Gamers Outlet due date: "Due Date: 01/12/2026"
+            go_due_match = re.search(r'Due\s+Date\s*:\s*(\d{1,2}/\d{1,2}/\d{4})', text)
+            if go_due_match:
+                date_str = go_due_match.group(1)
+                # Convert MM/DD/YYYY to DD.MM.YYYY
+                parts = date_str.split('/')
+                data['invoice_due_date'] = self._parse_date(f"{parts[1]}.{parts[0]}.{parts[2]}")
+        elif data.get('is_lets_consult'):
+            # Let's Consult-specific date extraction: "Dátum vyhotovenia dokl: 31.12.2025" and "Dátum splatnosti: 21.01.2026"
+            lc_date_match = re.search(r'Dátum vyhotovenia\s+dokl\s*:\s*(\d{1,2}\.\d{1,2}\.\d{4})', text)
+            if lc_date_match:
+                data['invoice_date'] = self._parse_date(lc_date_match.group(1))
+            
+            # Let's Consult due date: "Dátum splatnosti: 21.01.2026"
+            lc_due_match = re.search(r'Dátum splatnosti\s*:\s*(\d{1,2}\.\d{1,2}\.\d{4})', text)
+            if lc_due_match:
+                data['invoice_due_date'] = self._parse_date(lc_due_match.group(1))
+        elif data.get('is_acs'):
+            # ACS-specific date extraction: "Dátum vyhotovenia: 13.01.2026" and "Dátum splatnosti: 27.01.2026"
+            acs_date_match = re.search(r'Dátum vyhotovenia\s*:\s*(\d{1,2}\.\d{1,2}\.\d{4})', text)
+            if acs_date_match:
+                data['invoice_date'] = self._parse_date(acs_date_match.group(1))
+            
+            # ACS due date: "Dátum splatnosti: 27.01.2026"
+            acs_due_match = re.search(r'Dátum splatnosti\s*:\s*(\d{1,2}\.\d{1,2}\.\d{4})', text)
+            if acs_due_match:
+                data['invoice_due_date'] = self._parse_date(acs_due_match.group(1))
+        elif data.get('is_tss'):
             # TSS-specific date extraction: "Dátum vystavenia dokladu: 22.12.2025"
             tss_date_match = re.search(r'Dátum vystavenia dokladu\s*:\s*(\d{1,2}\.\d{1,2}\.\d{4})', text)
             if tss_date_match:
@@ -565,6 +617,72 @@ class SupplierInvoiceProcessor(models.Model):
         total_untaxed = 0.0
         total_tax = 0.0
         
+        # Gamers Outlet-specific extraction: "Sub-Total: 28.00€" and "Total: 29.43€"
+        if data.get('is_gamers_outlet'):
+            # Extract sub-total (base amount without fees)
+            subtotal_pattern = r'Sub-Total\s*:\s*([\d.]+)€'
+            subtotal_match = re.search(subtotal_pattern, text)
+            if subtotal_match:
+                total_untaxed = float(subtotal_match.group(1))
+            
+            # Extract PayPal fee if present
+            paypal_fee = 0.0
+            fee_pattern = r'Paypal\s+Fee\s*:\s*([\d.]+)€'
+            fee_match = re.search(fee_pattern, text)
+            if fee_match:
+                paypal_fee = float(fee_match.group(1))
+                total_tax = paypal_fee
+            
+            # Extract total amount
+            total_pattern = r'Total\s*:\s*([\d.]+)€'
+            total_match = re.search(total_pattern, text)
+            if total_match:
+                data['total_amount'] = float(total_match.group(1))
+                data['total_untaxed'] = total_untaxed
+                data['total_tax'] = total_tax
+                # For Gamers Outlet, the "tax" is actually the PayPal fee
+                data['total_tax'] = paypal_fee
+                _logger.info(f"Gamers Outlet totals extracted: Untaxed: {total_untaxed}, Fee: {paypal_fee}, Total: {data['total_amount']}")
+        
+        # Let's Consult-specific extraction: "Základ dane 360.00 EUR", "DPH celkovo 82.80 EUR", "Suma k úhrade 442.80 EUR"
+        elif data.get('is_lets_consult'):
+            # Extract base amount: "Základ dane 360.00 EUR"
+            base_pattern = r'Základ\s+dane\s+([\d.]+)\s+EUR'
+            base_match = re.search(base_pattern, text)
+            if base_match:
+                total_untaxed = float(base_match.group(1))
+            
+            # Extract tax amount: "DPH celkovo 82.80 EUR"
+            tax_pattern = r'DPH\s+celkovo\s+([\d.]+)\s+EUR'
+            tax_match = re.search(tax_pattern, text)
+            if tax_match:
+                total_tax = float(tax_match.group(1))
+            
+            # Extract total amount: "Suma k úhrade 442.80 EUR"
+            total_pattern = r'Suma\s+k\s+úhrade\s+([\d.]+)\s+EUR'
+            total_match = re.search(total_pattern, text)
+            if total_match:
+                data['total_amount'] = float(total_match.group(1))
+                data['total_untaxed'] = total_untaxed
+                data['total_tax'] = total_tax
+                _logger.info(f"Let's Consult totals extracted: Untaxed: {total_untaxed}, Tax: {total_tax}, Total: {data['total_amount']}")
+        
+        # ACS-specific extraction: "Súčet položiek 29,70 6,83 36,53"
+        elif data.get('is_acs'):
+            acs_pattern = r'Súčet\s+položiek\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)'
+            acs_match = re.search(acs_pattern, text)
+            if acs_match:
+                base_amount = acs_match.group(1).replace(' ', '').replace(',', '.')
+                tax_amount = acs_match.group(2).replace(' ', '').replace(',', '.')
+                total_amount = acs_match.group(3).replace(' ', '').replace(',', '.')
+                try:
+                    total_untaxed = float(base_amount)
+                    total_tax = float(tax_amount)
+                    data['total_amount'] = float(total_amount)
+                    _logger.info(f"ACS totals extracted: Untaxed: {total_untaxed}, Tax: {total_tax}, Total: {data['total_amount']}")
+                except ValueError as e:
+                    _logger.warning(f"Could not parse ACS totals: {e}")
+        
         # SETEM-specific extraction: "DPH 23% base_amount € tax_amount € total_amount €"
         if data.get('is_setem'):
             setem_pattern = r'DPH\s+(\d+)\s*%\s+([\d\s]+,\d+)\s*€\s+([\d\s]+,\d+)\s*€\s+([\d\s]+,\d+)\s*€'
@@ -585,7 +703,8 @@ class SupplierInvoiceProcessor(models.Model):
         # Generic VAT breakdown pattern for other suppliers
         # Find the tax breakdown section - support both comma and dot decimals, including negative values
         # Pattern supports: "23% 715.09 164.47" or "23% -715.09 -164.47"
-        if not data.get('is_setem') or total_untaxed == 0:  # Fallback if SETEM extraction didn't work
+        # Skip this for ACS, SETEM, Gamers Outlet, and Let's Consult since they have their own extraction
+        if not data.get('is_setem') and not data.get('is_acs') and not data.get('is_gamers_outlet') and not data.get('is_lets_consult') and total_untaxed > 0:
             vat_breakdown_pattern = r'(\d+)\s*%\s+(-?[\d\s]+[,\.]\d+)\s+(-?[\d\s]+[,\.]\d+)'
             vat_matches = re.findall(vat_breakdown_pattern, text)
             
@@ -672,6 +791,12 @@ class SupplierInvoiceProcessor(models.Model):
             data['lines'] = self._parse_telekom_lines_from_text(text)
         elif data.get('is_setem'):
             data['lines'] = self._parse_setem_lines_from_text(text)
+        elif data.get('is_acs'):
+            data['lines'] = self._parse_acs_lines_from_text(text)
+        elif data.get('is_gamers_outlet'):
+            data['lines'] = self._parse_gamers_outlet_lines_from_text(text)
+        elif data.get('is_lets_consult'):
+            data['lines'] = self._parse_lets_consult_lines_from_text(text)
         elif not data['lines'] or len(data['lines']) > 20:  # Too many lines usually means bad parsing
             if data.get('is_westech'):
                 data['lines'] = self._parse_westech_lines_from_text(text)
@@ -1809,6 +1934,306 @@ class SupplierInvoiceProcessor(models.Model):
         
         _logger.info(f"SETEM Parser: Total items extracted: {len(items)}")
         return items
+
+    def _parse_acs_lines_from_text(self, text):
+        """
+        ACS spol. s r.o. invoice parser - extracts line items from invoice items section.
+        
+        ACS format has rows with: Description | Quantity | Unit Price | Discount | Price | VAT % | VAT Amount | Total
+        Example: "Telekomunikačné služby za 12/2025 1 29,70 29,70 23% 6,83 36,53"
+        
+        The invoice format:
+        Označenie dodávky Množstvo J.cena Zľava Cena %DPH DPH EUR Celkom
+        Telekomunikačné služby za 1 29,70 29,70 23% 6,83 36,53
+        12/2025
+        """
+        items = []
+        
+        # Find the invoice items section - between header and "Súčet položiek"
+        header_start = text.lower().find('označenie dodávky')
+        summary_start = text.lower().find('súčet položiek')
+        
+        if header_start == -1 or summary_start == -1:
+            _logger.warning("ACS Parser: Could not find items section")
+            return items
+        
+        # Extract the items section
+        items_section = text[header_start:summary_start]
+        
+        _logger.info(f"ACS Parser: Items section extracted:\n{items_section}")
+        
+        # The pattern looks for: quantity unit_price discount price VAT% tax_amount total
+        # Example: "1 29,70 29,70 23% 6,83 36,53"
+        # But the description and quantity can span multiple lines
+        # So we need to find the numeric signature: price VAT% tax_amount
+        
+        # Normalize the section (replace newlines with spaces for easier parsing)
+        items_section_normalized = items_section.replace('\n', ' ')
+        
+        # Pattern to match the numeric signature of ACS invoice line
+        # This looks for: quantity (decimal) price (decimal) discount (decimal or empty) price (decimal) VAT% tax_amount total
+        # Simplified: We look for "price VAT% tax_amount total" pattern
+        # pattern: digits,digits (price) digits% (vat) digits,digits (tax) digits,digits (total)
+        line_pattern = r'(\d+,\d+)\s+(\d+)%\s+([\d,]+)\s+([\d,]+)'
+        
+        matches = list(re.finditer(line_pattern, items_section_normalized, re.IGNORECASE))
+        
+        _logger.info(f"ACS Parser: Found {len(matches)} potential line matches")
+        
+        for match_idx, match in enumerate(matches):
+            base_amount_str = match.group(1).replace(',', '.')
+            vat_rate = int(match.group(2))
+            tax_amount_str = match.group(3).replace(',', '.')
+            total_amount_str = match.group(4).replace(',', '.')
+            
+            # Now find the description by looking backwards from the start of this match
+            match_start = match.start()
+            
+            # Find the previous match end (or start of section if first match)
+            if match_idx > 0:
+                prev_match_end = matches[match_idx - 1].end()
+            else:
+                # For the first match, find where "Fakturujeme Vám:" ends or the start of actual items
+                prev_match_end = items_section_normalized.find('Fakturujeme Vám')
+                if prev_match_end != -1:
+                    # Move past "Fakturujeme Vám:"
+                    prev_match_end = prev_match_end + len('Fakturujeme Vám')
+                else:
+                    prev_match_end = len('Označenie dodávky Množstvo J.cena Zľava Cena %DPH DPH EUR Celkom')
+            
+            # Get text between previous match and current match
+            desc_text = items_section_normalized[prev_match_end:match_start].strip()
+            
+            # Clean up description - remove header words and extra whitespace
+            desc = re.sub(r'^(Označenie|dodávky|Množstvo|Cena|Zľava|DPH|Fakturujeme Vám)', '', desc_text, flags=re.IGNORECASE).strip()
+            desc = re.sub(r'\s+', ' ', desc)  # Normalize whitespace in description
+            
+            # Clean up numbers from description (like quantity that appears inline)
+            # Remove leading numbers that are clearly quantities (1, 2, etc) or dates
+            desc = re.sub(r'^\d+\s*', '', desc).strip()
+            
+            _logger.info(f"ACS Parser: Match {match_idx} - Desc: '{desc}', Price: {base_amount_str}, VAT: {vat_rate}%, Tax: {tax_amount_str}, Total: {total_amount_str}")
+            
+            try:
+                base_amount = float(base_amount_str)
+                tax_amount = float(tax_amount_str)
+                total_amount = float(total_amount_str)
+                
+                # Verify that base_amount + tax_amount ≈ total_amount (allowing for rounding)
+                calculated_total = base_amount + tax_amount
+                if abs(calculated_total - total_amount) > 0.01:
+                    _logger.warning(f"ACS Parser: Amount mismatch - {base_amount} + {tax_amount} ≠ {total_amount}")
+                
+                if base_amount > 0 and desc and len(desc) > 2:
+                    items.append({
+                        "description": desc,
+                        "quantity": 1.0,
+                        "price_unit": base_amount,
+                        "vat_rate": vat_rate,
+                    })
+                    _logger.info(f"ACS Parser: Added item '{desc}' - Price: {base_amount}€, VAT: {vat_rate}%")
+            except (ValueError, ZeroDivisionError) as e:
+                _logger.warning(f"ACS Parser: Could not parse values: {e}")
+        
+        _logger.info(f"ACS Parser: Total items extracted: {len(items)}")
+        return items
+
+    def _parse_gamers_outlet_lines_from_text(self, text):
+        """
+        Gamers Outlet invoice parser - extracts line items from the invoice.
+        
+        Gamers Outlet format has product lines like:
+        Product Name | Model | Price ex. tax | Total ex. tax | Total
+        Example: "1 x Windows Server 2022 Remote Desktop Services 50 USER Connections Cd Key | Windows | Global | 28.00€ | 28.00€ | 28.00€"
+        
+        Also extracts PayPal Fee as a separate line item if present.
+        """
+        items = []
+        
+        # Find the section starting from "Product Name" header
+        product_header = text.lower().find('product name')
+        if product_header == -1:
+            _logger.warning("Gamers Outlet Parser: Could not find 'Product Name' section")
+            return items
+        
+        # Find where the summary starts (Sub-Total)
+        summary_start = text.lower().find('sub-total')
+        if summary_start == -1:
+            summary_start = len(text)
+        
+        # Extract the products section
+        products_section = text[product_header:summary_start]
+        
+        _logger.info(f"Gamers Outlet Parser: Products section extracted:\n{products_section}")
+        
+        # Split into lines
+        lines = products_section.split('\n')
+        
+        in_products = False
+        current_description = None
+        
+        for line in lines:
+            line = line.strip()
+            
+            # Skip empty lines and headers
+            if not line or 'product name' in line.lower() or 'model' in line.lower() or 'price' in line.lower():
+                in_products = True
+                continue
+            
+            # Skip the summary section
+            if 'sub-total' in line.lower() or 'paypal fee' in line.lower() or 'total' in line.lower():
+                break
+            
+            if not in_products:
+                continue
+            
+            # Try to extract a product line with price
+            # Pattern: description with price at the end
+            # Looking for prices like "28.00€"
+            price_match = re.search(r'([\d.]+)€\s*$', line)
+            
+            if price_match:
+                price_str = price_match.group(1)
+                description = line[:price_match.start()].strip()
+                
+                # Remove model info (like "Windows" or "Global") from description if present
+                # The model is typically after the product name
+                desc_parts = description.split()
+                
+                # Clean up multi-line descriptions if needed
+                if current_description:
+                    description = current_description + ' ' + description
+                    current_description = None
+                
+                try:
+                    price_unit = float(price_str)
+                    if price_unit > 0 and description and len(description) > 3:
+                        items.append({
+                            "description": description,
+                            "quantity": 1.0,
+                            "price_unit": price_unit,
+                            "vat_rate": 0,  # Gamers Outlet appears to not apply VAT on CD keys
+                        })
+                        _logger.info(f"Gamers Outlet Parser: Added item '{description}' - Price: {price_unit}€")
+                except ValueError as e:
+                    _logger.warning(f"Gamers Outlet Parser: Could not parse price '{price_str}': {e}")
+            else:
+                # This might be a continuation of a multi-line description
+                if line and not line.startswith('x '):
+                    current_description = line if not current_description else current_description + ' ' + line
+        
+        # Extract PayPal Fee if present
+        paypal_fee_pattern = r'Paypal\s+Fee\s*:\s*([\d.]+)€'
+        paypal_match = re.search(paypal_fee_pattern, text)
+        if paypal_match:
+            fee_str = paypal_match.group(1)
+            try:
+                fee_amount = float(fee_str)
+                if fee_amount > 0:
+                    items.append({
+                        "description": "PayPal Fee",
+                        "quantity": 1.0,
+                        "price_unit": fee_amount,
+                        "vat_rate": 0,  # PayPal fee with 0 VAT
+                    })
+                    _logger.info(f"Gamers Outlet Parser: Added PayPal Fee - {fee_amount}€")
+            except ValueError as e:
+                _logger.warning(f"Gamers Outlet Parser: Could not parse PayPal fee '{fee_str}': {e}")
+        
+        _logger.info(f"Gamers Outlet Parser: Total items extracted: {len(items)}")
+        return items
+
+    def _parse_lets_consult_lines_from_text(self, text):
+        """
+        Let's Consult invoice parser - extracts line items from the invoice.
+        
+        Let's Consult format has product lines like:
+        "PC služby 1 MD 8.00hod 45.00 EUR 360.00 23.00"
+        Where: Description | Qty+Unit | PricePerUnit EUR | Total | VAT%
+        
+        The tricky part is that quantity and unit are combined (e.g., "8.00hod" = 8.00 hours)
+        """
+        items = []
+        
+        # Find the section with "Názov Množstvo Cena/jedn Suma DPH %"
+        header_match = re.search(r'Názov.*?Množstvo.*?Cena.*?Suma.*?DPH', text)
+        if not header_match:
+            _logger.warning("Let's Consult Parser: Could not find header section")
+            return items
+        
+        # Find where the summary starts (Základ dane or separators)
+        summary_start = text.lower().find('základ dane')
+        if summary_start == -1:
+            summary_start = text.lower().find('---')
+        if summary_start == -1:
+            summary_start = len(text)
+        
+        # Extract the products section
+        products_section = text[header_match.end():summary_start]
+        
+        _logger.info(f"Let's Consult Parser: Products section extracted:\n{products_section}")
+        
+        # Split into lines
+        lines = products_section.split('\n')
+        
+        for line in lines:
+            line = line.strip()
+            
+            # Skip empty lines and separators
+            if not line or '---' in line or '=' in line or 'Fakturujeme' in line or 'Počítačové' in line:
+                continue
+            
+            # Try to extract a product line - look for EUR keyword as anchor point
+            if 'EUR' in line:
+                # Pattern: Find EUR and work backwards to extract price, and forward for total
+                # Format: "description quantity_with_unit price EUR total vat_rate"
+                # Example: "PC služby 1 MD 8.00hod 45.00 EUR 360.00 23.00"
+                
+                # Split by EUR to separate before and after
+                eur_split = line.split('EUR')
+                if len(eur_split) >= 2:
+                    before_eur = eur_split[0].strip()
+                    after_eur = eur_split[1].strip()
+                    
+                    # Extract total and VAT from after EUR
+                    after_parts = after_eur.split()
+                    total_str = after_parts[0] if after_parts else '0'
+                    vat_str = after_parts[1] if len(after_parts) > 1 else '23'
+                    
+                    # Work backwards from EUR to find price
+                    before_parts = before_eur.split()
+                    if len(before_parts) >= 2:
+                        price_str = before_parts[-1]
+                        qty_with_unit = before_parts[-2]
+                        description_parts = before_parts[:-2]
+                        description = ' '.join(description_parts)
+                        
+                        try:
+                            # Extract quantity from "8.00hod" format
+                            qty_match = re.match(r'([\d.]+)', qty_with_unit)
+                            if qty_match:
+                                quantity = float(qty_match.group(1))
+                                unit = qty_with_unit[len(qty_match.group(1)):]  # "hod", "ks", etc.
+                                price_unit = float(price_str)
+                                total = float(total_str.replace(',', '.'))
+                                vat_rate = float(vat_str)
+                                
+                                if price_unit > 0 and description and len(description) > 2:
+                                    items.append({
+                                        "description": description,
+                                        "quantity": quantity,
+                                        "price_unit": price_unit,
+                                        "vat_rate": int(vat_rate),
+                                    })
+                                    _logger.info(f"Let's Consult Parser: Added item '{description}' - Qty: {quantity} {unit}, Price: {price_unit}€, Total: {total}€, VAT: {vat_rate}%")
+                            else:
+                                _logger.warning(f"Let's Consult Parser: Could not extract quantity from '{qty_with_unit}'")
+                        except (ValueError, IndexError) as e:
+                            _logger.warning(f"Let's Consult Parser: Could not parse line '{line}': {e}")
+        
+        _logger.info(f"Let's Consult Parser: Total items extracted: {len(items)}")
+        return items
+
 
     def _parse_vamont_lines_from_text(self, text):
         """
