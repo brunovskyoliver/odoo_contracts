@@ -1400,6 +1400,14 @@ class ContractLine(models.Model):
                 else:
                     line.remove_mobile_services_from_inventory()
         
+        # Update mobile service names when product_id changes on mobile service lines
+        if 'product_id' in vals:
+            for line in self.filtered('is_mobile_service'):
+                if line.mobile_service_ids:
+                    new_product = self.env['product.product'].browse(vals['product_id'])
+                    product_name = new_product.name or "Mobile Service"
+                    line.mobile_service_ids.write({'name': product_name})
+        
         # Skip name update if we're already doing it from mobile service update
         # or if 'name' was explicitly passed in vals (direct user update)
         if not self.env.context.get('skip_mobile_service_description_update') and 'name' not in vals:

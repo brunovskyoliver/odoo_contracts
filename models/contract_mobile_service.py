@@ -88,6 +88,19 @@ class ContractMobileService(models.Model):
         """Aktualizovať názov riadku zmluvy, keď sa zmení telefónne číslo alebo stav aktivity"""
         if 'phone_number' in vals:
             vals['phone_number'] = self._validate_phone_number(vals['phone_number'])
+        
+        # Ak sa mení inventory_id, vymazať starý riadok zmluvy
+        if 'inventory_id' in vals:
+            for record in self:
+                old_inventory_id = record.inventory_id.id
+                new_inventory_id = vals.get('inventory_id')
+                # Ak sa inventory_id zmenilo a existuje starý contract_line_id
+                if old_inventory_id != new_inventory_id and record.contract_line_id:
+                    contract_line_to_delete = record.contract_line_id
+                    # Najprv odpojíme mobilnú službu od riadku zmluvy
+                    record.contract_line_id = False
+                    # Potom vymažeme riadok zmluvy
+                    contract_line_to_delete.unlink()
             
         result = super().write(vals)
         if 'phone_number' in vals or 'is_active' in vals:
