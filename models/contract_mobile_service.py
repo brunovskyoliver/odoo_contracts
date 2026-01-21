@@ -89,25 +89,86 @@ class ContractMobileService(models.Model):
         if 'phone_number' in vals:
             vals['phone_number'] = self._validate_phone_number(vals['phone_number'])
         
-        # Ak sa mení inventory_id, vymazať starý riadok zmluvy
+        redirect_action = None
+        
+        # Ak sa mení inventory_id, spracovať zmenu
         if 'inventory_id' in vals:
             for record in self:
                 old_inventory_id = record.inventory_id.id
                 new_inventory_id = vals.get('inventory_id')
-                # Ak sa inventory_id zmenilo a existuje starý contract_line_id
-                if old_inventory_id != new_inventory_id and record.contract_line_id:
+                # Ak sa inventory_id zmenilo
+                if old_inventory_id != new_inventory_id:
+                    # Uložíme starý contract_line na vymazanie
                     contract_line_to_delete = record.contract_line_id
-                    # Najprv odpojíme mobilnú službu od riadku zmluvy
-                    record.contract_line_id = False
-                    # Potom vymažeme riadok zmluvy
-                    contract_line_to_delete.unlink()
+                    
+                    # Nájdeme nový inventár a jeho partnera
+                    new_inventory = self.env['contract.inventory'].browse(new_inventory_id)
+                    if new_inventory and new_inventory.partner_id:
+                        # Hľadáme Mobilky zmluvu pre partnera nového inventára
+                        mobilky_contract = self.env['contract.contract'].search([
+                            ('partner_id', '=', new_inventory.partner_id.id),
+                            ('x_contract_type', '=', 'Mobilky'),
+                            ('inventory_id', '=', new_inventory_id),
+                        ], limit=1)
+                        
+                        if mobilky_contract:
+                            # Nájdeme produkt podľa názvu mobilnej služby (name)
+                            product_id = False
+                            if contract_line_to_delete and contract_line_to_delete.product_id:
+                                product_id = contract_line_to_delete.product_id.id
+                            else:
+                                # Hľadáme produkt podľa názvu mobilnej služby
+                                product = self.env['product.product'].search([
+                                    ('name', '=', record.name)
+                                ], limit=1)
+                                if product:
+                                    product_id = product.id
+                            
+                            # Vytvoríme nový riadok zmluvy
+                            new_contract_line = self.env['contract.line'].create({
+                                'contract_id': mobilky_contract.id,
+                                'name': f"{record.name}: {record.phone_number}",
+                                'product_id': product_id,
+                                'quantity': 1,
+                                'price_unit': contract_line_to_delete.price_unit if contract_line_to_delete else 0,
+                                'uom_id': contract_line_to_delete.uom_id.id if contract_line_to_delete else False,
+                                'is_mobile_service': True,
+                                'date_start': fields.Date.today(),
+                                'recurring_rule_type': 'monthly',
+                                'recurring_interval': 1,
+                                'recurring_next_date': mobilky_contract.recurring_next_date or fields.Date.today(),
+                            })
+                            
+                            # Nastavíme nový contract_line_id na mobilnú službu
+                            vals['contract_line_id'] = new_contract_line.id
+                            
+                            # Pripravíme redirect akciu na novú zmluvu
+                            redirect_action = {
+                                'type': 'ir.actions.act_window',
+                                'res_model': 'contract.contract',
+                                'res_id': mobilky_contract.id,
+                                'view_mode': 'form',
+                                'target': 'current',
+                            }
+                    
+                    # Odpojíme starú mobilnú službu od starého riadku zmluvy
+                    if contract_line_to_delete:
+                        record.contract_line_id = False
+                        # Vymažeme starý riadok zmluvy
+                        contract_line_to_delete.unlink()
             
         result = super().write(vals)
+        
         if 'phone_number' in vals or 'is_active' in vals:
             contract_lines = self.mapped('contract_line_id')
             for contract_line in contract_lines:
                 if contract_line and contract_line.is_mobile_service:
                     contract_line.with_context(from_mobile_service_update=True)._compute_mobile_service_description()
+        
+        # Ak máme redirect akciu, vrátime ju
+        if redirect_action:
+            return redirect_action
+            
         return result
 
     @api.model
