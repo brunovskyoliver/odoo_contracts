@@ -198,12 +198,14 @@
                             >
                                 <list
                                     decoration-muted="is_canceled"
-                                    decoration-info="create_invoice_visibility and not is_canceled"
-                                    decoration-success="inventory_state == 'allocated'"
-                                    decoration-warning="inventory_state == 'partial'"
-                                    decoration-danger="inventory_state == 'pending' and in_inventory"
+                                    decoration-info="create_invoice_visibility and not is_canceled and not is_newly_added"
+                                    decoration-success="inventory_state == 'allocated' and not is_newly_added"
+                                    decoration-warning="inventory_state == 'partial' and not is_newly_added"
+                                    decoration-danger="inventory_state == 'pending' and in_inventory and not is_newly_added"
+                                    decoration-primary="is_newly_added"
                                     editable="bottom"
                                 >
+                                    <field name="is_newly_added" column_invisible="True" />
                                     <control>
                                         <create string="Add a line" />
                                         <create
@@ -307,11 +309,13 @@
                             >
                                 <list
                                     decoration-muted="is_canceled"
-                                    decoration-info="create_invoice_visibility and not is_canceled"
-                                    decoration-success="inventory_state == 'allocated'"
-                                    decoration-warning="inventory_state == 'partial'"
-                                    decoration-danger="inventory_state == 'pending' and in_inventory"
+                                    decoration-info="create_invoice_visibility and not is_canceled and not is_newly_added"
+                                    decoration-success="inventory_state == 'allocated' and not is_newly_added"
+                                    decoration-warning="inventory_state == 'partial' and not is_newly_added"
+                                    decoration-danger="inventory_state == 'pending' and in_inventory and not is_newly_added"
+                                    decoration-primary="is_newly_added"
                                 >
+                                    <field name="is_newly_added" column_invisible="True" />
                                     <control>
                                         <create string="Add a line" />
                                         <create

@@ -434,6 +434,18 @@ class ContractContract(models.Model):
             action["views"] = [(list_view.id, "list"), (form_view.id, "form")]
         return action
 
+    def action_open_contract_form(self):
+        """Open the contract form view with proper action"""
+        self.ensure_one()
+        action = self.env['ir.actions.act_window']._for_xml_id('contract.action_customer_contract')
+        action.update({
+            'res_id': self.id,
+            'view_mode': 'form',
+            'views': [(self.env.ref('contract.contract_contract_customer_form_view').id, 'form')],
+            'target': 'current',
+            'context': {},
+        })
+        return action
 
 
     @api.depends("contract_line_ids.date_end")

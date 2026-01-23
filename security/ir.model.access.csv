@@ -63,3 +63,6 @@
 "access_product_quantity_alert_user","Product Quantity Alert User","model_product_quantity_alert","account.group_account_invoice",1,0,0,0
 "access_supplier_invoice_regenerate_wizard_manager","Supplier Invoice Regenerate Wizard Manager","model_supplier_invoice_regenerate_wizard","account.group_account_manager",1,1,1,1
 "access_supplier_invoice_regenerate_wizard_user","Supplier Invoice Regenerate Wizard User","model_supplier_invoice_regenerate_wizard","account.group_account_invoice",1,1,1,1
+"access_contract_inventory_create_rental_wizard_manager","Contract Inventory Create Rental Wizard Manager","model_contract_inventory_create_rental_wizard","account.group_account_manager",1,1,1,1
+"access_contract_inventory_create_rental_wizard_user","Contract Inventory Create Rental Wizard User","model_contract_inventory_create_rental_wizard","account.group_account_invoice",1,1,1,1
+"contract_inventory_create_rental_wizard_only_full","Contract Inventory Create Rental Wizard - Full Access","model_contract_inventory_create_rental_wizard","contract.group_contract_inventory_only",1,1,1,1

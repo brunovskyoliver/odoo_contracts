@@ -34,6 +34,7 @@
         "security/product_pairing_security.xml",
         "views/res_users_views.xml",
         "wizards/contract_inventory_bulk_return_wizard_view.xml",
+        "wizards/contract_inventory_create_rental_wizard_view.xml",
         "security/contract_security.xml",
         "security/contract_terminate_reason.xml",
         "security/contract_inventory.xml",

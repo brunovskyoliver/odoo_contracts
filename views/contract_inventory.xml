@@ -13,6 +13,11 @@
                                 class="oe_stat_button"
                                 icon="fa-truck"
                                 string="Vrátiť produkty"/>
+                        <button name="%(action_contract_inventory_create_rental_wizard)d"
+                                type="action"
+                                class="oe_stat_button"
+                                icon="fa-file-text-o"
+                                string="Vytvoriť prenájom"/>
                         <button name="toggle_active" 
                             type="object" 
                             class="oe_stat_button" 
@@ -67,6 +72,7 @@
                                     <field name="partner_id"/>
                                     <field name="date_start"/>
                                     <field name="date_end"/>
+                                    <button name="action_open_contract_form" type="object" string="Otvoriť" icon="fa-external-link"/>
                                 </list>
                             </field>
                         </page>

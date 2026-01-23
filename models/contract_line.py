@@ -68,6 +68,11 @@ class ContractLine(models.Model):
         "and temporary one for which a user is not able to plan a"
         "successor in advance",
     )
+    is_newly_added = fields.Boolean(
+        string="Newly Added",
+        compute="_compute_is_newly_added",
+        help="Indicates if this line was recently added from inventory wizard",
+    )
     in_inventory = fields.Boolean(
         string="Track in Inventory",
         default=False,
@@ -1306,6 +1311,12 @@ class ContractLine(models.Model):
                 line.inventory_state = 'allocated'
             else:
                 line.inventory_state = 'partial'
+
+    def _compute_is_newly_added(self):
+        """Check if the line is in the list of highlighted lines from context"""
+        highlighted_ids = self.env.context.get('highlighted_line_ids', [])
+        for line in self:
+            line.is_newly_added = line.id in highlighted_ids
                 
     @api.onchange('in_inventory')
     def _onchange_in_inventory(self):

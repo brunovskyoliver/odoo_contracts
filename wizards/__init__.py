@@ -11,3 +11,4 @@ from . import contract_inventory_bulk_return_wizard_line
 from . import contract_inventory_bulk_return_wizard
 from . import contract_inventory_line_export
 from . import contract_inventory_import
+from . import contract_inventory_create_rental_wizard
