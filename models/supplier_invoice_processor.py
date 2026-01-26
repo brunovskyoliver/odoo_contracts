@@ -234,6 +234,15 @@ class SupplierInvoiceProcessor(models.Model):
         if not self.attachment_id:
             raise UserError(_('Please attach a PDF file first.'))
         
+        # Skip and delete "Rozpis hovorov" (call records) files completely - ignore silently
+        if 'rozpis hovorov' in (self.filename or '').lower():
+            _logger.info(f"Deleting 'Rozpis hovorov' SIP record: {self.name} - File: {self.filename}")
+            self.unlink()
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'reload',
+            }
+        
         self.state = 'processing'
         
         try:
@@ -409,7 +418,7 @@ class SupplierInvoiceProcessor(models.Model):
             return
 
         # Skip pairing requirement for Va-Mont Finance, Telekom, O2, SETEM, ACS, Gamers Outlet, and Let's Consult - always auto-create without product matching
-        if self.supplier_id and self.supplier_id.id in (1179, 1662, 1653, 1625, 1660, 1688, 1657):  # Va-Mont Finance, Telekom, O2, SETEM, ACS, Gamers Outlet, Let's Consult supplier IDs
+        if self.supplier_id and self.supplier_id.id in (1179, 1662, 1653, 1625, 1660, 1688, 1657, 17):  # Va-Mont Finance, Telekom, O2, SETEM, ACS, Gamers Outlet, Let's Consult, e-Net supplier IDs
             if self.state in ('processing', 'pairing', 'draft', 'extracted'):
                 self.state = 'extracted'
             return
@@ -444,10 +453,11 @@ class SupplierInvoiceProcessor(models.Model):
         is_acs = 'acs spol. s r.o.' in text.lower() or 'www.acs.sk' in text.lower()
         is_gamers_outlet = 'gamers outlet' in text.lower() or 'gamers-outlet' in text.lower()
         is_lets_consult = "let's consult" in text.lower() or "letsconsult" in text.lower()
+        is_enet = 'e-net, s.r.o.' in text.lower() or 'e-Net, s.r.o.' in text
 
         
-        if not is_alza and not is_westech and not is_tes and not is_tss and not is_asbis and not is_upc and not is_vamont and not is_telekom and not is_o2 and not is_setem and not is_acs and not is_gamers_outlet and not is_lets_consult:
-            raise UserError(_('This processor only handles Alza.sk, Westech, TES Slovakia, TSS Group, Asbis, UPC Broadband, Va-Mont Finance, Telekom, O2 Slovakia, SETEM, ACS, Gamers Outlet, and Let\'s Consult invoices. Please check the PDF file.'))
+        if not is_alza and not is_westech and not is_tes and not is_tss and not is_asbis and not is_upc and not is_vamont and not is_telekom and not is_o2 and not is_setem and not is_acs and not is_gamers_outlet and not is_lets_consult and not is_enet:
+            raise UserError(_('This processor only handles Alza.sk, Westech, TES Slovakia, TSS Group, Asbis, UPC Broadband, Va-Mont Finance, Telekom, O2 Slovakia, SETEM, ACS, Gamers Outlet, Let\'s Consult, and e-Net invoices. Please check the PDF file.'))
         
         # Check if this is a credit note (dobropis/opravný doklad) - check both filename and text
         filename_lower = self.filename.lower() if self.filename else ''
@@ -474,6 +484,7 @@ class SupplierInvoiceProcessor(models.Model):
             'is_acs': is_acs,
             'is_gamers_outlet': is_gamers_outlet,
             'is_lets_consult': is_lets_consult,
+            'is_enet': is_enet,
         }
         if is_alza:
             data.update({ 'supplier_id': 21,})
@@ -501,12 +512,20 @@ class SupplierInvoiceProcessor(models.Model):
             data.update({ 'supplier_id': 1688,})
         elif is_lets_consult:
             data.update({ 'supplier_id': 1657,})
+        elif is_enet:
+            data.update({ 'supplier_id': 17,})
         # Extract invoice number (common patterns)
         # Extract invoice number - use supplier-specific patterns first
         if data.get('is_upc'):
             # UPC format: "Poradové číslo faktúry: 214095500"
             upc_pattern = r'Poradové\s+číslo\s+faktúry\s*:\s*(\d+)'
             match = re.search(upc_pattern, text, re.IGNORECASE)
+            if match:
+                data['invoice_number'] = match.group(1)
+        elif data.get('is_enet'):
+            # e-Net format: "FAKTÚRA číslo : 26200739"
+            enet_pattern = r'FAKTÚRA\s+číslo\s*:\s*(\d+)'
+            match = re.search(enet_pattern, text, re.IGNORECASE)
             if match:
                 data['invoice_number'] = match.group(1)
         
@@ -590,6 +609,16 @@ class SupplierInvoiceProcessor(models.Model):
             setem_due_match = re.search(r'Splatnosť\s+(\d{1,2}\.\d{1,2}\.\d{4})', text)
             if setem_due_match:
                 data['invoice_due_date'] = self._parse_date(setem_due_match.group(1))
+        elif data.get('is_enet'):
+            # e-Net-specific date extraction: "Dátum vystavenia 01.01.2026" and "Dátum splatnosti 15.01.2026"
+            enet_date_match = re.search(r'Dátum vystavenia\s+(\d{1,2}\.\d{1,2}\.\d{4})', text)
+            if enet_date_match:
+                data['invoice_date'] = self._parse_date(enet_date_match.group(1))
+            
+            # e-Net due date: "Dátum splatnosti 15.01.2026"
+            enet_due_match = re.search(r'Dátum splatnosti\s+(\d{1,2}\.\d{1,2}\.\d{4})', text)
+            if enet_due_match:
+                data['invoice_due_date'] = self._parse_date(enet_due_match.group(1))
         else:
             # Generic date extraction for other suppliers
             date_pattern = r'(\d{1,2}[./-]\d{1,2}[./-]\d{2,4})'
@@ -709,11 +738,59 @@ class SupplierInvoiceProcessor(models.Model):
                 except ValueError as e:
                     _logger.warning(f"Could not parse SETEM totals: {e}")
         
+        # e-Net-specific extraction: "Spolu 1778.05 408.95 2187.00"
+        if data.get('is_enet'):
+            enet_pattern = r'Spolu\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)'
+            enet_match = re.search(enet_pattern, text)
+            if enet_match:
+                base_amount = enet_match.group(1).replace(',', '.')
+                tax_amount = enet_match.group(2).replace(',', '.')
+                total_amount = enet_match.group(3).replace(',', '.')
+                try:
+                    total_untaxed = float(base_amount)
+                    total_tax = float(tax_amount)
+                    data['total_amount'] = float(total_amount)
+                    _logger.info(f"e-Net totals extracted: Untaxed: {total_untaxed}, Tax: {total_tax}, Total: {data['total_amount']}")
+                except ValueError as e:
+                    _logger.warning(f"Could not parse e-Net totals: {e}")
+        
+        # Westech-specific extraction: "DPH% Základ DPH(zaokr.) Celkom\n23% 1 023.00 235.29 1 258.29"
+        if data.get('is_westech'):
+            westech_pattern = r'(\d+)\s*%\s+([\d\s]+[\.,]\d+)\s+([\d\s]+[\.,]\d+)\s+([\d\s]+[\.,]\d+)'
+            westech_match = re.search(westech_pattern, text)
+            if westech_match:
+                base_amount = westech_match.group(2).replace(' ', '').replace(',', '.')
+                tax_amount = westech_match.group(3).replace(' ', '').replace(',', '.')
+                total_amount = westech_match.group(4).replace(' ', '').replace(',', '.')
+                try:
+                    total_untaxed = float(base_amount)
+                    total_tax = float(tax_amount)
+                    data['total_amount'] = float(total_amount)
+                    _logger.info(f"Westech totals extracted: Untaxed: {total_untaxed}, Tax: {total_tax}, Total: {data['total_amount']}")
+                except ValueError as e:
+                    _logger.warning(f"Could not parse Westech totals: {e}")
+        
+        # UPC-specific extraction: "Sadzba 23% 26,11 6,01 32,12"
+        if data.get('is_upc'):
+            upc_pattern = r'Sadzba\s+(\d+)\s*%\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)'
+            upc_match = re.search(upc_pattern, text)
+            if upc_match:
+                base_amount = upc_match.group(2).replace(',', '.')
+                tax_amount = upc_match.group(3).replace(',', '.')
+                total_amount = upc_match.group(4).replace(',', '.')
+                try:
+                    total_untaxed = float(base_amount)
+                    total_tax = float(tax_amount)
+                    data['total_amount'] = float(total_amount)
+                    _logger.info(f"UPC totals extracted: Untaxed: {total_untaxed}, Tax: {total_tax}, Total: {data['total_amount']}")
+                except ValueError as e:
+                    _logger.warning(f"Could not parse UPC totals: {e}")
+        
         # Generic VAT breakdown pattern for other suppliers
         # Find the tax breakdown section - support both comma and dot decimals, including negative values
         # Pattern supports: "23% 715.09 164.47" or "23% -715.09 -164.47"
-        # Skip this for ACS, SETEM, Gamers Outlet, and Let's Consult since they have their own extraction
-        if not data.get('is_setem') and not data.get('is_acs') and not data.get('is_gamers_outlet') and not data.get('is_lets_consult') and total_untaxed > 0:
+        # Skip this for ACS, SETEM, e-Net, UPC, Westech, Gamers Outlet, and Let's Consult since they have their own extraction
+        if not data.get('is_setem') and not data.get('is_acs') and not data.get('is_enet') and not data.get('is_upc') and not data.get('is_westech') and not data.get('is_gamers_outlet') and not data.get('is_lets_consult') and total_untaxed > 0:
             vat_breakdown_pattern = r'(\d+)\s*%\s+(-?[\d\s]+[,\.]\d+)\s+(-?[\d\s]+[,\.]\d+)'
             vat_matches = re.findall(vat_breakdown_pattern, text)
             
@@ -806,6 +883,8 @@ class SupplierInvoiceProcessor(models.Model):
             data['lines'] = self._parse_gamers_outlet_lines_from_text(text)
         elif data.get('is_lets_consult'):
             data['lines'] = self._parse_lets_consult_lines_from_text(text)
+        elif data.get('is_enet'):
+            data['lines'] = self._parse_enet_lines_from_text(text)
         elif not data['lines'] or len(data['lines']) > 20:  # Too many lines usually means bad parsing
             if data.get('is_westech'):
                 data['lines'] = self._parse_westech_lines_from_text(text)
@@ -2243,6 +2322,92 @@ class SupplierInvoiceProcessor(models.Model):
         _logger.info(f"Let's Consult Parser: Total items extracted: {len(items)}")
         return items
 
+    def _parse_enet_lines_from_text(self, text):
+        """
+        e-Net invoice parser - extracts line items from the invoice.
+        
+        e-Net format has product lines like:
+        "L2 1.000/1.000Mbps MDPEX 23 % 1.0000 878.04 878.05 1080.00 1080.00"
+        Where: Description | DPH% | Quantity | Price_without_VAT | Price_with_VAT
+        """
+        items = []
+        
+        # Find the section header with "Jednotková Celková" or similar
+        # Looking for lines with product data between header and summary
+        lines_section_start = text.lower().find('položky')
+        if lines_section_start == -1:
+            lines_section_start = text.lower().find('merační j')
+        
+        summary_start = text.lower().find('spolu')
+        if summary_start == -1:
+            summary_start = text.lower().find('suma')
+        if summary_start == -1:
+            summary_start = len(text)
+        
+        # Extract the products section
+        if lines_section_start > 0:
+            products_section = text[lines_section_start:summary_start]
+        else:
+            products_section = text[:summary_start]
+        
+        # Split into lines
+        text_lines = products_section.split('\n')
+        
+        for line in text_lines:
+            line = line.strip()
+            
+            # Skip empty lines, headers, and non-product lines
+            if not line or 'Položky' in line or 'Jednotková' in line or '---' in line or 'Zoznam' in line or '%' not in line:
+                continue
+            
+            # Skip separator lines
+            if all(c in '=-_' for c in line):
+                continue
+            
+            # Try to extract product line - look for VAT rate (%) as an anchor
+            try:
+                # Pattern: description...VAT%...qty...price_without_vat...price_total_without_vat...price_with_vat...price_total_with_vat
+                # Example: "L2 1.000/1.000Mbps MDPEX 23 % 1.0000 878.04 878.05 1080.00 1080.00"
+                
+                # Find VAT% in the line
+                vat_match = re.search(r'(\d+)\s*%', line)
+                if vat_match:
+                    vat_rate = int(vat_match.group(1))
+                    vat_pos = vat_match.start()
+                    
+                    # Description is before the VAT%
+                    description = line[:vat_pos].strip()
+                    
+                    # Extract numbers after VAT%
+                    after_vat = line[vat_match.end():].strip()
+                    numbers = re.findall(r'[\d.,]+', after_vat)
+                    
+                    if len(numbers) >= 2:  # At least qty and price
+                        try:
+                            quantity = float(numbers[0].replace(',', '.'))
+                            
+                            # Try to find total price (usually last number) or unit price
+                            # Price is typically the second number
+                            price_unit = float(numbers[1].replace(',', '.'))
+                            
+                            # Clean up description - remove extra spaces
+                            description = re.sub(r'\s+', ' ', description).strip()
+                            
+                            if price_unit > 0 and description and len(description) > 2:
+                                items.append({
+                                    "description": description,
+                                    "quantity": quantity,
+                                    "price_unit": price_unit,
+                                    "vat_rate": vat_rate,
+                                })
+                                _logger.info(f"e-Net Parser: Added item '{description}' - Qty: {quantity}, Price: {price_unit}€, VAT: {vat_rate}%")
+                        except (ValueError, IndexError) as e:
+                            _logger.warning(f"e-Net Parser: Could not parse numbers from '{after_vat}': {e}")
+            except Exception as e:
+                _logger.warning(f"e-Net Parser: Error processing line '{line}': {e}")
+        
+        _logger.info(f"e-Net Parser: Total items extracted: {len(items)}")
+        return items
 
     def _parse_vamont_lines_from_text(self, text):
         """
