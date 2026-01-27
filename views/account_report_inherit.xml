@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Rename the "PDF" report to something more descriptive like "Proforma / Invoice PDF" -->
+        <record id="account.account_invoices" model="ir.actions.report">
+            <field name="name">Proforma PDF</field>
+        </record>
+    </data>
+</odoo>

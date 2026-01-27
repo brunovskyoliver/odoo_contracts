@@ -92,6 +92,7 @@
         'data/product_quantity_alert_cron.xml',
         'security/stock_rules.xml',
         'views/account_move_stock_view.xml',
+        'views/account_report_inherit.xml',
     ],
     "demo": [
         "data/contract_inventory_demo.xml",
