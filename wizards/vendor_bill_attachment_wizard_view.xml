@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Wizard Form View -->
+        <record id="vendor_bill_attachment_wizard_form" model="ir.ui.view">
+            <field name="name">vendor.bill.attachment.wizard.form</field>
+            <field name="model">vendor.bill.attachment.wizard</field>
+            <field name="arch" type="xml">
+                <form string="PDF merge">
+                    <field name="selection_mode" invisible="1"/>
+                    <field name="state" invisible="1"/>
+                    
+                    <!-- Date Range Selection Mode -->
+                    <group invisible="selection_mode != 'date_range' or state != 'draft'" string="Výber podľa účtovného dátumu">
+                        <group>
+                            <field name="date_from" string="Účtovný dátum od"/>
+                            <field name="date_to" string="Účtovný dátum do"/>
+                        </group>
+                        <group>
+                            <field name="partner_ids" widget="many2many_tags" string="Dodávatelia (voliteľné)"/>
+                        </group>
+                    </group>
+                    
+                    <group invisible="selection_mode != 'date_range' or state != 'draft'">
+                        <button name="action_load_by_date_range" 
+                                string="Načítať faktúry" 
+                                type="object" 
+                                class="btn-secondary"
+                                icon="fa-search"/>
+                    </group>
+                    
+                    <!-- Summary (shown for both modes) -->
+                    <group invisible="state != 'draft'">
+                        <group string="Výber">
+                            <field name="move_count" string="Vybrané faktúry"/>
+                            <field name="attachment_count" string="S PDF prílohami"/>
+                            <field name="missing_attachment_count" string="Bez PDF príloh"/>
+                        </group>
+                        <group string="Options">
+                            <field name="batch_size" invisible="1"/>
+                        </group>
+                    </group>
+                    
+                    <!-- Show missing attachment info if any -->
+                    <group invisible="not missing_attachment_info or state != 'draft'" string="Faktúry bez PDF prílohy">
+                        <field name="missing_attachment_info" nolabel="1" readonly="1" widget="text"/>
+                    </group>
+
+                    <group invisible="state != 'processing'">
+                        <div class="alert alert-warning" role="alert">
+                            <i class="fa fa-spinner fa-spin"/> Spracovávanie... Prosím počkajte.
+                        </div>
+                        <field name="progress" widget="progressbar"/>
+                    </group>
+                    
+                    <group invisible="state != 'done'">
+                        <div class="alert alert-success" role="alert">
+                            <i class="fa fa-check-circle"/> PDF úspešne vygenerované! Kliknite na tlačidlo nižšie pre stiahnutie.
+                        </div>
+                        <!-- <field name="result_attachment_id" readonly="1"/> -->
+                        <div class="mt-2 mb-2">
+                            <strong>Na stiahnutie</strong><br/>
+                            <field name="download_url" widget="url" readonly="1"/>
+                        </div>
+                        <field name="error_message" invisible="not error_message" readonly="1"/>
+                    </group>
+                    
+                    <group invisible="state != 'error'">
+                        <div class="alert alert-danger" role="alert">
+                            <i class="fa fa-exclamation-triangle"/> Pri generovaní PDF došlo k chybe.
+                        </div>
+                        <field name="error_message" readonly="1"/>
+                    </group>
+                    
+                    <field name="state" invisible="1"/>
+                    <field name="move_ids" invisible="1"/>
+                    <footer>
+                        <button name="action_generate_merged_pdf" 
+                                string="Generate Merged PDF" 
+                                type="object" 
+                                class="btn-primary"
+                                invisible="state not in ('draft',)"/>
+                        <button name="action_download_result" 
+                                string="Download PDF" 
+                                type="object" 
+                                class="btn-primary"
+                                invisible="state != 'done'"/>
+                        <button name="action_retry" 
+                                string="Retry" 
+                                type="object" 
+                                class="btn-secondary"
+                                invisible="state != 'error'"/>
+                        <button string="Close" class="btn-secondary" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+        
+        <!-- Server Action to open the wizard (from list selection) -->
+        <record id="action_vendor_bill_attachment_wizard" model="ir.actions.act_window">
+            <field name="name">Zlúčiť originálne PDF</field>
+            <field name="res_model">vendor.bill.attachment.wizard</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+            <field name="binding_model_id" ref="account.model_account_move"/>
+            <field name="binding_view_types">list,form</field>
+            <field name="domain">[('move_type', 'in', ('in_invoice', 'in_refund', 'in_receipt'))]</field>
+        </record>
+        
+        <!-- Menu Action to open wizard directly (for date range selection) -->
+        <record id="action_vendor_bill_attachment_wizard_menu" model="ir.actions.act_window">
+            <field name="name">Zlúčiť PDF faktúr podľa dátumu</field>
+            <field name="res_model">vendor.bill.attachment.wizard</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+            <field name="context">{'default_selection_mode': 'date_range'}</field>
+        </record>
+        
+        <!-- Menu Item - under Accounting/Vendors -->
+        <menuitem id="menu_vendor_bill_attachment_wizard"
+            name="Zlúčiť PDF faktúr"
+            parent="account.menu_finance_payables"
+            action="action_vendor_bill_attachment_wizard_menu"
+            sequence="31"/>
+        
+    </data>
+</odoo>

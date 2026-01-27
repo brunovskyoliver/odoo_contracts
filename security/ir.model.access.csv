@@ -66,3 +66,7 @@
 "access_contract_inventory_create_rental_wizard_manager","Contract Inventory Create Rental Wizard Manager","model_contract_inventory_create_rental_wizard","account.group_account_manager",1,1,1,1
 "access_contract_inventory_create_rental_wizard_user","Contract Inventory Create Rental Wizard User","model_contract_inventory_create_rental_wizard","account.group_account_invoice",1,1,1,1
 "contract_inventory_create_rental_wizard_only_full","Contract Inventory Create Rental Wizard - Full Access","model_contract_inventory_create_rental_wizard","contract.group_contract_inventory_only",1,1,1,1
+"access_vendor_bill_attachment_wizard_manager","Vendor Bill Attachment Wizard Manager","model_vendor_bill_attachment_wizard","account.group_account_manager",1,1,1,1
+"access_vendor_bill_attachment_wizard_user","Vendor Bill Attachment Wizard User","model_vendor_bill_attachment_wizard","account.group_account_invoice",1,1,1,1
+"access_vendor_bill_merged_pdf_manager","Vendor Bill Merged PDF Manager","model_vendor_bill_merged_pdf","account.group_account_manager",1,1,1,1
+"access_vendor_bill_merged_pdf_user","Vendor Bill Merged PDF User","model_vendor_bill_merged_pdf","account.group_account_invoice",1,1,0,0

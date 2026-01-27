@@ -31,3 +31,4 @@ from . import product_pairing_rule
 from . import pairing_ignore_rule
 from . import supplier_invoice_processor
 from . import product_quantity_alert
+from . import vendor_bill_merged_pdf

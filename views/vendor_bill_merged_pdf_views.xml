@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- List View -->
+        <record id="vendor_bill_merged_pdf_list" model="ir.ui.view">
+            <field name="name">vendor.bill.merged.pdf.list</field>
+            <field name="model">vendor.bill.merged.pdf</field>
+            <field name="arch" type="xml">
+                <list string="Merged Vendor Bill PDFs" default_order="create_date desc">
+                    <field name="name"/>
+                    <field name="invoice_count"/>
+                    <field name="page_count"/>
+                    <field name="file_size" widget="integer"/>
+                    <field name="user_id"/>
+                    <field name="create_date"/>
+                    <button name="action_download" type="object" string="Download" icon="fa-download" class="btn-primary"/>
+                </list>
+            </field>
+        </record>
+
+        <!-- Form View -->
+        <record id="vendor_bill_merged_pdf_form" model="ir.ui.view">
+            <field name="name">vendor.bill.merged.pdf.form</field>
+            <field name="model">vendor.bill.merged.pdf</field>
+            <field name="arch" type="xml">
+                <form string="Merged Vendor Bill PDF" create="false" edit="false">
+                    <header>
+                        <button name="action_download" type="object" string="Download PDF" class="btn-primary" icon="fa-download"/>
+                        <button name="action_view_invoices" type="object" string="View Source Invoices" class="btn-secondary" icon="fa-list"/>
+                    </header>
+                    <sheet>
+                        <div class="oe_title">
+                            <h1>
+                                <field name="name" readonly="1"/>
+                            </h1>
+                        </div>
+                        <group>
+                            <group string="File Information">
+                                <field name="file_name"/>
+                                <field name="file_size" widget="integer"/>
+                                <field name="invoice_count"/>
+                                <field name="page_count"/>
+                            </group>
+                            <group string="Details">
+                                <field name="user_id"/>
+                                <field name="create_date"/>
+                                <field name="attachment_id" invisible="1"/>
+                            </group>
+                        </group>
+                        <group string="Download">
+                            <field name="file_data" filename="file_name" widget="binary" readonly="1"/>
+                        </group>
+                        <group string="Notes" invisible="not notes">
+                            <field name="notes" nolabel="1" readonly="1"/>
+                        </group>
+                        <notebook>
+                            <page string="Source Invoices" name="invoices">
+                                <field name="move_ids" readonly="1">
+                                    <list>
+                                        <field name="name"/>
+                                        <field name="partner_id"/>
+                                        <field name="invoice_date"/>
+                                        <field name="amount_total"/>
+                                        <field name="state"/>
+                                    </list>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Action -->
+        <record id="action_vendor_bill_merged_pdf" model="ir.actions.act_window">
+            <field name="name">Merged Vendor Bill PDFs</field>
+            <field name="res_model">vendor.bill.merged.pdf</field>
+            <field name="view_mode">list,form</field>
+            <field name="context">{'create': False}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    No merged PDFs yet
+                </p>
+                <p>
+                    Select vendor bills from the list view and use "Action → Merge Original PDFs" to create merged PDF documents.
+                </p>
+            </field>
+        </record>
+
+        <!-- Menu Item - under Accounting/Vendors -->
+        <menuitem id="menu_vendor_bill_merged_pdf"
+            name="Merged Bill PDFs"
+            parent="account.menu_finance_payables"
+            action="action_vendor_bill_merged_pdf"
+            sequence="30"/>
+
+    </data>
+</odoo>
