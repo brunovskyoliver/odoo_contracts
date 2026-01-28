@@ -212,6 +212,12 @@ class ContractContract(models.Model):
         help="Označuje, či bola odoslaná notifikácia 1 mesiac pred koncom viazanosti",
     )
     
+    zlava_100 = fields.Boolean(
+        string="Zľava 100%",
+        default=False,
+        help="Ak je zaškrtnuté, pri vytvorení faktúry sa pridá riadok so zľavou 100%, čím bude výsledná suma faktúry 0",
+    )
+    
     @api.depends('contract_line_ids.in_inventory', 'contract_line_ids')
     def _compute_has_inventory_products(self):
         for contract in self:
@@ -748,6 +754,35 @@ class ContractContract(models.Model):
                     invoice_vals["invoice_line_ids"].append(
                         Command.create(invoice_line_vals)
                     )
+            
+            # Add 100% discount line if zlava_100 is checked
+            if contract.zlava_100 and invoice_vals["invoice_line_ids"]:
+                # Calculate total amount of all invoice lines
+                total_amount = 0
+                for line in invoice_vals["invoice_line_ids"]:
+                    if line[0] == 0:  # Command.create = 0
+                        line_vals = line[2]
+                        total_amount += line_vals.get('price_unit', 0) * line_vals.get('quantity', 1)
+                
+                if total_amount > 0:
+                    # Get tax from the first product in contract lines that has taxes
+                    tax_ids = []
+                    for cline in contract_lines:
+                        if cline.product_id and cline.product_id.taxes_id:
+                            tax_ids = cline.product_id.taxes_id.ids
+                            break
+                    
+                    discount_line_vals = {
+                        'name': 'Zľava 100%',
+                        'quantity': 1,
+                        'price_unit': -total_amount,
+                    }
+                    if tax_ids:
+                        discount_line_vals['tax_ids'] = [Command.set(tax_ids)]
+                    invoice_vals["invoice_line_ids"].append(
+                        Command.create(discount_line_vals)
+                    )
+            
             invoices_values.append(invoice_vals)
             # Force the recomputation of journal items
             contract_lines._update_recurring_next_date()

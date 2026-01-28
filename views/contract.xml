@@ -144,7 +144,11 @@
                             />
                         </group>
                     </group>
+                    <group>
+                        <field name="zlava_100" />
+                    </group>
                     <group name="recurring_invoices">
+                    
                         <group>
                             <field
                                 name="line_recurrence"
@@ -176,6 +180,7 @@
                                 name="total_subtotal"
                                 readonly="1"
                             />
+                            
                         </group>
                         <group invisible="line_recurrence">
                             <field name="date_start" required="not line_recurrence" />
@@ -185,6 +190,7 @@
                     </group>
                     <group col="4" name="recurring_type" string="Typ účtovania">
                         <field name="generation_type" />
+                        
                     </group>
                     <notebook>
                         <page name="recurring_invoice_line" string="Položky zmluvy">
