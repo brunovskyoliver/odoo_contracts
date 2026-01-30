@@ -417,8 +417,8 @@ class SupplierInvoiceProcessor(models.Model):
                 self.state = 'extracted'
             return
 
-        # Skip pairing requirement for Va-Mont Finance, Telekom, O2, SETEM, ACS, Gamers Outlet, and Let's Consult - always auto-create without product matching
-        if self.supplier_id and self.supplier_id.id in (1179, 1662, 1653, 1625, 1660, 1688, 1657, 17):  # Va-Mont Finance, Telekom, O2, SETEM, ACS, Gamers Outlet, Let's Consult, e-Net supplier IDs
+        # Skip pairing requirement for Va-Mont Finance, Telekom, O2, SETEM, ACS, Gamers Outlet, Let's Consult, e-Net, and Orange - always auto-create without product matching
+        if self.supplier_id and self.supplier_id.id in (1179, 1662, 1653, 1625, 1660, 1688, 1657, 17, 1749):  # Va-Mont Finance, Telekom, O2, SETEM, ACS, Gamers Outlet, Let's Consult, e-Net, Orange Slovensko supplier IDs
             if self.state in ('processing', 'pairing', 'draft', 'extracted'):
                 self.state = 'extracted'
             return
@@ -454,10 +454,11 @@ class SupplierInvoiceProcessor(models.Model):
         is_gamers_outlet = 'gamers outlet' in text.lower() or 'gamers-outlet' in text.lower()
         is_lets_consult = "let's consult" in text.lower() or "letsconsult" in text.lower()
         is_enet = 'e-net, s.r.o.' in text.lower() or 'e-Net, s.r.o.' in text
+        is_orange = 'orange slovensko' in text.lower()
 
         
-        if not is_alza and not is_westech and not is_tes and not is_tss and not is_asbis and not is_upc and not is_vamont and not is_telekom and not is_o2 and not is_setem and not is_acs and not is_gamers_outlet and not is_lets_consult and not is_enet:
-            raise UserError(_('This processor only handles Alza.sk, Westech, TES Slovakia, TSS Group, Asbis, UPC Broadband, Va-Mont Finance, Telekom, O2 Slovakia, SETEM, ACS, Gamers Outlet, Let\'s Consult, and e-Net invoices. Please check the PDF file.'))
+        if not is_alza and not is_westech and not is_tes and not is_tss and not is_asbis and not is_upc and not is_vamont and not is_telekom and not is_o2 and not is_setem and not is_acs and not is_gamers_outlet and not is_lets_consult and not is_enet and not is_orange:
+            raise UserError(_('This processor only handles Alza.sk, Westech, TES Slovakia, TSS Group, Asbis, UPC Broadband, Va-Mont Finance, Telekom, O2 Slovakia, SETEM, ACS, Gamers Outlet, Let\'s Consult, e-Net, and Orange invoices. Please check the PDF file.'))
         
         # Check if this is a credit note (dobropis/opravný doklad) - check both filename and text
         filename_lower = self.filename.lower() if self.filename else ''
@@ -485,6 +486,7 @@ class SupplierInvoiceProcessor(models.Model):
             'is_gamers_outlet': is_gamers_outlet,
             'is_lets_consult': is_lets_consult,
             'is_enet': is_enet,
+            'is_orange': is_orange,
         }
         if is_alza:
             data.update({ 'supplier_id': 21,})
@@ -514,6 +516,8 @@ class SupplierInvoiceProcessor(models.Model):
             data.update({ 'supplier_id': 1657,})
         elif is_enet:
             data.update({ 'supplier_id': 17,})
+        elif is_orange:
+            data.update({ 'supplier_id': 1749,})
         # Extract invoice number (common patterns)
         # Extract invoice number - use supplier-specific patterns first
         if data.get('is_upc'):
@@ -526,6 +530,12 @@ class SupplierInvoiceProcessor(models.Model):
             # e-Net format: "FAKTÚRA číslo : 26200739"
             enet_pattern = r'FAKTÚRA\s+číslo\s*:\s*(\d+)'
             match = re.search(enet_pattern, text, re.IGNORECASE)
+            if match:
+                data['invoice_number'] = match.group(1)
+        elif data.get('is_orange'):
+            # Orange format: "Číslo faktúry: XXX" (to be confirmed with sample invoice)
+            orange_pattern = r'Číslo\s+faktúry\s*:\s*(\S+)'
+            match = re.search(orange_pattern, text, re.IGNORECASE)
             if match:
                 data['invoice_number'] = match.group(1)
         
@@ -619,6 +629,22 @@ class SupplierInvoiceProcessor(models.Model):
             enet_due_match = re.search(r'Dátum splatnosti\s+(\d{1,2}\.\d{1,2}\.\d{4})', text)
             if enet_due_match:
                 data['invoice_due_date'] = self._parse_date(enet_due_match.group(1))
+        elif data.get('is_orange'):
+            # Orange-specific date extraction: "Dátum vyhotovenia: 10. 12. 2025" and "Dátum splatnosti: 24. 12. 2025"
+            orange_date_match = re.search(r'Dátum\s+vyhotovenia\s*:\s*(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})', text)
+            if orange_date_match:
+                day = orange_date_match.group(1)
+                month = orange_date_match.group(2)
+                year = orange_date_match.group(3)
+                data['invoice_date'] = self._parse_date(f"{day}.{month}.{year}")
+            
+            # Orange due date: "Dátum splatnosti: 24. 12. 2025"
+            orange_due_match = re.search(r'Dátum\s+splatnosti\s*:\s*(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})', text)
+            if orange_due_match:
+                day = orange_due_match.group(1)
+                month = orange_due_match.group(2)
+                year = orange_due_match.group(3)
+                data['invoice_due_date'] = self._parse_date(f"{day}.{month}.{year}")
         else:
             # Generic date extraction for other suppliers
             date_pattern = r'(\d{1,2}[./-]\d{1,2}[./-]\d{2,4})'
@@ -754,6 +780,41 @@ class SupplierInvoiceProcessor(models.Model):
                 except ValueError as e:
                     _logger.warning(f"Could not parse e-Net totals: {e}")
         
+        # Orange-specific extraction: "Spolu s DPH 10,93 €"
+        if data.get('is_orange'):
+            # Extract total base amount: "Spolu zaokrúhlene bez DPH 8,89 €"
+            orange_base_pattern = r'Spolu\s+zaokrúhlene\s+bez\s+DPH\s+([-\d,\.]+)'
+            orange_base_match = re.search(orange_base_pattern, text, re.IGNORECASE)
+            if orange_base_match:
+                base_str = orange_base_match.group(1).replace(',', '.')
+                try:
+                    total_untaxed = float(base_str)
+                except ValueError:
+                    pass
+            
+            # Extract tax amount: "DPH za služby 8,89 € 23 % 2,04 €"
+            orange_tax_pattern = r'DPH\s+za\s+\w+\s+([-\d,\.]+)\s+€?\s+(\d+)\s*%\s+([-\d,\.]+)'
+            orange_tax_match = re.search(orange_tax_pattern, text, re.IGNORECASE)
+            if orange_tax_match:
+                tax_str = orange_tax_match.group(3).replace(',', '.')
+                try:
+                    total_tax = float(tax_str)
+                except ValueError:
+                    pass
+            
+            # Extract total with VAT: "Spolu s DPH 10,93 €"
+            orange_total_pattern = r'Spolu\s+s\s+DPH\s+([-\d,\.]+)\s*€'
+            orange_total_match = re.search(orange_total_pattern, text, re.IGNORECASE)
+            if orange_total_match:
+                total_amount_str = orange_total_match.group(1).replace(',', '.')
+                try:
+                    data['total_amount'] = float(total_amount_str)
+                    data['total_untaxed'] = total_untaxed
+                    data['total_tax'] = total_tax
+                    _logger.info(f"Orange totals extracted: Untaxed: {total_untaxed}, Tax: {total_tax}, Total: {data['total_amount']}")
+                except ValueError as e:
+                    _logger.warning(f"Could not parse Orange total: {e}")
+        
         # Westech-specific extraction: "DPH% Základ DPH(zaokr.) Celkom\n23% 1 023.00 235.29 1 258.29"
         if data.get('is_westech'):
             westech_pattern = r'(\d+)\s*%\s+([\d\s]+[\.,]\d+)\s+([\d\s]+[\.,]\d+)\s+([\d\s]+[\.,]\d+)'
@@ -789,8 +850,8 @@ class SupplierInvoiceProcessor(models.Model):
         # Generic VAT breakdown pattern for other suppliers
         # Find the tax breakdown section - support both comma and dot decimals, including negative values
         # Pattern supports: "23% 715.09 164.47" or "23% -715.09 -164.47"
-        # Skip this for ACS, SETEM, e-Net, UPC, Westech, Gamers Outlet, and Let's Consult since they have their own extraction
-        if not data.get('is_setem') and not data.get('is_acs') and not data.get('is_enet') and not data.get('is_upc') and not data.get('is_westech') and not data.get('is_gamers_outlet') and not data.get('is_lets_consult') and total_untaxed > 0:
+        # Skip this for ACS, SETEM, e-Net, UPC, Westech, Gamers Outlet, Let's Consult, and Orange since they have their own extraction
+        if not data.get('is_setem') and not data.get('is_acs') and not data.get('is_enet') and not data.get('is_upc') and not data.get('is_westech') and not data.get('is_gamers_outlet') and not data.get('is_lets_consult') and not data.get('is_orange') and total_untaxed > 0:
             vat_breakdown_pattern = r'(\d+)\s*%\s+(-?[\d\s]+[,\.]\d+)\s+(-?[\d\s]+[,\.]\d+)'
             vat_matches = re.findall(vat_breakdown_pattern, text)
             
@@ -885,6 +946,8 @@ class SupplierInvoiceProcessor(models.Model):
             data['lines'] = self._parse_lets_consult_lines_from_text(text)
         elif data.get('is_enet'):
             data['lines'] = self._parse_enet_lines_from_text(text)
+        elif data.get('is_orange'):
+            data['lines'] = self._parse_orange_lines_from_text(text)
         elif not data['lines'] or len(data['lines']) > 20:  # Too many lines usually means bad parsing
             if data.get('is_westech'):
                 data['lines'] = self._parse_westech_lines_from_text(text)
@@ -2408,6 +2471,119 @@ class SupplierInvoiceProcessor(models.Model):
         _logger.info(f"e-Net Parser: Total items extracted: {len(items)}")
         return items
 
+    def _parse_orange_lines_from_text(self, text):
+        """
+        Orange Slovensko invoice parser - extracts line items from the invoice.
+        
+        Orange format has product lines like:
+        "Mes. poplatok Go Safe Extra 26. 11. 2025 – 7. 12. 2025 11,96 23 % 9,7223"
+        "Prevod/Reorganizácia telefónneho čísla (na nového účastníka) 5,13 1 23 % 4,1667"
+        "Zľava -5,13 23 % -4,1667"
+        "Digitálna odmena -1,02 23 % -0,8333"
+        
+        Pattern: Description | Amount_with_VAT | [Quantity] | VAT% | Amount_without_VAT
+        Key: VAT% is always "XX %" with a space before %
+        """
+        items = []
+        
+        # Find the section with invoice details
+        items_section_start = text.lower().find('názov položky')
+        if items_section_start == -1:
+            items_section_start = text.lower().find('pravidelné poplatky')
+        if items_section_start == -1:
+            items_section_start = 0
+        
+        # Find the end of items section
+        summary_start = text.lower().find('spolu zaokrúhlene')
+        if summary_start == -1:
+            summary_start = text.lower().find('sumarizácia dph')
+        if summary_start == -1:
+            summary_start = len(text)
+        
+        # Extract the section
+        items_section = text[items_section_start:summary_start]
+        
+        # Split into lines
+        text_lines = items_section.split('\n')
+        
+        # Lines to skip (section headers, descriptive text, etc.)
+        skip_patterns = [
+            'Názov položky', 'Suma s DPH', 'Počet DPH', 'Suma bez DPH',
+            'Jednotková cena', 'bez DPH za', 'S paušálom', 'neobmedzené',
+            'Spolu zaokrúhlene', 'DPH za služby', 'Spolu s DPH', 'Zaokrúhlenie',
+            'Pravidelné poplatky', 'Jednorazové poplatky', 'v rámci', 'dátový balík',
+            'po prečerpaní', 'spomalenie', 'za zúčtovacie obdobie', 'za ks'
+        ]
+        
+        for line in text_lines:
+            line = line.strip()
+            
+            # Skip empty or short lines
+            if not line or len(line) < 5:
+                continue
+            
+            # Skip descriptive/header lines
+            if any(skip in line for skip in skip_patterns):
+                continue
+            
+            # Orange line pattern: ... Amount_with_VAT [Qty] VAT% Amount_without_VAT
+            # Use regex to find the pattern at the END of the line
+            # Pattern: (-?decimal) [optional_qty] (number %) (-?decimal)
+            
+            # Match: amount_with_vat [qty] vat% amount_without_vat at end of line
+            # Examples:
+            # "11,96 23 % 9,7223" - no qty
+            # "5,13 1 23 % 4,1667" - qty=1
+            # "-5,13 23 % -4,1667" - negative, no qty
+            
+            # Pattern with optional quantity
+            line_pattern = r'(-?\d+[,\.]\d+)\s+(?:(\d+)\s+)?(\d+)\s+%\s+(-?\d+[,\.]\d+)\s*$'
+            match = re.search(line_pattern, line)
+            
+            if not match:
+                continue
+            
+            try:
+                amount_with_vat_str = match.group(1)
+                qty_str = match.group(2)  # May be None
+                vat_rate = int(match.group(3))
+                amount_without_vat_str = match.group(4)
+                
+                # Description is everything before the match
+                description = line[:match.start()].strip()
+                
+                # Clean up description - remove trailing dates if present
+                # Dates like "26. 11. 2025 – 7. 12. 2025" should stay in description
+                
+                # Parse amounts
+                amount_with_vat = float(amount_with_vat_str.replace(',', '.'))
+                amount_without_vat = float(amount_without_vat_str.replace(',', '.'))
+                
+                # Parse quantity
+                quantity = float(qty_str) if qty_str else 1.0
+                
+                # Calculate price unit
+                if quantity != 0:
+                    price_unit = amount_without_vat / quantity
+                else:
+                    price_unit = amount_without_vat
+                
+                # Only add lines with meaningful descriptions
+                if description and len(description) > 2:
+                    items.append({
+                        "description": description,
+                        "quantity": quantity,
+                        "price_unit": price_unit,
+                        "vat_rate": vat_rate,
+                    })
+                    _logger.info(f"Orange Parser: Added item '{description}' - Qty: {quantity}, Price: {price_unit}€, VAT: {vat_rate}%")
+                    
+            except (ValueError, ZeroDivisionError) as e:
+                _logger.warning(f"Orange Parser: Could not parse line '{line}': {e}")
+        
+        _logger.info(f"Orange Parser: Total items extracted: {len(items)}")
+        return items
+    
     def _parse_vamont_lines_from_text(self, text):
         """
         Va-Mont Finance invoice parser - handles products with format:
