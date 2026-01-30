@@ -1029,6 +1029,7 @@ class SupplierInvoiceProcessor(models.Model):
         
         New logic: A line with pattern "Qty Price Price..." marks a product.
         All lines WITHOUT this pattern are description continuations.
+        Handles negative amounts (refunds) with spaces like "-2 202,44"
         """
         rows = [r.strip() for r in text.split("\n")]
         items = []
@@ -1076,7 +1077,7 @@ class SupplierInvoiceProcessor(models.Model):
             for idx in range(len(tokens)):
                 if VAT_RATE_RE.match(tokens[idx]):
                     # Check that this is really a VAT rate (preceded by price-like token)
-                    if idx > 0 and PRICE_RE.match(tokens[idx - 1]):
+                    if idx > 0 and (PRICE_RE.match(tokens[idx - 1]) or (idx > 1 and tokens[idx - 1].isdigit() and PRICE_RE.match(tokens[idx - 2]))):
                         # This looks like a real VAT rate in a product line
                         vat_idx = idx
                         
@@ -1088,7 +1089,7 @@ class SupplierInvoiceProcessor(models.Model):
                                 if search_idx + 1 < len(tokens):
                                     next_token = tokens[search_idx + 1]
                                     # Next should be a price (with comma) or a single digit (part of multi-token price)
-                                    if PRICE_RE.match(next_token) or next_token.isdigit():
+                                    if PRICE_RE.match(next_token) or (next_token.startswith('-') and next_token[1:].isdigit()):
                                         product_data_start_idx = search_idx
                                         break
                         
@@ -1159,32 +1160,30 @@ class SupplierInvoiceProcessor(models.Model):
             qty = float(tokens[product_data_start_idx])
             
             # Price extraction needs to handle multi-token prices (with spaces as thousands separators)
-            # Examples: "1 088,62" becomes ["1", "088,62"] or "250,38" stays as one token
-            # Key insight: If qty is 1-3 digits and next token is "XXX,YY" (starts with leading 0 or is 3 digits),
-            # it's likely part of a multi-token price like "1 088,62"
+            # Examples: "1 088,62" becomes ["1", "088,62"] or "-2 202,44" becomes ["-2", "202,44"]
+            # or "250,38" stays as one token
             price_token = tokens[product_data_start_idx + 1]
             
-            # Check if this is a partial price token (starts with "0" suggesting it's thousands group)
-            is_partial_price = (
-                price_token and 
-                re.match(r'^0\d*,', price_token) and  # Starts with "0" before decimal (e.g., "088,62")
-                product_data_start_idx + 2 < len(tokens)
+            # Check if next token starts with "-" or digits only (part of spaced price)
+            is_spaced_price = (
+                product_data_start_idx + 2 < len(tokens) and 
+                (price_token.startswith('-') or price_token.isdigit()) and 
+                not ',' in price_token and
+                not '.' in price_token and
+                re.match(r'^0?\d+[,\.]', tokens[product_data_start_idx + 2])  # Next token has decimal
             )
             
-            if is_partial_price:
-                # Combine with previous token (which is qty but forms the beginning of price)
-                # This is a bit of a hack, but we need to treat qty+next as forming the price
-                # Since qty was "1" and next is "088,62", together they make "1088,62"
-                price_str = str(int(qty)) + tokens[product_data_start_idx + 1]
-            elif price_token.isdigit():
-                # This is just the thousands part (like "1" from "1 088,62")
-                # Next token should have the decimal
-                if product_data_start_idx + 2 < len(tokens):
+            if is_spaced_price:
+                # This is a spaced price like "-2" followed by "202,44"
+                # Combine them: "-2" + "202,44" = "-2202,44"
+                if price_token.startswith('-'):
+                    # Negative spaced price: "-2" + "202,44" = "-2202,44"
                     price_str = price_token + tokens[product_data_start_idx + 2]
                 else:
-                    price_str = price_token
+                    # Positive spaced price: "2" + "202,44" = "2202,44"
+                    price_str = price_token + tokens[product_data_start_idx + 2]
             else:
-                # This token has a decimal (comma or dot) and doesn't start with 0
+                # Single token price
                 price_str = price_token
             
             price = float(price_str.replace(' ', '').replace(',', '.'))
