@@ -9,6 +9,12 @@ from odoo.exceptions import UserError, ValidationError
 _logger = logging.getLogger(__name__)
 
 try:
+    import requests
+except ImportError:
+    _logger.warning("requests library not installed. Paperless integration will not work.")
+    requests = None
+
+try:
     import PyPDF2
     import pdfplumber
 except ImportError:
@@ -174,6 +180,32 @@ class SupplierInvoiceProcessor(models.Model):
     
     error_message = fields.Text(
         string='Chybová správa',
+        readonly=True,
+    )
+    
+    # Paperless-ngx integration fields
+    paperless_uploaded = fields.Boolean(
+        string='Uploaded to Paperless',
+        default=False,
+        readonly=True,
+        tracking=True,
+    )
+    paperless_task_id = fields.Char(
+        string='Paperless Task ID',
+        readonly=True,
+        help='The task ID returned by Paperless-ngx when uploading',
+    )
+    paperless_document_id = fields.Integer(
+        string='Paperless Document ID',
+        readonly=True,
+        help='The actual document ID in Paperless-ngx (retrieved after processing)',
+    )
+    paperless_upload_date = fields.Datetime(
+        string='Paperless Upload Date',
+        readonly=True,
+    )
+    paperless_error = fields.Text(
+        string='Paperless Upload Error',
         readonly=True,
     )
 
@@ -2823,6 +2855,16 @@ class SupplierInvoiceProcessor(models.Model):
             
             self.message_post(body=_('Invoice %s created successfully.') % invoice.name)
             
+            # Auto-upload to Paperless if enabled (hardcoded config)
+            # Set PAPERLESS_AUTO_UPLOAD = True to enable automatic uploads
+            PAPERLESS_AUTO_UPLOAD = True
+            if PAPERLESS_AUTO_UPLOAD:
+                try:
+                    self.action_upload_to_paperless()
+                except Exception as e:
+                    _logger.warning("Auto-upload to Paperless failed: %s", str(e))
+                    # Don't fail the invoice creation, just log the error
+            
             return {
                 'type': 'ir.actions.act_window',
                 'res_model': 'account.move',
@@ -2870,6 +2912,182 @@ class SupplierInvoiceProcessor(models.Model):
                 'default_invoice_id': self.invoice_id.id,
             }
         }
+
+    def action_upload_to_paperless(self):
+        """Upload the PDF attachment to Paperless-ngx"""
+        self.ensure_one()
+        
+        if not requests:
+            raise UserError(_('The requests library is not installed. Please install it with: pip install requests'))
+        
+        # ============================================================
+        # PAPERLESS-NGX CONFIGURATION - EDIT THESE VALUES
+        # ============================================================
+        PAPERLESS_URL = 'http://172.19.1.40:8000'  # Your Paperless URL
+        PAPERLESS_API_TOKEN = '78beaba211fdb798dc1913c97958c86a6f96e5a9'      # Your API token from Paperless admin
+        # ============================================================
+        
+        if PAPERLESS_URL == 'https://paperless.example.com' or PAPERLESS_API_TOKEN == 'your-api-token-here':
+            raise UserError(_('Paperless credentials not configured. Please edit supplier_invoice_processor.py and set PAPERLESS_URL and PAPERLESS_API_TOKEN.'))
+        
+        if not self.attachment_id:
+            raise UserError(_('No PDF attachment found to upload.'))
+        
+        if self.paperless_uploaded:
+            raise UserError(_('This document has already been uploaded to Paperless (Document ID: %s).') % self.paperless_document_id)
+        
+        try:
+            # Get the PDF data
+            pdf_data = base64.b64decode(self.attachment_id.datas)
+            
+            # Build the API URL
+            api_url = PAPERLESS_URL.rstrip('/') + '/api/documents/post_document/'
+            
+            # Prepare the file for upload
+            filename = self.filename or f"invoice_{self.invoice_number or self.name}.pdf"
+            files = {
+                'document': (filename, pdf_data, 'application/pdf'),
+            }
+            
+            # Prepare metadata
+            data = {}
+            
+            # Add title (invoice number or processor name)
+            title = self.invoice_number or self.name
+            if self.supplier_id:
+                title = f"{self.supplier_id.name} - {title}"
+            data['title'] = title
+            
+            # Storage path ID for "Dodavateľské FA" - run this to see all paths:
+            # curl -H "Authorization: Token YOUR_TOKEN" "http://YOUR_PAPERLESS_URL/api/storage_paths/"
+            PAPERLESS_STORAGE_PATH_ID = 1  # ID of "Dodavateľské FA" storage path
+            data['storage_path'] = PAPERLESS_STORAGE_PATH_ID
+            
+            # Add creation date (invoice date)
+            if self.invoice_date:
+                data['created'] = self.invoice_date.strftime('%Y-%m-%d')
+            
+            # Headers with authentication
+            headers = {
+                'Authorization': f'Token {PAPERLESS_API_TOKEN}',
+            }
+            
+            # Make the API request
+            _logger.info(f"Uploading document to Paperless: {api_url}")
+            response = requests.post(
+                api_url,
+                headers=headers,
+                files=files,
+                data=data,
+                timeout=60,
+            )
+            
+            if response.status_code in [200, 201, 202]:
+                # Success - document was accepted
+                # Paperless returns task ID, not document ID directly for async processing
+                task_id = 'unknown'
+                try:
+                    result = response.json() if response.text else {}
+                    if isinstance(result, dict):
+                        task_id = result.get('task_id', result.get('id', 'unknown'))
+                    elif isinstance(result, str):
+                        task_id = result
+                    else:
+                        task_id = str(result)
+                except Exception:
+                    # If JSON parsing fails, use the raw text
+                    task_id = response.text[:50] if response.text else 'unknown'
+                
+                self.write({
+                    'paperless_uploaded': True,
+                    'paperless_task_id': str(task_id),
+                    'paperless_upload_date': fields.Datetime.now(),
+                    'paperless_error': False,
+                })
+                
+                self.message_post(
+                    body=_('PDF successfully uploaded to Paperless-ngx. Task ID: %s') % task_id
+                )
+                
+                return {
+                    'type': 'ir.actions.client',
+                    'tag': 'display_notification',
+                    'params': {
+                        'title': _('Success'),
+                        'message': _('Document uploaded to Paperless successfully!'),
+                        'type': 'success',
+                        'sticky': False,
+                    }
+                }
+            else:
+                # Error
+                error_msg = f"HTTP {response.status_code}: {response.text}"
+                _logger.error(f"Paperless upload failed: {error_msg}")
+                
+                self.write({
+                    'paperless_error': error_msg,
+                })
+                
+                raise UserError(_('Failed to upload to Paperless: %s') % error_msg)
+                
+        except requests.exceptions.ConnectionError as e:
+            error_msg = _('Could not connect to Paperless server. Please check the URL and ensure the server is running.')
+            self.paperless_error = str(e)
+            raise UserError(error_msg)
+        except requests.exceptions.Timeout as e:
+            error_msg = _('Connection to Paperless timed out. Please try again.')
+            self.paperless_error = str(e)
+            raise UserError(error_msg)
+        except Exception as e:
+            _logger.exception("Error uploading to Paperless: %s", str(e))
+            self.paperless_error = str(e)
+            raise UserError(_('Error uploading to Paperless: %s') % str(e))
+
+    def action_open_in_paperless(self):
+        """Open the document in Paperless-ngx web interface"""
+        self.ensure_one()
+        
+        if not self.paperless_uploaded:
+            raise UserError(_('This document has not been uploaded to Paperless yet.'))
+        
+        # Hardcoded Paperless URL - must match the one in action_upload_to_paperless
+        PAPERLESS_URL = 'http://172.19.1.40:8000'
+        PAPERLESS_API_TOKEN = '78beaba211fdb798dc1913c97958c86a6f96e5a9'
+        
+        # If we don't have the document ID yet, try to get it from the task status
+        if not self.paperless_document_id and self.paperless_task_id:
+            try:
+                headers = {'Authorization': f'Token {PAPERLESS_API_TOKEN}'}
+                task_url = f"{PAPERLESS_URL}/api/tasks/?task_id={self.paperless_task_id}"
+                response = requests.get(task_url, headers=headers, timeout=10)
+                
+                if response.status_code == 200:
+                    tasks = response.json()
+                    if tasks and len(tasks) > 0:
+                        task = tasks[0]
+                        if task.get('status') == 'SUCCESS' and task.get('related_document'):
+                            self.paperless_document_id = task['related_document']
+                            _logger.info(f"Got Paperless document ID: {self.paperless_document_id}")
+                        elif task.get('status') == 'FAILURE':
+                            self.paperless_error = task.get('result', 'Task failed')
+            except Exception as e:
+                _logger.warning(f"Could not get Paperless task status: {e}")
+        
+        # If we have the document ID, open the document directly
+        if self.paperless_document_id:
+            document_url = f"{PAPERLESS_URL}/documents/{self.paperless_document_id}/details"
+            return {
+                'type': 'ir.actions.act_url',
+                'url': document_url,
+                'target': 'new',
+            }
+        else:
+            # Otherwise open the Paperless dashboard
+            return {
+                'type': 'ir.actions.act_url',
+                'url': PAPERLESS_URL,
+                'target': 'new',
+            }
 
     def action_reset_to_draft(self):
         """Reset to draft state"""

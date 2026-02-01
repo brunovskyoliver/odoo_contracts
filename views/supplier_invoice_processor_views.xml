@@ -14,6 +14,7 @@
                 <field name="total_amount" sum="Total"/>
                 <field name="currency_id" column_invisible="1"/>
                 <field name="state" widget="badge" decoration-info="state=='draft'" decoration-success="state=='done'" decoration-warning="state in ('processing','extracted','pairing')" decoration-danger="state=='error'"/>
+                <field name="paperless_uploaded" string="Paperless" widget="boolean"/>
                 <field name="invoice_id"/>
             </list>
         </field>
@@ -30,6 +31,8 @@
                     <button name="action_create_invoice" string="Vytvoriť faktúru" type="object" class="btn-primary" invisible="state not in ('extracted', 'pairing')"/>
                     <button name="action_regenerate_invoice" string="Pregenerovat" type="object" class="btn-warning" invisible="not invoice_id or state != 'done'" title="Regenerates the invoice by replacing the old one with the same number"/>
                     <button name="action_view_invoice" string="Zobraziť faktúru" type="object" class="btn-primary" invisible="not invoice_id"/>
+                    <button name="action_upload_to_paperless" string="Nahrať do Paperless" type="object" class="btn-secondary" icon="fa-cloud-upload" invisible="not attachment_id or paperless_uploaded"/>
+                    <button name="action_open_in_paperless" string="Otvoriť v Paperless" type="object" class="btn-secondary" icon="fa-external-link" invisible="not paperless_uploaded"/>
                     <button name="action_reset_to_draft" string="Vrátiť do konceptu" type="object" invisible="state == 'draft'"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,processing,pairing,extracted,done"/>
                 </header>
@@ -37,6 +40,11 @@
                     <div class="oe_button_box" name="button_box">
                         <button name="action_view_invoice" type="object" class="oe_stat_button" icon="fa-pencil-square-o" invisible="not invoice_id">
                             <field name="invoice_id" widget="statinfo" string="Invoice"/>
+                        </button>
+                        <button name="action_open_in_paperless" type="object" class="oe_stat_button" icon="fa-cloud" invisible="not paperless_uploaded">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Paperless</span>
+                            </div>
                         </button>
                     </div>
                     <div class="oe_title">
@@ -100,6 +108,19 @@
                         <page string="Poznámky" name="notes">
                             <field name="notes" placeholder="Add any notes here..."/>
                         </page>
+                        <page string="Paperless" name="paperless">
+                            <group>
+                                <group string="Paperless-ngx Status">
+                                    <field name="paperless_uploaded" readonly="1"/>
+                                    <field name="paperless_task_id" readonly="1" invisible="not paperless_uploaded"/>
+                                    <field name="paperless_document_id" readonly="1" invisible="not paperless_document_id"/>
+                                    <field name="paperless_upload_date" readonly="1" invisible="not paperless_uploaded"/>
+                                </group>
+                                <group string="Paperless Error" invisible="not paperless_error">
+                                    <field name="paperless_error" widget="text" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
                         <page string="Error" name="error" invisible="state != 'error'">
                             <field name="error_message" widget="text" readonly="1"/>
                         </page>
@@ -127,10 +148,13 @@
                 <filter string="Error" name="error" domain="[('state', '=', 'error')]"/>
                 <separator/>
                 <filter string="No Invoice Created" name="no_invoice" domain="[('invoice_id', '=', False)]"/>
+                <filter string="Uploaded to Paperless" name="paperless_uploaded" domain="[('paperless_uploaded', '=', True)]"/>
+                <filter string="Not in Paperless" name="paperless_not_uploaded" domain="[('paperless_uploaded', '=', False), ('attachment_id', '!=', False)]"/>
                 <group expand="0" string="Group By">
                     <filter string="Supplier" name="group_supplier" context="{'group_by': 'supplier_id'}"/>
                     <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
                     <filter string="Invoice Date" name="group_invoice_date" context="{'group_by': 'invoice_date'}"/>
+                    <filter string="Paperless Status" name="group_paperless" context="{'group_by': 'paperless_uploaded'}"/>
                 </group>
             </search>
         </field>
