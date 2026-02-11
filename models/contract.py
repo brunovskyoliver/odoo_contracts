@@ -766,11 +766,15 @@ class ContractContract(models.Model):
                 
                 if total_amount > 0:
                     # Get tax from the first product in contract lines that has taxes
+                    # Filter to only include taxes matching the contract's company
                     tax_ids = []
                     for cline in contract_lines:
                         if cline.product_id and cline.product_id.taxes_id:
-                            tax_ids = cline.product_id.taxes_id.ids
-                            break
+                            tax_ids = cline.product_id.taxes_id.filtered(
+                                lambda t: t.company_id.id == contract.company_id.id
+                            ).ids
+                            if tax_ids:
+                                break
                     
                     discount_line_vals = {
                         'name': 'Zľava 100%',

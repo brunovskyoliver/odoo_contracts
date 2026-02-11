@@ -16,6 +16,10 @@ class AccountMove(models.Model):
             if invoice.move_type == 'out_invoice' and invoice.state == 'posted':
                 # Check if reminder fee is already added
                 if not any(line.product_id.id == reminder_product.id for line in invoice.invoice_line_ids):
+                    # Filter taxes to only include those matching the invoice's company
+                    tax_ids = reminder_product.taxes_id.filtered(
+                        lambda t: t.company_id.id == invoice.company_id.id
+                    ).ids
                     invoice.button_draft()
                     invoice.write({
                         'invoice_line_ids': [(0, 0, {
@@ -23,7 +27,7 @@ class AccountMove(models.Model):
                             'name': fee_name,
                             'quantity': 1,
                             'price_unit': fee_amount,
-                            'tax_ids': [(6, 0, reminder_product.taxes_id.ids)],
+                            'tax_ids': [(6, 0, tax_ids)],
                         })]
                     })
                     invoice.action_post()

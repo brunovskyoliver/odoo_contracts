@@ -374,6 +374,15 @@ class ContractAbstractContractLine(models.AbstractModel):
         elif self.x_zlavnena_cena != 0:
             unit_price = self.x_zlavnena_cena
         
+        # Filter taxes to only include those matching the contract's company
+        company_id = self.contract_id.company_id.id if self.contract_id else False
+        if company_id and self.product_id:
+            tax_ids = self.product_id.taxes_id.filtered(
+                lambda t: t.company_id.id == company_id
+            ).ids
+        else:
+            tax_ids = self.product_id.taxes_id.ids if self.product_id else []
+        
         res = {
             'display_type': self.display_type,
             'product_id': self.product_id.id,
@@ -381,7 +390,7 @@ class ContractAbstractContractLine(models.AbstractModel):
             'quantity': self.quantity,
             'price_unit': unit_price,  # Use the discounted price when applicable
             'discount': self.discount,
-            'tax_ids': [(6, 0, self.product_id.taxes_id.ids)],
+            'tax_ids': [(6, 0, tax_ids)],
             'analytic_distribution': self.contract_id.analytic_distribution or False,
         }
             
