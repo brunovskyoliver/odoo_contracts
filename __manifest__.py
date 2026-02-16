@@ -86,6 +86,7 @@
         'wizards/product_pairing_wizard_views.xml',
         'wizards/supplier_invoice_regenerate_wizard_view.xml',
         'wizards/vendor_bill_attachment_wizard_view.xml',
+        'wizards/customer_invoice_attachment_wizard_view.xml',
         'views/vendor_bill_merged_pdf_views.xml',
         'views/contract_menu.xml',
         'data/contract_sequence.xml',
