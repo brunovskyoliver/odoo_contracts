@@ -160,6 +160,28 @@ class SupplierInvoiceProcessor(models.Model):
         tracking=True,
     )
     
+    # Orange-specific fields
+    orange_variabilny_symbol = fields.Char(
+        string='Orange Variabilný Symbol',
+        readonly=True,
+        help='Variabilný symbol extrahovaný z faktúry Orange',
+    )
+    
+    reinvoice_id = fields.Many2one(
+        'account.move',
+        string='Refakturácia zákazníkovi',
+        readonly=True,
+        tracking=True,
+        help='Faktúra vytvorená zákazníkovi na základe Orange faktúry',
+    )
+    
+    reinvoice_partner_id = fields.Many2one(
+        'res.partner',
+        string='Zákazník na refakturáciu',
+        readonly=True,
+        help='Zákazník, ktorému bola vytvorená refakturácia',
+    )
+    
     company_id = fields.Many2one(
         'res.company',
         string='Spoločnosť',
@@ -331,6 +353,18 @@ class SupplierInvoiceProcessor(models.Model):
             self.total_untaxed = invoice_data.get('total_untaxed', 0.0)
             self.total_tax = invoice_data.get('total_tax', 0.0)
             self.total_amount = invoice_data.get('total_amount', 0.0)
+            
+            # Store Orange Variabilný symbol and find matching customer for reinvoicing
+            if invoice_data.get('orange_variabilny_symbol'):
+                self.orange_variabilny_symbol = invoice_data['orange_variabilny_symbol']
+                # Find customer with matching Orange Variabilný Symbol
+                reinvoice_customer = self.env['res.partner'].search([
+                    ('orange_variabilny_symbol', '=', invoice_data['orange_variabilny_symbol']),
+                    ('customer_rank', '>', 0),
+                ], limit=1)
+                if reinvoice_customer:
+                    self.reinvoice_partner_id = reinvoice_customer.id
+                    _logger.info(f"Found customer for Orange reinvoicing: {reinvoice_customer.name} (VS: {invoice_data['orange_variabilny_symbol']})")
             
             # Create invoice lines
             self.line_ids.unlink()  # Clear existing lines
@@ -535,7 +569,7 @@ class SupplierInvoiceProcessor(models.Model):
         elif is_upc:
             data.update({ 'supplier_id': 1648,})
         elif is_vamont:
-            data.update({ 'supplier_id': 1179,})
+            data.update({ 'supplier_id': 1738,})
         elif is_o2:
             data.update({ 'supplier_id': 1653,})
         elif is_setem:
@@ -677,6 +711,12 @@ class SupplierInvoiceProcessor(models.Model):
                 month = orange_due_match.group(2)
                 year = orange_due_match.group(3)
                 data['invoice_due_date'] = self._parse_date(f"{day}.{month}.{year}")
+            
+            # Orange Variabilný symbol extraction: "Variabilný symbol: 0426725768"
+            vs_match = re.search(r'Variabiln[ýy]\s+symbol\s*:\s*(\d+)', text, re.IGNORECASE)
+            if vs_match:
+                data['orange_variabilny_symbol'] = vs_match.group(1)
+                _logger.info(f"Orange Variabilný symbol extracted: {vs_match.group(1)}")
         else:
             # Generic date extraction for other suppliers
             date_pattern = r'(\d{1,2}[./-]\d{1,2}[./-]\d{2,4})'
@@ -812,40 +852,55 @@ class SupplierInvoiceProcessor(models.Model):
                 except ValueError as e:
                     _logger.warning(f"Could not parse e-Net totals: {e}")
         
-        # Orange-specific extraction: "Spolu s DPH 10,93 €"
+        # Orange-specific extraction: Multi-phone invoices have multiple totals to sum
         if data.get('is_orange'):
-            # Extract total base amount: "Spolu zaokrúhlene bez DPH 8,89 €"
-            orange_base_pattern = r'Spolu\s+zaokrúhlene\s+bez\s+DPH\s+([-\d,\.]+)'
-            orange_base_match = re.search(orange_base_pattern, text, re.IGNORECASE)
-            if orange_base_match:
-                base_str = orange_base_match.group(1).replace(',', '.')
+            # For multi-phone Orange invoices, we need to sum ALL occurrences
+            # of "Spolu zaokrúhlene bez DPH XX,XX €" (one per phone number)
+            
+            # Sum all base amounts: "Spolu zaokrúhlene bez DPH 8,89 €"
+            orange_base_pattern = r'Spolu\s+zaokrúhlene\s+bez\s+DPH\s+([-\d,\.]+)\s*€?'
+            for match in re.finditer(orange_base_pattern, text, re.IGNORECASE):
+                base_str = match.group(1).replace(',', '.')
                 try:
-                    total_untaxed = float(base_str)
+                    total_untaxed += float(base_str)
                 except ValueError:
                     pass
             
-            # Extract tax amount: "DPH za služby 8,89 € 23 % 2,04 €"
-            orange_tax_pattern = r'DPH\s+za\s+\w+\s+([-\d,\.]+)\s+€?\s+(\d+)\s*%\s+([-\d,\.]+)'
-            orange_tax_match = re.search(orange_tax_pattern, text, re.IGNORECASE)
-            if orange_tax_match:
-                tax_str = orange_tax_match.group(3).replace(',', '.')
+            # Sum all tax amounts: "DPH za služby 8,89 € 23 % 2,04 €"
+            orange_tax_pattern = r'DPH\s+za\s+\w+\s+[-\d,\.]+\s*€?\s+\d+\s*%\s+([-\d,\.]+)\s*€?'
+            for match in re.finditer(orange_tax_pattern, text, re.IGNORECASE):
+                tax_str = match.group(1).replace(',', '.')
                 try:
-                    total_tax = float(tax_str)
+                    total_tax += float(tax_str)
                 except ValueError:
                     pass
             
-            # Extract total with VAT: "Spolu s DPH 10,93 €"
-            orange_total_pattern = r'Spolu\s+s\s+DPH\s+([-\d,\.]+)\s*€'
-            orange_total_match = re.search(orange_total_pattern, text, re.IGNORECASE)
-            if orange_total_match:
-                total_amount_str = orange_total_match.group(1).replace(',', '.')
+            # The final total should be on page 1: "Celková suma na úhradu: 104,00 €"
+            # or we sum all individual "Spolu s DPH XX,XX €" values
+            final_total_pattern = r'Celková\s+suma\s+na\s+úhradu\s*:\s*([-\d,\.]+)\s*€'
+            final_total_match = re.search(final_total_pattern, text, re.IGNORECASE)
+            if final_total_match:
                 try:
-                    data['total_amount'] = float(total_amount_str)
-                    data['total_untaxed'] = total_untaxed
-                    data['total_tax'] = total_tax
-                    _logger.info(f"Orange totals extracted: Untaxed: {total_untaxed}, Tax: {total_tax}, Total: {data['total_amount']}")
-                except ValueError as e:
-                    _logger.warning(f"Could not parse Orange total: {e}")
+                    data['total_amount'] = float(final_total_match.group(1).replace(',', '.'))
+                except ValueError:
+                    pass
+            
+            # Fallback: sum individual "Spolu s DPH" values
+            if 'total_amount' not in data or data['total_amount'] == 0:
+                orange_total_pattern = r'Spolu\s+s\s+DPH\s+([-\d,\.]+)\s*€'
+                individual_total = 0.0
+                for match in re.finditer(orange_total_pattern, text, re.IGNORECASE):
+                    try:
+                        individual_total += float(match.group(1).replace(',', '.'))
+                    except ValueError:
+                        pass
+                if individual_total > 0:
+                    data['total_amount'] = individual_total
+            
+            if total_untaxed > 0 or total_tax > 0:
+                data['total_untaxed'] = total_untaxed
+                data['total_tax'] = total_tax
+                _logger.info(f"Orange totals extracted: Untaxed: {total_untaxed}, Tax: {total_tax}, Total: {data.get('total_amount', 0)}")
         
         # Westech-specific extraction: "DPH% Základ DPH(zaokr.) Celkom\n23% 1 023.00 235.29 1 258.29"
         if data.get('is_westech'):
@@ -2515,28 +2570,57 @@ class SupplierInvoiceProcessor(models.Model):
         
         Pattern: Description | Amount_with_VAT | [Quantity] | VAT% | Amount_without_VAT
         Key: VAT% is always "XX %" with a space before %
+        
+        Multi-phone invoices: Each phone number has its own section from 
+        "Pravidelné poplatky" to "Spolu zaokrúhlene"
         """
         items = []
         
-        # Find the section with invoice details
-        items_section_start = text.lower().find('názov položky')
-        if items_section_start == -1:
-            items_section_start = text.lower().find('pravidelné poplatky')
-        if items_section_start == -1:
-            items_section_start = 0
+        # Find ALL sections with invoice details (one per phone number)
+        # Pattern: each phone section starts with "Pravidelné poplatky" 
+        # and ends with "Spolu zaokrúhlene"
+        text_lower = text.lower()
         
-        # Find the end of items section
-        summary_start = text.lower().find('spolu zaokrúhlene')
-        if summary_start == -1:
-            summary_start = text.lower().find('sumarizácia dph')
-        if summary_start == -1:
-            summary_start = len(text)
+        # Find all starting positions of item sections
+        section_starts = []
+        pos = 0
+        while True:
+            # Find next "Pravidelné poplatky"
+            start = text_lower.find('pravidelné poplatky', pos)
+            if start == -1:
+                break
+            section_starts.append(start)
+            pos = start + 1
         
-        # Extract the section
-        items_section = text[items_section_start:summary_start]
+        # If no sections found, try falling back to "názov položky"
+        if not section_starts:
+            pos = 0
+            while True:
+                start = text_lower.find('názov položky', pos)
+                if start == -1:
+                    break
+                section_starts.append(start)
+                pos = start + 1
         
-        # Split into lines
-        text_lines = items_section.split('\n')
+        # If still nothing, process entire text
+        if not section_starts:
+            section_starts = [0]
+        
+        # For each section, find the end and extract lines
+        all_items_text = []
+        for i, start in enumerate(section_starts):
+            # Find the end - "spolu zaokrúhlene" after this start
+            end = text_lower.find('spolu zaokrúhlene', start)
+            if end == -1:
+                # No end marker, use next section start or end of text
+                if i + 1 < len(section_starts):
+                    end = section_starts[i + 1]
+                else:
+                    end = len(text)
+            
+            # Extract this section
+            section_text = text[start:end]
+            all_items_text.append(section_text)
         
         # Lines to skip (section headers, descriptive text, etc.)
         skip_patterns = [
@@ -2544,74 +2628,73 @@ class SupplierInvoiceProcessor(models.Model):
             'Jednotková cena', 'bez DPH za', 'S paušálom', 'neobmedzené',
             'Spolu zaokrúhlene', 'DPH za služby', 'Spolu s DPH', 'Zaokrúhlenie',
             'Pravidelné poplatky', 'Jednorazové poplatky', 'v rámci', 'dátový balík',
-            'po prečerpaní', 'spomalenie', 'za zúčtovacie obdobie', 'za ks'
+            'po prečerpaní', 'spomalenie', 'za zúčtovacie obdobie', 'za ks',
+            'alikvótna časť'
         ]
         
-        for line in text_lines:
-            line = line.strip()
+        # Process all sections
+        for section in all_items_text:
+            text_lines = section.split('\n')
             
-            # Skip empty or short lines
-            if not line or len(line) < 5:
-                continue
-            
-            # Skip descriptive/header lines
-            if any(skip in line for skip in skip_patterns):
-                continue
-            
-            # Orange line pattern: ... Amount_with_VAT [Qty] VAT% Amount_without_VAT
-            # Use regex to find the pattern at the END of the line
-            # Pattern: (-?decimal) [optional_qty] (number %) (-?decimal)
-            
-            # Match: amount_with_vat [qty] vat% amount_without_vat at end of line
-            # Examples:
-            # "11,96 23 % 9,7223" - no qty
-            # "5,13 1 23 % 4,1667" - qty=1
-            # "-5,13 23 % -4,1667" - negative, no qty
-            
-            # Pattern with optional quantity
-            line_pattern = r'(-?\d+[,\.]\d+)\s+(?:(\d+)\s+)?(\d+)\s+%\s+(-?\d+[,\.]\d+)\s*$'
-            match = re.search(line_pattern, line)
-            
-            if not match:
-                continue
-            
-            try:
-                amount_with_vat_str = match.group(1)
-                qty_str = match.group(2)  # May be None
-                vat_rate = int(match.group(3))
-                amount_without_vat_str = match.group(4)
+            for line in text_lines:
+                line = line.strip()
                 
-                # Description is everything before the match
-                description = line[:match.start()].strip()
+                # Skip empty or short lines
+                if not line or len(line) < 5:
+                    continue
                 
-                # Clean up description - remove trailing dates if present
-                # Dates like "26. 11. 2025 – 7. 12. 2025" should stay in description
+                # Skip descriptive/header lines
+                if any(skip in line for skip in skip_patterns):
+                    continue
                 
-                # Parse amounts
-                amount_with_vat = float(amount_with_vat_str.replace(',', '.'))
-                amount_without_vat = float(amount_without_vat_str.replace(',', '.'))
+                # Orange line pattern: ... Amount_with_VAT [Qty] VAT% Amount_without_VAT
+                # Match: amount_with_vat [qty] vat% amount_without_vat at end of line
+                # Examples:
+                # "11,96 23 % 9,7223" - no qty
+                # "5,13 1 23 % 4,1667" - qty=1
+                # "-5,13 23 % -4,1667" - negative, no qty
                 
-                # Parse quantity
-                quantity = float(qty_str) if qty_str else 1.0
+                # Pattern with optional quantity
+                line_pattern = r'(-?\d+[,\.]\d+)\s+(?:(\d+)\s+)?(\d+)\s+%\s+(-?\d+[,\.]\d+)\s*$'
+                match = re.search(line_pattern, line)
                 
-                # Calculate price unit
-                if quantity != 0:
-                    price_unit = amount_without_vat / quantity
-                else:
-                    price_unit = amount_without_vat
+                if not match:
+                    continue
                 
-                # Only add lines with meaningful descriptions
-                if description and len(description) > 2:
-                    items.append({
-                        "description": description,
-                        "quantity": quantity,
-                        "price_unit": price_unit,
-                        "vat_rate": vat_rate,
-                    })
-                    _logger.info(f"Orange Parser: Added item '{description}' - Qty: {quantity}, Price: {price_unit}€, VAT: {vat_rate}%")
+                try:
+                    amount_with_vat_str = match.group(1)
+                    qty_str = match.group(2)  # May be None
+                    vat_rate = int(match.group(3))
+                    amount_without_vat_str = match.group(4)
                     
-            except (ValueError, ZeroDivisionError) as e:
-                _logger.warning(f"Orange Parser: Could not parse line '{line}': {e}")
+                    # Description is everything before the match
+                    description = line[:match.start()].strip()
+                    
+                    # Parse amounts
+                    amount_with_vat = float(amount_with_vat_str.replace(',', '.'))
+                    amount_without_vat = float(amount_without_vat_str.replace(',', '.'))
+                    
+                    # Parse quantity
+                    quantity = float(qty_str) if qty_str else 1.0
+                    
+                    # Calculate price unit - round to 2 decimals to match invoice totals
+                    if quantity != 0:
+                        price_unit = round(amount_without_vat / quantity, 2)
+                    else:
+                        price_unit = round(amount_without_vat, 2)
+                    
+                    # Only add lines with meaningful descriptions
+                    if description and len(description) > 2:
+                        items.append({
+                            "description": description,
+                            "quantity": quantity,
+                            "price_unit": price_unit,
+                            "vat_rate": vat_rate,
+                        })
+                        _logger.info(f"Orange Parser: Added item '{description}' - Qty: {quantity}, Price: {price_unit}€, VAT: {vat_rate}%")
+                        
+                except (ValueError, ZeroDivisionError) as e:
+                    _logger.warning(f"Orange Parser: Could not parse line '{line}': {e}")
         
         _logger.info(f"Orange Parser: Total items extracted: {len(items)}")
         return items
@@ -2855,6 +2938,19 @@ class SupplierInvoiceProcessor(models.Model):
             
             self.message_post(body=_('Invoice %s created successfully.') % invoice.name)
             
+            # Create customer reinvoice for Orange invoices with matching customer
+            if self.reinvoice_partner_id and self.supplier_id and self.supplier_id.id == 1749:  # Orange Slovensko
+                try:
+                    reinvoice = self._create_orange_reinvoice(invoice)
+                    if reinvoice:
+                        self.reinvoice_id = reinvoice.id
+                        self.message_post(body=_('Refaktúra %s vytvorená pre zákazníka %s.') % (
+                            reinvoice.name, self.reinvoice_partner_id.name
+                        ))
+                except Exception as e:
+                    _logger.warning("Failed to create Orange reinvoice: %s", str(e))
+                    self.message_post(body=_('Chyba pri vytváraní refaktúry: %s') % str(e))
+            
             # Auto-upload to Paperless if enabled (hardcoded config)
             # Set PAPERLESS_AUTO_UPLOAD = True to enable automatic uploads
             PAPERLESS_AUTO_UPLOAD = True
@@ -2912,6 +3008,87 @@ class SupplierInvoiceProcessor(models.Model):
                 'default_invoice_id': self.invoice_id.id,
             }
         }
+
+    def _create_orange_reinvoice(self, supplier_invoice):
+        """Create a customer invoice (reinvoice) for Orange services
+        
+        Args:
+            supplier_invoice: The supplier invoice (account.move) that was just created
+            
+        Returns:
+            The created customer invoice (account.move) or False if failed
+        """
+        self.ensure_one()
+        
+        if not self.reinvoice_partner_id:
+            _logger.warning("No reinvoice partner found for Orange invoice")
+            return False
+        
+        if not self.invoice_number:
+            _logger.warning("No invoice number found for Orange reinvoice description")
+            return False
+        
+        # Prepare line description
+        reinvoice_description = f"Refakturujeme Vám služby Orange podľa priloženej faktúry číslo {self.invoice_number}"
+        
+        # Calculate total amount from supplier invoice lines (sum of line subtotals)
+        # We create a single line with the total amount
+        total_untaxed = sum(line.price_unit * line.quantity for line in self.line_ids)
+        
+        # Find the 23% sale tax
+        sale_tax = self.env['account.tax'].search([
+            ('type_tax_use', '=', 'sale'),
+            ('amount', '=', 23),
+            ('company_id', '=', self.company_id.id),
+        ], limit=1)
+        
+        # Find income account (602000 - Tržby zo služieb is typical for services)
+        # In Odoo 18, account.account uses company_ids (many2many) instead of company_id
+        income_account = self.env['account.account'].search([
+            ('code', '=', '602000'),
+        ], limit=1)
+        
+        if not income_account:
+            # Fallback to any income account
+            income_account = self.env['account.account'].search([
+                ('account_type', '=', 'income'),
+            ], limit=1)
+        
+        # Prepare customer invoice values
+        reinvoice_vals = {
+            'move_type': 'out_invoice',
+            'partner_id': self.reinvoice_partner_id.id,
+            'invoice_date': self.invoice_date or fields.Date.today(),
+            'invoice_date_due': self.invoice_due_date,
+            'ref': f"Orange refaktúra - {self.invoice_number}",
+            'company_id': self.company_id.id,
+            'currency_id': self.currency_id.id,
+            'invoice_line_ids': [(0, 0, {
+                'name': reinvoice_description,
+                'quantity': 1,
+                'price_unit': total_untaxed,
+                'tax_ids': [(6, 0, [sale_tax.id])] if sale_tax else [],
+                'account_id': income_account.id if income_account else False,
+            })],
+        }
+        
+        # Create the customer invoice
+        reinvoice = self.env['account.move'].create(reinvoice_vals)
+        
+        # Copy the original PDF as attachment to the reinvoice
+        if self.attachment_id:
+            self.env['ir.attachment'].create({
+                'name': f"Orange_faktura_{self.invoice_number}.pdf",
+                'type': 'binary',
+                'datas': self.attachment_id.datas,
+                'res_model': 'account.move',
+                'res_id': reinvoice.id,
+                'mimetype': 'application/pdf',
+            })
+        
+        _logger.info(f"Created Orange reinvoice {reinvoice.name} for customer {self.reinvoice_partner_id.name}")
+        
+        return reinvoice
 
     def action_upload_to_paperless(self):
         """Upload the PDF attachment to Paperless-ngx"""

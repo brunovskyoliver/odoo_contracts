@@ -50,6 +50,12 @@
                     />
                 </button>
             </xpath>
+            <xpath expr="//field[@name='vat']/.." position="after">
+                <div class="o_row">
+                    <label for="orange_variabilny_symbol" string="Orange VS"/>
+                    <field name="orange_variabilny_symbol" nolabel="1" placeholder="Variabilný symbol Orange"/>
+                </div>
+            </xpath>
         </field>
     </record>
     <record id="view_res_partner_filter" model="ir.ui.view">

@@ -10,6 +10,12 @@ class ResPartner(models.Model):
     _inherit = "res.partner"
 
     x_hours_warning_sent = fields.Boolean(string="Hours Warning Sent", default=False)
+    orange_variabilny_symbol = fields.Char(
+        string='Orange Variabilný Symbol',
+        help='Variabilný symbol z faktúry Orange, ktorý slúži na spárovanie a refakturáciu',
+        copy=False,
+        index=True,
+    )
 
     def write(self, vals):
         # Check if we're updating available hours

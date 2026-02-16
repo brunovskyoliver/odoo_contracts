@@ -67,6 +67,51 @@ class AccountMove(models.Model):
         store=True,
     )
 
+    def message_update(self, msg_dict, update_vals=None):
+        result = super().message_update(msg_dict, update_vals=update_vals)
+        for move in self:
+            move._create_helpdesk_ticket_from_customer_reply(msg_dict)
+        return result
+
+    def _create_helpdesk_ticket_from_customer_reply(self, msg_dict):
+        self.ensure_one()
+        if self.move_type not in ('out_invoice', 'out_refund'):
+            return
+        if self.state != 'posted':
+            return
+        if msg_dict.get('message_type') and msg_dict.get('message_type') != 'email':
+            return
+        if 'helpdesk.ticket' not in self.env or 'helpdesk.team' not in self.env:
+            return
+
+        author_id = msg_dict.get('author_id')
+        if not author_id or not self.partner_id:
+            return
+
+        author_partner = self.env['res.partner'].browse(author_id).exists()
+        if not author_partner:
+            return
+
+        invoice_partner = self.partner_id.commercial_partner_id
+        if author_partner.commercial_partner_id != invoice_partner:
+            return
+
+        team = self.env['helpdesk.team'].browse(1).exists()
+        if not team or team.name != 'Starostlivosť o zákazníka':
+            team = self.env['helpdesk.team'].search([
+                ('name', '=', 'Starostlivosť o zákazníka'),
+            ], limit=1)
+        if not team:
+            return
+
+        invoice_label = self.name or self.ref or str(self.id)
+        self.env['helpdesk.ticket'].sudo().create({
+            'name': _('Odpoved na fakturu %s') % invoice_label,
+            'partner_id': invoice_partner.id,
+            'team_id': team.id,
+            'description': msg_dict.get('body') or _('Zakaznik odpovedal na fakturu %s.') % invoice_label,
+        })
+
     @api.model
     def _get_default_invoice_date_due(self):
         return fields.Date.context_today(self) + timedelta(days=14)
