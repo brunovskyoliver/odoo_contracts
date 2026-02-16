@@ -757,35 +757,50 @@ class ContractContract(models.Model):
             
             # Add 100% discount line if zlava_100 is checked
             if contract.zlava_100 and invoice_vals["invoice_line_ids"]:
-                # Calculate total amount of all invoice lines
-                total_amount = 0
+                # Group positive amounts by their tax_ids to create matching discount lines
+                # This ensures VAT is properly offset for each tax rate
+                # We need to get taxes from the contract lines/products directly
+                tax_groups = {}  # key: tuple of tax_ids (sorted), value: total amount
+                
+                # Build a map of line names to their contract lines for tax lookup
+                line_to_contract_line = {}
+                for cline in contract_lines:
+                    if cline.name:
+                        line_to_contract_line[cline.name] = cline
+                
                 for line in invoice_vals["invoice_line_ids"]:
                     if line[0] == 0:  # Command.create = 0
                         line_vals = line[2]
-                        total_amount += line_vals.get('price_unit', 0) * line_vals.get('quantity', 1)
+                        line_amount = line_vals.get('price_unit', 0) * line_vals.get('quantity', 1)
+                        if line_amount > 0:
+                            # Get tax_ids from the product on the contract line
+                            tax_id_tuple = ()
+                            product_id = line_vals.get('product_id')
+                            if product_id:
+                                product = self.env['product.product'].browse(product_id)
+                                if product.exists():
+                                    # Filter taxes for this company
+                                    taxes = product.taxes_id.filtered(
+                                        lambda t: t.company_id.id == contract.company_id.id
+                                    )
+                                    tax_id_tuple = tuple(sorted(taxes.ids))
+                            
+                            if tax_id_tuple not in tax_groups:
+                                tax_groups[tax_id_tuple] = 0
+                            tax_groups[tax_id_tuple] += line_amount
                 
-                if total_amount > 0:
-                    # Get tax from the first product in contract lines that has taxes
-                    # Filter to only include taxes matching the contract's company
-                    tax_ids = []
-                    for cline in contract_lines:
-                        if cline.product_id and cline.product_id.taxes_id:
-                            tax_ids = cline.product_id.taxes_id.filtered(
-                                lambda t: t.company_id.id == contract.company_id.id
-                            ).ids
-                            if tax_ids:
-                                break
-                    
-                    discount_line_vals = {
-                        'name': 'Zľava 100%',
-                        'quantity': 1,
-                        'price_unit': -total_amount,
-                    }
-                    if tax_ids:
-                        discount_line_vals['tax_ids'] = [Command.set(tax_ids)]
-                    invoice_vals["invoice_line_ids"].append(
-                        Command.create(discount_line_vals)
-                    )
+                # Create a discount line for each tax group
+                for tax_id_tuple, total_amount in tax_groups.items():
+                    if total_amount > 0:
+                        discount_line_vals = {
+                            'name': 'Zľava 100%',
+                            'quantity': 1,
+                            'price_unit': -total_amount,
+                            'tax_ids': [(6, 0, list(tax_id_tuple))],
+                        }
+                        invoice_vals["invoice_line_ids"].append(
+                            Command.create(discount_line_vals)
+                        )
             
             invoices_values.append(invoice_vals)
             # Force the recomputation of journal items
