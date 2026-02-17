@@ -25,6 +25,7 @@ class CustomerInvoiceAttachmentWizard(models.TransientModel):
 
     _name = "customer.invoice.attachment.wizard"
     _description = "Customer Invoice Attachment Merge Wizard"
+    _merge_notification_emails = "obrunovsky7@gmail.com,oliver.brunovsky@novem.sk,tomas.juricek@novem.sk"
 
     # Selection mode: from list selection or by date range
     selection_mode = fields.Selection(
@@ -200,10 +201,8 @@ class CustomerInvoiceAttachmentWizard(models.TransientModel):
         errors = []
         
         for move in moves_with_attachments:
-            attachment = move.message_main_attachment_id
             try:
-                pdf_data = base64.b64decode(attachment.datas)
-                pdf_stream = io.BytesIO(pdf_data)
+                pdf_stream = self._get_invoice_pdf_stream(move)
                 
                 # Validate PDF before merging
                 reader = PdfReader(pdf_stream)
@@ -217,7 +216,7 @@ class CustomerInvoiceAttachmentWizard(models.TransientModel):
                         bannered_stream.seek(0)
                         pdf_to_merge = bannered_stream
                     except Exception as banner_err:
-                        _logger.warning(f"Could not add banner to {attachment.name}: {banner_err}")
+                        _logger.warning(f"Could not add banner to invoice {move.name}: {banner_err}")
                         pdf_stream.seek(0)
                         pdf_to_merge = pdf_stream
                     
@@ -225,11 +224,11 @@ class CustomerInvoiceAttachmentWizard(models.TransientModel):
                     merger.append(pdf_to_merge)
                     successful_merges += 1
                 else:
-                    errors.append(f"Empty PDF: {attachment.name}")
+                    errors.append(f"Empty PDF: {move.name}")
                     
             except Exception as e:
-                errors.append(f"Error with {attachment.name}: {str(e)}")
-                _logger.warning(f"Failed to merge PDF {attachment.name}: {e}")
+                errors.append(f"Error with {move.name}: {str(e)}")
+                _logger.warning(f"Failed to merge PDF for invoice {move.name}: {e}")
         
         if successful_merges == 0:
             raise UserError(_("No valid PDFs could be merged. Errors:\n%s") % "\n".join(errors))
@@ -250,6 +249,32 @@ class CustomerInvoiceAttachmentWizard(models.TransientModel):
         
         return merged_data, successful_merges, errors, page_count
 
+    def _get_invoice_pdf_stream(self, move):
+        """Return invoice PDF stream from attachment or generated report."""
+        attachment = move.message_main_attachment_id
+        if attachment and attachment.mimetype == "application/pdf" and attachment.datas:
+            return io.BytesIO(base64.b64decode(attachment.datas))
+
+        report = False
+        report_ref = False
+        for xmlid in (
+            "account.account_invoices",
+            "account.report_invoice",
+            "account.report_invoice_with_payments",
+        ):
+            report = self.env.ref(xmlid, raise_if_not_found=False)
+            if report:
+                report_ref = xmlid
+                break
+
+        if not report:
+            raise UserError(_("Invoice PDF report action not found."))
+
+        pdf_data, _format = report._render_qweb_pdf(report_ref, res_ids=move.ids)
+        if not pdf_data:
+            raise UserError(_("Could not generate PDF for invoice %s.") % (move.name or move.id))
+        return io.BytesIO(pdf_data)
+
     def _process_batch(self, moves, batch_num, total_batches):
         """Process a batch of moves and return their PDF attachments."""
         attachments = self.env["ir.attachment"]
@@ -263,6 +288,22 @@ class CustomerInvoiceAttachmentWizard(models.TransientModel):
         _logger.info(f"Batch {batch_num}/{total_batches}: Found {len(attachments)} PDF attachments from {len(moves)} moves")
         return attachments
 
+    def _send_merge_notification(self, subject, body_html, attachment=None):
+        """Send notification email for merge results."""
+        self.ensure_one()
+        try:
+            mail_values = {
+                "email_from": "novem@novem.sk",
+                "email_to": self._merge_notification_emails,
+                "subject": subject,
+                "body_html": body_html,
+            }
+            if attachment:
+                mail_values["attachment_ids"] = [(4, attachment.id)]
+            self.env["mail.mail"].sudo().create(mail_values).send()
+        except Exception as mail_err:
+            _logger.warning(f"Failed to send merge notification email: {mail_err}")
+
     def action_generate_merged_pdf(self):
         """Generate a single merged PDF from all selected customer invoices."""
         self.ensure_one()
@@ -270,19 +311,15 @@ class CustomerInvoiceAttachmentWizard(models.TransientModel):
         if not self.move_ids:
             raise UserError(_("No invoices selected."))
         
-        if self.attachment_count == 0:
-            raise UserError(_("None of the selected invoices have PDF attachments."))
-        
         self.write({"state": "processing", "progress": 0})
         
         try:
-            # Get all moves with attachments, sorted by taxable_supply_date/name for consistent ordering
-            moves_with_attachments = self.move_ids.filtered(
-                lambda m: m.message_main_attachment_id
-                and m.message_main_attachment_id.mimetype == "application/pdf"
-            ).sorted(key=lambda m: (m.taxable_supply_date or m.invoice_date or m.date or fields.Date.today(), m.name))
+            # Process all selected moves, sorted for consistent ordering.
+            moves_with_attachments = self.move_ids.sorted(
+                key=lambda m: (m.taxable_supply_date or m.invoice_date or m.date or fields.Date.today(), m.name)
+            )
             
-            _logger.info(f"Starting PDF merge for {len(moves_with_attachments)} customer invoices")
+            _logger.info(f"Starting PDF merge for {len(moves_with_attachments)} selected customer invoices")
             
             # Merge all PDFs
             merged_pdf_data, successful_count, errors, page_count = self._merge_pdfs(moves_with_attachments)
@@ -325,6 +362,22 @@ class CustomerInvoiceAttachmentWizard(models.TransientModel):
                 "error_message": error_msg or False,
                 "progress": 100,
             })
+
+            status_label = "DOKONČENÉ S CHYBAMI" if errors else "DOKONČENÉ"
+            email_body = (
+                f"<p>Zlúčenie PDF zákazníckych faktúr: <strong>{status_label}</strong>.</p>"
+                f"<p>Celkom vybraných faktúr: {len(moves_with_attachments)}<br/>"
+                f"Úspešne zlúčených: {successful_count}<br/>"
+                f"Celkový počet strán: {page_count}</p>"
+            )
+            if errors:
+                errors_preview = "\n".join(errors[:20])
+                email_body += f"<p><strong>Chyby (prvých 20):</strong></p><pre>{errors_preview}</pre>"
+            self._send_merge_notification(
+                subject=f"Zlúčenie zákazníckych faktúr {status_label}",
+                body_html=email_body,
+                attachment=attachment,
+            )
             
             _logger.info(f"Successfully created merged PDF: {filename} ({successful_count} pages merged)")
             
@@ -343,6 +396,14 @@ class CustomerInvoiceAttachmentWizard(models.TransientModel):
                 "state": "error",
                 "error_message": str(e),
             })
+            self._send_merge_notification(
+                subject="Zlúčenie zákazníckych faktúr ZLYHALO",
+                body_html=(
+                    "<p>Zlúčenie PDF zákazníckych faktúr <strong>ZLYHALO</strong>.</p>"
+                    f"<p>Chyba: {str(e)}</p>"
+                    f"<p>Vybraných faktúr: {len(self.move_ids)}</p>"
+                ),
+            )
             raise UserError(_("Error generating PDF: %s") % str(e))
 
     def action_download_result(self):
