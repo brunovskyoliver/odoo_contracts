@@ -2,12 +2,74 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from ast import literal_eval
+from email.utils import parseaddr
 
-from odoo import fields, models, api
+from odoo import fields, models, api, _
 
 
 class ResPartner(models.Model):
     _inherit = "res.partner"
+
+    def message_update(self, msg_dict, update_vals=None):
+        result = super().message_update(msg_dict, update_vals=update_vals)
+        for partner in self:
+            partner._create_helpdesk_ticket_from_partner_email(msg_dict)
+        return result
+
+    @api.model
+    def message_new(self, msg_dict, custom_values=None):
+        partner = super().message_new(msg_dict, custom_values=custom_values)
+        partner._create_helpdesk_ticket_from_partner_email(msg_dict)
+        return partner
+
+    def _create_helpdesk_ticket_from_partner_email(self, msg_dict):
+        self.ensure_one()
+        if msg_dict.get("message_type") and msg_dict.get("message_type") != "email":
+            return
+        if "helpdesk.ticket" not in self.env or "helpdesk.team" not in self.env:
+            return
+
+        author_partner = False
+        author_id = msg_dict.get("author_id")
+        if author_id:
+            author_partner = self.env["res.partner"].browse(author_id).exists()
+
+        if not author_partner:
+            email_from = msg_dict.get("from") or msg_dict.get("email_from")
+            parsed_email = parseaddr(email_from or "")[1]
+            if parsed_email:
+                author_partner = self.env["res.partner"].search([
+                    ("email", "=", parsed_email),
+                ], limit=1)
+
+        if not author_partner:
+            return
+        if author_partner.user_ids:
+            return
+
+        email_from_raw = (msg_dict.get("from") or "").lower()
+        if "mailer-daemon" in email_from_raw or "postmaster" in email_from_raw:
+            return
+
+        team = self.env["helpdesk.team"].browse(1).exists()
+        if not team or team.name != "Starostlivosť o zákazníka":
+            team = self.env["helpdesk.team"].search([
+                ("name", "=", "Starostlivosť o zákazníka"),
+            ], limit=1)
+        if not team:
+            return
+
+        customer = author_partner.commercial_partner_id or self.commercial_partner_id
+        if not customer:
+            return
+
+        subject = msg_dict.get("subject") or _("Správa od zákazníka")
+        self.env["helpdesk.ticket"].sudo().create({
+            "name": _("Email od zákazníka: %s") % subject,
+            "partner_id": customer.id,
+            "team_id": team.id,
+            "description": msg_dict.get("body") or _("Prijatá správa od zákazníka."),
+        })
 
     x_hours_warning_sent = fields.Boolean(string="Hours Warning Sent", default=False)
     orange_variabilny_symbol = fields.Char(

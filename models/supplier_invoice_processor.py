@@ -2763,12 +2763,15 @@ class SupplierInvoiceProcessor(models.Model):
                     quantity = float(match.group(2).replace(',', '.'))
                     price_unit = float(match.group(3).replace(',', '.'))
                     # Total is match.group(4) - could be used for validation if needed
+
+                    line_vat_rate = vat_rate
+                    line_vat_rate = 23
                     
                     items.append({
                         "description": description,
                         "quantity": quantity,
                         "price_unit": price_unit,
-                        "vat_rate": vat_rate,
+                        "vat_rate": line_vat_rate,
                     })
                 except ValueError:
                     pass
