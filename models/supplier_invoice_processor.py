@@ -3088,6 +3088,7 @@ class SupplierInvoiceProcessor(models.Model):
                 'res_id': reinvoice.id,
                 'mimetype': 'application/pdf',
             })
+        reinvoice.action_post()
         
         _logger.info(f"Created Orange reinvoice {reinvoice.name} for customer {self.reinvoice_partner_id.name}")
         
