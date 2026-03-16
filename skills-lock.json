@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "skills": {
+    "odoo-18": {
+      "source": "unclecatvn/agent-skills",
+      "sourceType": "github",
+      "computedHash": "021e52957f01d8bdf827a9a72d08281b62c51c17fd2b3ce4c5109801e7b02cd0"
+    },
+    "odoo-development": {
+      "source": "mindrally/skills",
+      "sourceType": "github",
+      "computedHash": "614ede59903cdd3e438ab902e8761353a420f99e3065fc590915f8bd58a18e0f"
+    }
+  }
+}
