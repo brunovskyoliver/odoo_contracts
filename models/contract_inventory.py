@@ -390,6 +390,9 @@ class ContractInventoryLine(models.Model):
     @api.constrains('quantity', 'product_id')
     def _check_quantity(self):
         for line in self:
+            if self.env.context.get('no_stock_movement'):
+                continue
+
             # Skip validation for products with "Servisné práce" in name
             if 'Servisné práce' in line.product_id.name:
                 continue
@@ -399,4 +402,4 @@ class ContractInventoryLine(models.Model):
                 raise ValidationError(_(
                     "Nie je možné priradiť väčšie množstvo, než je dostupné na sklade. "
                     "Produkt %s má k dispozícii iba %s jednotiek."
-                ) % (line.product_id.name, line.product_id.qty_available))
+                ) % (line.product_id.name, available_qty))

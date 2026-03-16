@@ -12,6 +12,18 @@ class ProjectTask(models.Model):
 
     was_done = fields.Boolean(string='Was Done', default=False)
 
+    def _get_inventory_sale_lines(self):
+        self.ensure_one()
+        sale_order = self.sudo().sale_order_id
+        if not sale_order:
+            return self.env['sale.order.line']
+
+        sale_line = self.sudo().sale_line_id
+        if sale_line and sale_line.order_id == sale_order:
+            return sale_line
+
+        return sale_order.order_line
+
     def _return_materials_to_warehouse(self, record):
         """Handle returning materials from contract inventory to warehouse."""
         if not record.was_done or not record.sudo().sale_order_id:
@@ -55,7 +67,7 @@ class ProjectTask(models.Model):
 
             has_moves = False
             
-            for line in record.sudo().sale_order_id.order_line:
+            for line in record._get_inventory_sale_lines():
                 if not line.product_id or line.product_uom_qty <= 0:
                     continue
 
@@ -123,6 +135,7 @@ class ProjectTask(models.Model):
         return super(ProjectTask, self).unlink()
 
     def write(self, vals):
+        previous_was_done = {task.id: task.was_done for task in self}
         result = super(ProjectTask, self).write(vals)
         
         # Check if stage changed to 'done'
@@ -131,10 +144,13 @@ class ProjectTask(models.Model):
             for task in self:
                 stage = task.stage_id
                 _logger.info('Task %s - Current stage name: %s', task.id, stage.name)
-                if stage.name.lower() == 'done':
+                is_done_stage = bool(stage and (stage.fold or (stage.name and stage.name.lower() == 'done')))
+                if is_done_stage and not previous_was_done.get(task.id):
                     _logger.info('Task %s marked as done, updating contract inventory', task.id)
                     task._update_contract_inventory()
                     task.was_done = True
+                elif is_done_stage:
+                    _logger.info('Task %s already processed as done, skipping duplicate inventory update', task.id)
                 else:
                     _logger.info('Task %s - Stage is not "done" (%s), skipping inventory update', 
                                task.id, stage.name)
@@ -190,12 +206,13 @@ class ProjectTask(models.Model):
                         self.id, sale_order.id, sale_order.state)
             return
 
-        _logger.info('Task %s - Processing sale order: %s with %s lines',
-                    self.id, sale_order.id, len(sale_order.order_line))
+        inventory_sale_lines = self._get_inventory_sale_lines()
+        _logger.info('Task %s - Processing sale order: %s with %s relevant lines',
+                    self.id, sale_order.id, len(inventory_sale_lines))
 
         InventoryLine = self.env['contract.inventory.line'].sudo().with_context(no_stock_movement=True)
 
-        for line in sale_order.order_line:
+        for line in inventory_sale_lines:
             _logger.info('Task %s - Processing order line: %s, Product: %s, Quantity: %s',
                         self.id, line.id,
                         line.product_id.id if line.product_id else 'No product',
@@ -210,16 +227,23 @@ class ProjectTask(models.Model):
             ], limit=1)
 
             try:
-                # Check available quantity in warehouse
-                available_qty = line.product_id.with_context(warehouse=self.env['stock.warehouse'].sudo().search([], limit=1).id).qty_available
-                if available_qty < line.product_uom_qty:
+                # Check available quantity in warehouse stock location
+                available_qty = line.product_id.with_context(
+                    location=self.env.ref('stock.stock_location_stock').id
+                ).qty_available
+
+                existing_qty = inventory_line.quantity if inventory_line else 0.0
+                requested_qty = line.product_uom_qty
+                new_qty = existing_qty + requested_qty
+
+                if requested_qty > available_qty:
                     raise UserError(_(
                         'Nie je možné priradiť väčšie množstvo, než je dostupné na sklade. '
-                        'Produkt %s má k dispozícii iba %s jednotiek, požadované: %s.'
-                    ) % (line.product_id.name, available_qty, line.product_uom_qty))
+                        'Produkt %s má k dispozícii iba %s jednotiek. '
+                        'Aktuálne pridelené: %s, požadované navýšenie: %s.'
+                    ) % (line.product_id.name, available_qty, existing_qty, requested_qty))
 
                 if inventory_line:
-                    new_qty = inventory_line.quantity + line.product_uom_qty
                     _logger.info(
                         'Task %s - Updating inventory line %s. Old qty: %s, +%s => %s (Available in warehouse: %s)',
                         self.id, inventory_line.id, inventory_line.quantity,
