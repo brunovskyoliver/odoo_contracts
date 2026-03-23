@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="project_project_form_inherit_contract_customer_hours" model="ir.ui.view">
+        <field name="name">project.project.form.inherit.contract.customer.hours</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="industry_fsm.project_view_form_inherit"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='group_field_service']/div" position="inside">
+                <setting class="col-lg-12" id="contract_project_customer_partner" help="Set the customer for this Field Service project." invisible="not is_fsm">
+                    <field name="partner_id" widget="res_partner_many2one"/>
+                </setting>
+                <setting class="col-lg-12" id="contract_daily_fsm_customer_report" help="Control how customer hours are shown in daily Field Service reports." invisible="not is_fsm">
+                    <field name="exclude_from_customer_hours"/>
+                    <div class="mt-3 d-flex flex-wrap" invisible="exclude_from_customer_hours">
+                        <label for="customer_hours_multiplier" class="fw-bold" string="Hours Multiplier"/>
+                        <field name="customer_hours_multiplier" class="oe_inline ps-2"/>
+                    </div>
+                </setting>
+            </xpath>
+        </field>
+    </record>
+</odoo>

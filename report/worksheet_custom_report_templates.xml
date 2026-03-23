@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+        <template id="worksheet_custom_page_inherit_contract" inherit_id="industry_fsm.worksheet_custom_page">
+            <xpath expr="//div[@name='worksheet_task_timesheet']/t[@t-if='doc.allow_timesheets and doc.timesheet_ids']" position="attributes">
+                <attribute name="t-if">doc.allow_timesheets and timesheet_lines_map.get(doc.id)</attribute>
+            </xpath>
+            <xpath expr="//div[@name='worksheet_task_timesheet']//tbody[@class='sale_tbody']/t[@t-foreach='doc.timesheet_ids']" position="attributes">
+                <attribute name="t-foreach">timesheet_lines_map.get(doc.id, doc.timesheet_ids)</attribute>
+            </xpath>
+            <xpath expr="//div[@name='worksheet_task_timesheet']//tbody[@class='sale_tbody']//td[@class='text-end']/span[@t-if='is_uom_day']" position="replace">
+                <span t-if="is_uom_day" t-out="line._convert_hours_to_days(multiplied_timesheet_hours.get(line.id, line.unit_amount))" t-options='{"widget": "timesheet_uom"}'>5 dní</span>
+            </xpath>
+            <xpath expr="//div[@name='worksheet_task_timesheet']//tbody[@class='sale_tbody']//td[@class='text-end']/span[@t-else='']" position="replace">
+                <span t-else="" t-out="multiplied_timesheet_hours.get(line.id, line.unit_amount)" t-options="{'widget': 'float_time'}">10:00</span>
+            </xpath>
+            <xpath expr="//div[@name='worksheet_task_timesheet']//tr[@class='o_total']/td/span[@t-if='is_uom_day']" position="replace">
+                <span t-if="is_uom_day" t-out="line._convert_hours_to_days(multiplied_total_hours.get(doc.id, doc.effective_hours))">10 dní</span>
+            </xpath>
+            <xpath expr="//div[@name='worksheet_task_timesheet']//tr[@class='o_total']/td/span[@t-else='']" position="replace">
+                <span t-else="" t-out="multiplied_total_hours.get(doc.id, doc.effective_hours)" t-options='{"widget": "float_time"}'>10:00</span>
+            </xpath>
+        </template>
+    </data>
+</odoo>

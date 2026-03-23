@@ -20,6 +20,7 @@ from . import contract_terminate_reason
 from . import contract_inventory
 from . import contract_mobile_service
 from . import project_task
+from . import project_project
 from . import nameday
 from . import sale_order
 from . import contract_mobile_invoice

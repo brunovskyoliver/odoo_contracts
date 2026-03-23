@@ -10,7 +10,63 @@ _logger = logging.getLogger(__name__)
 class ProjectTask(models.Model):
     _inherit = 'project.task'
 
+    _DEFAULT_TASK_PROJECT_ID = 3
+
     was_done = fields.Boolean(string='Was Done', default=False)
+    exclude_from_customer_hours = fields.Boolean(
+        related='project_id.exclude_from_customer_hours',
+        string='Exclude From Customer Hours',
+        readonly=True,
+        store=True,
+    )
+    customer_hours_multiplier = fields.Float(
+        related='project_id.customer_hours_multiplier',
+        string='Customer Hours Multiplier',
+        readonly=True,
+        store=True,
+    )
+
+    def _should_exclude_customer_hours(self):
+        self.ensure_one()
+        return bool(self.exclude_from_customer_hours)
+
+    def _get_customer_hours_multiplier(self):
+        self.ensure_one()
+        return self.customer_hours_multiplier or 1.0
+
+    @api.model
+    def default_get(self, default_fields):
+        vals = super(ProjectTask, self).default_get(default_fields)
+
+        if 'project_id' not in default_fields:
+            return vals
+
+        context = self.env.context
+        active_model = context.get('active_model')
+        active_id = context.get('active_id')
+
+        # If the task is created from a specific project context, keep that project.
+        if active_model == 'project.project' and active_id:
+            vals['project_id'] = active_id
+            return vals
+
+        # Tasks created from the Field Service app should always default to fallback project.
+        if context.get('fsm_mode'):
+            fallback_project = self.env['project.project'].browse(self._DEFAULT_TASK_PROJECT_ID)
+            if fallback_project.exists():
+                vals['project_id'] = fallback_project.id
+            return vals
+
+        if vals.get('project_id'):
+            return vals
+
+        if context.get('default_project_id'):
+            return vals
+
+        fallback_project = self.env['project.project'].browse(self._DEFAULT_TASK_PROJECT_ID)
+        if fallback_project.exists():
+            vals['project_id'] = fallback_project.id
+        return vals
 
     def _get_inventory_sale_lines(self):
         self.ensure_one()

@@ -11,17 +11,18 @@
 
 {
     "name": "Recurring - Contracts Management",
-    "version": "18.0.1.4.5",
+    "version": "18.0.1.4.6",
     "category": "Contract Management",
     "license": "AGPL-3",
     "author": "Tecnativa, ACSONE SA/NV, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/contract",
-    "depends": ["base", "account", "product", "portal", "stock", "account_followup", "mail"],
+    "depends": ["base", "account", "product", "portal", "stock", "account_followup", "mail", "project", "industry_fsm"],
     "development_status": "Production/Stable",
     "data": [
         "security/groups.xml",
         "security/contract_inventory_rules.xml",
         "data/nameday_cron.xml",
+        "data/project_daily_customer_report_cron.xml",
         "data/mail_template_nameday.xml",
         "security/account_followup_security.xml",
         "data/account_followup_actions.xml",
@@ -46,6 +47,7 @@
         "report/contract_views.xml",
         "report/contract_inventory_line_report.xml",
         "report/contract_inventory_line_report_action.xml",
+        "report/worksheet_custom_report_templates.xml",
         "views/contract_inventory_line_views.xml",
         "data/contract_cron.xml",
         "data/contract_renew_cron.xml",
@@ -96,6 +98,7 @@
         'security/stock_rules.xml',
         'views/account_move_stock_view.xml',
         'views/account_report_inherit.xml',
+        'views/project_project_views.xml',
     ],
     "demo": [
         "data/contract_inventory_demo.xml",
