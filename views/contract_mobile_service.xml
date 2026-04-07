@@ -11,6 +11,7 @@
                 <field name="operator"/>
                 <field name="is_active"/>
                 <field name="partner_id"/>
+                <field name="notes"/>
                 <field name="inventory_id"/>
                 <field name="contract_id"/>
             </list>

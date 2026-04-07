@@ -593,8 +593,8 @@ class SupplierInvoiceProcessor(models.Model):
             if match:
                 data['invoice_number'] = match.group(1)
         elif data.get('is_enet'):
-            # e-Net format: "FAKTÚRA číslo : 26200739"
-            enet_pattern = r'FAKTÚRA\s+číslo\s*:\s*(\d+)'
+            # e-Net format: "FAKTÚRA číslo : 26200739" or "FAKTÚRA číslo : RP1260394"
+            enet_pattern = r'FAKTÚRA\s+číslo\s*:\s*([A-Z]{0,4}\d+[A-Z0-9/-]*)'
             match = re.search(enet_pattern, text, re.IGNORECASE)
             if match:
                 data['invoice_number'] = match.group(1)
@@ -609,14 +609,15 @@ class SupplierInvoiceProcessor(models.Model):
             # Fallback to generic patterns
             invoice_patterns = [
                 r'Invoice\s*No\.\s*:\s*(\S+)',  # Gamers Outlet format: "Invoice No.: INV-2022-003681996"
-                r'FAKTÚRA\s*ČÍSLO\s*:\s*(\d+)',  # Let's Consult format: "FAKTÚRA ČÍSLO : 5025131"
-                r'FAKTÚRA\s*č\.\s*(\d+)',  # ACS format: "FAKTÚRA č. 2613011"
+                r'FAKTÚRA\s*ČÍSLO\s*:\s*([A-Z0-9][A-Z0-9/-]*)',  # Let's Consult / generic "FAKTÚRA ČÍSLO : 5025131"
+                r'FAKTÚRA\s*č\.\s*([A-Z0-9][A-Z0-9/-]*)',  # ACS format: "FAKTÚRA č. 2613011"
                 r'Faktúra\s*-\s*daňový\s*doklad\s*-\s*(\d+)',  # Alza invoice format
                 r'Faktúra\s*-\s*daňový\s*doklad\s*č\.\s*:\s*(?:.*?)([A-Z]{2}-\d+/\d+)',  # TSS format: "Faktúra - daňový doklad č.: ... FV-3336/2025"
                 r'Opravný\s+daňový\s+doklad\s*-\s*(\d+)',  # Alza credit note / corrective invoice number
-                r'FAKTÚRA\s+číslo\s+(\d+)',  # TES format: "FAKTÚRA číslo 2512298"
+                r'FAKTÚRA\s+číslo\s+([A-Z0-9][A-Z0-9/-]*)',  # TES format: "FAKTÚRA číslo 2512298"
                 r'FAKTÚRA\s+(\d+)',  # WESTech format: "FAKTÚRA 1102526327"
-                r'Faktúra\s+(\S+)',  # SETEM format: "Faktúra FAK/2026/001" or Va-Mont format: "Faktúra 12500024"
+                # Avoid false positive capture of "Faktúra číslo" -> "číslo"
+                r'Faktúra\s+(?!č(?:\.|íslo)\b)([A-Z0-9][A-Z0-9/-]*)',  # SETEM / Va-Mont formats
                 r'Invoice\s*#?\s*:?:?\s*(\S+)',
                 r'Faktura\s*č\.\s*:?:?\s*(\S+)',
                 r'Invoice\s*Number\s*:?:?\s*(\S+)',
@@ -627,6 +628,15 @@ class SupplierInvoiceProcessor(models.Model):
                 if match:
                     data['invoice_number'] = match.group(1)
                     break
+        
+        if data.get('invoice_number'):
+            invoice_number = data['invoice_number'].strip()
+            invoice_number = re.sub(r'^[\s:.,;-]+|[\s:.,;-]+$', '', invoice_number)
+            # Guard against accidental token extraction from labels
+            if invoice_number.lower() in {'číslo', 'cislo', 'č.', 'č'}:
+                data['invoice_number'] = False
+            else:
+                data['invoice_number'] = invoice_number
         
         # Extract dates
         if data.get('is_gamers_outlet'):

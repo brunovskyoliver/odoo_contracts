@@ -1,5 +1,6 @@
-from odoo import api, fields, models
+from odoo import Command, api, fields, models, _
 from dateutil.relativedelta import relativedelta
+from odoo.exceptions import UserError
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -132,3 +133,75 @@ class MobileInvoiceSettings(models.TransientModel):
         except Exception as e:
             _logger.error(f"Error removing excess usage contract lines: {str(e)}")
             raise
+
+    def _get_hlas_invoice_products(self):
+        product_23 = self.env['product.product'].search([
+            ('display_name', '=', 'Vyúčtovanie paušálnych služieb a spotreby HLAS 23%')
+        ], limit=1)
+        product_0 = self.env['product.product'].search([
+            ('display_name', '=', 'Vyúčtovanie paušálnych služieb a spotreby HLAS 0%')
+        ], limit=1)
+        return product_23, product_0
+
+    def action_create_hlas_only_invoices(self):
+        self.ensure_one()
+        if not self.invoice_date:
+            raise UserError(_('Prosim nastavte datum fakturacie.'))
+
+        product_23, product_0 = self._get_hlas_invoice_products()
+        if not product_23 and not product_0:
+            raise UserError(_(
+                'Produkty "Vyúčtovanie paušálnych služieb a spotreby HLAS 23%%" '
+                'a "Vyúčtovanie paušálnych služieb a spotreby HLAS 0%%" neboli najdene.'
+            ))
+
+        allowed_product_ids = (product_23 | product_0).ids
+        date_ref = self.invoice_date
+
+        contracts = self.env['contract.contract'].search([
+            ('x_contract_type', '=', 'Mobilky'),
+            ('recurring_next_date', '<=', date_ref),
+        ])
+
+        created_moves = self.env['account.move']
+        invoiced_lines = self.env['contract.line']
+
+        for contract in contracts:
+            lines_to_invoice = contract._get_lines_to_invoice(date_ref).filtered(
+                lambda l: not l.display_type and l.product_id.id in allowed_product_ids
+            )
+            if not lines_to_invoice:
+                continue
+
+            invoice_vals = contract._prepare_invoice(date_ref)
+            invoice_vals['invoice_line_ids'] = []
+
+            for line in lines_to_invoice:
+                invoice_line_vals = line._prepare_invoice_line()
+                if not invoice_line_vals:
+                    continue
+                invoice_line_vals.pop('company_id', None)
+                invoice_line_vals.pop('company_currency_id', None)
+                invoice_vals['invoice_line_ids'].append(Command.create(invoice_line_vals))
+
+            if not invoice_vals['invoice_line_ids']:
+                continue
+
+            move = self.env['account.move'].create(invoice_vals)
+            contract._copy_mobile_usage_reports_to_invoice(move)
+            created_moves |= move
+            invoiced_lines |= lines_to_invoice
+
+        if not created_moves:
+            raise UserError(_('Nenasli sa ziadne mobilne polozky na fakturaciu pre zvoleny datum.'))
+
+        invoiced_lines._update_recurring_next_date()
+        created_moves.action_post()
+        contracts._compute_recurring_next_date()
+
+        action = self.env['ir.actions.act_window']._for_xml_id('account.action_move_out_invoice_type')
+        action['domain'] = [('id', 'in', created_moves.ids)]
+        if len(created_moves) == 1:
+            action['views'] = [(False, 'form')]
+            action['res_id'] = created_moves.id
+        return action

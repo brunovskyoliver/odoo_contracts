@@ -865,7 +865,6 @@ class ContractMobileInvoice(models.Model):
                     existing_line_23.with_context(skip_date_check=True).write({
                         'price_unit': new_total,  # Adjust for 23% VAT
                         'x_zlavnena_cena': new_total,  # Adjust for 23% VAT
-                        'date_start': contract.recurring_next_date,
                         'recurring_next_date': contract.recurring_next_date
                     })
                 else:
@@ -898,7 +897,6 @@ class ContractMobileInvoice(models.Model):
                     existing_line_0.with_context(skip_date_check=True).write({
                         'price_unit': new_total,
                         'x_zlavnena_cena': new_total,
-                        'date_start': contract.recurring_next_date,
                         'recurring_next_date': contract.recurring_next_date
                     })
                 else:

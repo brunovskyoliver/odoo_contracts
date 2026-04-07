@@ -21,6 +21,11 @@
                             type="object" 
                             class="btn-primary"
                             context="{'context_action': 'update_dates'}"/>
+                    <button name="action_create_hlas_only_invoices"
+                        string="Vytvorit faktury Mobilky (len HLAS 23%/0%)"
+                        type="object"
+                        class="btn-primary"
+                        context="{'context_action': 'invoice_hlas_only'}"/>
                     <button name="action_reset_excess_usage_lines" 
                             string="Premazat nadspotreby v zmluvach" 
                             type="object" 
