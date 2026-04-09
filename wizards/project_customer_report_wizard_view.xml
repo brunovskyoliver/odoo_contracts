@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_project_customer_report_wizard_form" model="ir.ui.view">
+        <field name="name">project.customer.report.wizard.form</field>
+        <field name="model">project.customer.report.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Generovať report pre zákazníka">
+                <group>
+                    <field name="task_id" invisible="not task_id"/>
+                    <field name="project_id"/>
+                    <field name="date_from"/>
+                    <field name="date_to"/>
+                </group>
+                <footer>
+                    <button name="action_generate_report" string="Generovať report" type="object" class="btn-primary"/>
+                    <button string="Zrušiť" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

@@ -72,5 +72,7 @@
 "access_vendor_bill_merged_pdf_user","Vendor Bill Merged PDF User","model_vendor_bill_merged_pdf","account.group_account_invoice",1,1,0,0
 "access_customer_invoice_attachment_wizard_manager","Customer Invoice Attachment Wizard Manager","model_customer_invoice_attachment_wizard","account.group_account_manager",1,1,1,1
 "access_customer_invoice_attachment_wizard_user","Customer Invoice Attachment Wizard User","model_customer_invoice_attachment_wizard","account.group_account_invoice",1,1,1,1
+"access_project_customer_report_wizard_manager","Project Customer Report Wizard Manager","model_project_customer_report_wizard","account.group_account_manager",1,1,1,1
+"access_project_customer_report_wizard_user","Project Customer Report Wizard User","model_project_customer_report_wizard","account.group_account_invoice",1,1,1,1
 "access_customer_invoice_merged_pdf_manager","Customer Invoice Merged PDF Manager","model_customer_invoice_merged_pdf","account.group_account_manager",1,1,1,1
 "access_customer_invoice_merged_pdf_user","Customer Invoice Merged PDF User","model_customer_invoice_merged_pdf","account.group_account_invoice",1,1,0,0

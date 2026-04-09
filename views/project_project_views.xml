@@ -15,6 +15,14 @@
                         <label for="customer_hours_multiplier" class="fw-bold" string="Hours Multiplier"/>
                         <field name="customer_hours_multiplier" class="oe_inline ps-2"/>
                     </div>
+                    <div class="mt-3">
+                        <button
+                            name="action_open_customer_report_wizard"
+                            string="Vygenerovať report pre zákazníka"
+                            type="object"
+                            class="btn-primary"
+                        />
+                    </div>
                 </setting>
             </xpath>
         </field>

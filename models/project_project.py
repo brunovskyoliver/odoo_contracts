@@ -31,11 +31,28 @@ class ProjectProject(models.Model):
             if project.customer_hours_multiplier < 0:
                 raise ValidationError(_("Customer Hours Multiplier must be greater than or equal to 0."))
 
+    def action_open_customer_report_wizard(self):
+        self.ensure_one()
+        return {
+            "name": _("Generate Customer Report"),
+            "type": "ir.actions.act_window",
+            "res_model": "project.customer.report.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_project_id": self.id,
+            },
+        }
+
     def _get_daily_customer_report_tasks(self, report_date):
+        return self._get_customer_report_tasks(report_date, report_date)
+
+    def _get_customer_report_tasks(self, date_from, date_to):
         self.ensure_one()
         tasks = self.env["project.task"].search([
             ("project_id", "=", self.id),
-            ("timesheet_ids.date", "=", report_date),
+            ("timesheet_ids.date", ">=", date_from),
+            ("timesheet_ids.date", "<=", date_to),
         ])
         # display_satisfied_conditions_count is non-stored, so filter in Python.
         return tasks.filtered(lambda task: task.display_satisfied_conditions_count)

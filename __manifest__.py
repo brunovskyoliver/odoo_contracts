@@ -89,6 +89,7 @@
         'wizards/supplier_invoice_regenerate_wizard_view.xml',
         'wizards/vendor_bill_attachment_wizard_view.xml',
         'wizards/customer_invoice_attachment_wizard_view.xml',
+        'wizards/project_customer_report_wizard_view.xml',
         'views/vendor_bill_merged_pdf_views.xml',
         'views/contract_menu.xml',
         'data/contract_sequence.xml',
@@ -99,6 +100,7 @@
         'views/account_move_stock_view.xml',
         'views/account_report_inherit.xml',
         'views/project_project_views.xml',
+        'views/project_task_views.xml',
     ],
     "demo": [
         "data/contract_inventory_demo.xml",

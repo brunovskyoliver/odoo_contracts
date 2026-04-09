@@ -34,6 +34,23 @@ class ProjectTask(models.Model):
         self.ensure_one()
         return self.customer_hours_multiplier or 1.0
 
+    def action_open_customer_report_wizard(self):
+        self.ensure_one()
+        if not self.project_id:
+            raise UserError(_("This task must belong to a project before a customer report can be generated."))
+
+        return {
+            "name": _("Generate Customer Report"),
+            "type": "ir.actions.act_window",
+            "res_model": "project.customer.report.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_project_id": self.project_id.id,
+                "default_task_id": self.id,
+            },
+        }
+
     @api.model
     def default_get(self, default_fields):
         vals = super(ProjectTask, self).default_get(default_fields)
