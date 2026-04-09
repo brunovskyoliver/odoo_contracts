@@ -1121,6 +1121,14 @@ class ContractMobileUsageReport(models.Model):
     )
     report_file = fields.Binary(string="Report File", attachment=True)
     report_filename = fields.Char(string="Report File Name")
+
+    def _get_billing_period_display(self):
+        """Return the report month range as dd.mm.yyyy - dd.mm.yyyy."""
+        self.ensure_one()
+        report_date = fields.Date.to_date(self.date)
+        month_start = report_date.replace(day=1)
+        month_end = month_start + relativedelta(day=31)
+        return f"{month_start.strftime('%d.%m.%Y')} - {month_end.strftime('%d.%m.%Y')}"
     
     def action_generate_report(self):
         """Generate usage reports for all partners with mobile services across multiple invoices"""
@@ -1313,9 +1321,13 @@ class ContractMobileUsageReport(models.Model):
             # Add NOVEM logo if exists
             if os.path.exists(novem_logo):
                 insert_image(ws, novem_logo, "A1")
-            
-            current_row = 5  # Start after logo
-            
+
+            billing_period = self._get_billing_period_display()
+            ws.cell(row=5, column=1, value="Fakturačné obdobie:").font = Font(bold=True, color="438EAC")
+            ws.cell(row=5, column=2, value=billing_period)
+
+            current_row = 7  # Start after logo and billing period
+
             thin_border = Border(
                 left=Side(style='thin'),
                 right=Side(style='thin'),
@@ -2189,5 +2201,4 @@ def format_plan_name(text):
         result = result.replace("minut", "")
     
     return result
-
 
