@@ -483,8 +483,8 @@ class SupplierInvoiceProcessor(models.Model):
                 self.state = 'extracted'
             return
 
-        # Skip pairing requirement for Va-Mont Finance, Telekom, O2, SETEM, ACS, Gamers Outlet, Let's Consult, e-Net, and Orange - always auto-create without product matching
-        if self.supplier_id and self.supplier_id.id in (1179, 1662, 1653, 1625, 1660, 1688, 1657, 17, 1749):  # Va-Mont Finance, Telekom, O2, SETEM, ACS, Gamers Outlet, Let's Consult, e-Net, Orange Slovensko supplier IDs
+        # Skip pairing requirement for service/telecom suppliers that should auto-create without product matching
+        if self.supplier_id and self.supplier_id.id in (1179, 1662, 1653, 1625, 1660, 1688, 1657, 17, 1749, 1790):  # Va-Mont Finance, Telekom, O2, SETEM, ACS, Gamers Outlet, Let's Consult, e-Net, Orange Slovensko, GeCom supplier IDs
             if self.state in ('processing', 'pairing', 'draft', 'extracted'):
                 self.state = 'extracted'
             return
@@ -519,9 +519,19 @@ class SupplierInvoiceProcessor(models.Model):
         is_setem = 'setem s.r.o.' in text_lower
         is_acs = 'acs spol. s r.o.' in text_lower or 'www.acs.sk' in text_lower
         is_gamers_outlet = 'gamers outlet' in text_lower or 'gamers-outlet' in text_lower
-        is_lets_consult = "let's consult" in text_lower or "letsconsult" in text_lower
+        is_lets_consult = (
+            "let's consult" in text_lower
+            or "let´s consult" in text_lower
+            or "letsconsult" in text_lower
+        )
         is_enet = 'e-net, s.r.o.' in text_lower or 'e-net, s.r.o.' in text_lower
         is_orange = 'orange slovensko' in text_lower
+        is_gecom = (
+            'gecom, s.r.o.' in text_lower
+            or 'gecom s.r.o.' in text_lower
+            or 'ičo: 36705268' in text_lower
+            or 'ico: 36705268' in text_lower
+        )
         is_oliver_brunovsky = (
             'oliver brunovský' in text_lower
             or 'oliver brunovsky' in text_lower
@@ -531,8 +541,8 @@ class SupplierInvoiceProcessor(models.Model):
         )
 
         
-        if not is_alza and not is_westech and not is_tes and not is_tss and not is_asbis and not is_upc and not is_vamont and not is_telekom and not is_o2 and not is_setem and not is_acs and not is_gamers_outlet and not is_lets_consult and not is_enet and not is_orange and not is_oliver_brunovsky:
-            raise UserError(_('This processor only handles Alza.sk, Westech, TES Slovakia, TSS Group, Asbis, UPC Broadband, Va-Mont Finance, Telekom, O2 Slovakia, SETEM, ACS, Gamers Outlet, Let\'s Consult, e-Net, Orange, and Oliver Brunovsky invoices. Please check the PDF file.'))
+        if not is_alza and not is_westech and not is_tes and not is_tss and not is_asbis and not is_upc and not is_vamont and not is_telekom and not is_o2 and not is_setem and not is_acs and not is_gamers_outlet and not is_lets_consult and not is_enet and not is_orange and not is_gecom and not is_oliver_brunovsky:
+            raise UserError(_('This processor only handles Alza.sk, Westech, TES Slovakia, TSS Group, Asbis, UPC Broadband, Va-Mont Finance, Telekom, O2 Slovakia, SETEM, ACS, Gamers Outlet, Let\'s Consult, e-Net, Orange, GeCom, and Oliver Brunovsky invoices. Please check the PDF file.'))
         
         # Check if this is a credit note (dobropis/opravný doklad) - check both filename and text
         filename_lower = self.filename.lower() if self.filename else ''
@@ -561,6 +571,7 @@ class SupplierInvoiceProcessor(models.Model):
             'is_lets_consult': is_lets_consult,
             'is_enet': is_enet,
             'is_orange': is_orange,
+            'is_gecom': is_gecom,
             'is_oliver_brunovsky': is_oliver_brunovsky,
         }
         if is_alza:
@@ -593,6 +604,8 @@ class SupplierInvoiceProcessor(models.Model):
             data.update({ 'supplier_id': 17,})
         elif is_orange:
             data.update({ 'supplier_id': 1749,})
+        elif is_gecom:
+            data.update({ 'supplier_id': 1790,})
         elif is_oliver_brunovsky:
             data.update({
                 'supplier_id': 1643,
@@ -613,10 +626,26 @@ class SupplierInvoiceProcessor(models.Model):
             match = re.search(enet_pattern, text, re.IGNORECASE)
             if match:
                 data['invoice_number'] = match.group(1)
+        elif data.get('is_lets_consult'):
+            lets_consult_patterns = [
+                r'F\s*A\s*K\s*T\s*Ú\s*R\s*A\s*Č\s*Í\s*S\s*L\s*O\s*:\s*([A-Z0-9][A-Z0-9/-]*)',
+                r'FAKTÚRA\s*ČÍSLO\s*:\s*([A-Z0-9][A-Z0-9/-]*)',
+                r'Var\.\s*symbol\s*:\s*([A-Z0-9][A-Z0-9/-]*)',
+            ]
+            for pattern in lets_consult_patterns:
+                match = re.search(pattern, text, re.IGNORECASE)
+                if match:
+                    data['invoice_number'] = match.group(1)
+                    break
         elif data.get('is_orange'):
             # Orange format: "Číslo faktúry: XXX" (to be confirmed with sample invoice)
             orange_pattern = r'Číslo\s+faktúry\s*:\s*(\S+)'
             match = re.search(orange_pattern, text, re.IGNORECASE)
+            if match:
+                data['invoice_number'] = match.group(1)
+        elif data.get('is_gecom'):
+            gecom_pattern = r'FAKTÚRA\s*-\s*DAŇOVÝ\s+DOKLAD\s+č\.\s*([A-Z0-9][A-Z0-9/-]*)'
+            match = re.search(gecom_pattern, text, re.IGNORECASE)
             if match:
                 data['invoice_number'] = match.group(1)
         
@@ -742,6 +771,14 @@ class SupplierInvoiceProcessor(models.Model):
             if vs_match:
                 data['orange_variabilny_symbol'] = vs_match.group(1)
                 _logger.info(f"Orange Variabilný symbol extracted: {vs_match.group(1)}")
+        elif data.get('is_gecom'):
+            gecom_date_match = re.search(r'Dátum\s+vyhotovenia\s*\.{0,}\s*(\d{1,2}\.\d{1,2}\.\d{4})', text, re.IGNORECASE)
+            if gecom_date_match:
+                data['invoice_date'] = self._parse_date(gecom_date_match.group(1))
+
+            gecom_due_match = re.search(r'Dátum\s+splatnosti\s*\.{0,}\s*(\d{1,2}\.\d{1,2}\.\d{4})', text, re.IGNORECASE)
+            if gecom_due_match:
+                data['invoice_due_date'] = self._parse_date(gecom_due_match.group(1))
         elif data.get('is_oliver_brunovsky'):
             invoice_date_match = re.search(r'Dátum\s+vystavenia\s*:\s*(\d{1,2}\.\d{1,2}\.\d{4})', text)
             if invoice_date_match:
@@ -851,6 +888,22 @@ class SupplierInvoiceProcessor(models.Model):
                     _logger.info(f"ACS totals extracted: Untaxed: {total_untaxed}, Tax: {total_tax}, Total: {data['total_amount']}")
                 except ValueError as e:
                     _logger.warning(f"Could not parse ACS totals: {e}")
+        
+        # GeCom-specific extraction: "Súčet 14,63 3,37 18,00"
+        elif data.get('is_gecom'):
+            gecom_sum_pattern = r'Súčet\s+([\d\s]+,\d+)\s+([\d\s]+,\d+)\s+([\d\s]+,\d+)'
+            gecom_sum_match = re.search(gecom_sum_pattern, text, re.IGNORECASE)
+            if gecom_sum_match:
+                base_amount = gecom_sum_match.group(1).replace(' ', '').replace(',', '.')
+                tax_amount = gecom_sum_match.group(2).replace(' ', '').replace(',', '.')
+                total_amount = gecom_sum_match.group(3).replace(' ', '').replace(',', '.')
+                try:
+                    total_untaxed = float(base_amount)
+                    total_tax = float(tax_amount)
+                    data['total_amount'] = float(total_amount)
+                    _logger.info(f"GeCom totals extracted: Untaxed: {total_untaxed}, Tax: {total_tax}, Total: {data['total_amount']}")
+                except ValueError as e:
+                    _logger.warning(f"Could not parse GeCom totals: {e}")
         
         # SETEM-specific extraction: "DPH 23% base_amount € tax_amount € total_amount €"
         if data.get('is_setem'):
@@ -981,7 +1034,7 @@ class SupplierInvoiceProcessor(models.Model):
         # Find the tax breakdown section - support both comma and dot decimals, including negative values
         # Pattern supports: "23% 715.09 164.47" or "23% -715.09 -164.47"
         # Skip this for ACS, SETEM, e-Net, UPC, Westech, Gamers Outlet, Let's Consult, and Orange since they have their own extraction
-        if not data.get('is_setem') and not data.get('is_acs') and not data.get('is_enet') and not data.get('is_upc') and not data.get('is_westech') and not data.get('is_gamers_outlet') and not data.get('is_lets_consult') and not data.get('is_orange') and total_untaxed > 0:
+        if not data.get('is_setem') and not data.get('is_acs') and not data.get('is_enet') and not data.get('is_upc') and not data.get('is_westech') and not data.get('is_gamers_outlet') and not data.get('is_lets_consult') and not data.get('is_orange') and not data.get('is_gecom') and total_untaxed > 0:
             vat_breakdown_pattern = r'(\d+)\s*%\s+(-?[\d\s]+[,\.]\d+)\s+(-?[\d\s]+[,\.]\d+)'
             vat_matches = re.findall(vat_breakdown_pattern, text)
             
@@ -1080,6 +1133,8 @@ class SupplierInvoiceProcessor(models.Model):
             data['lines'] = self._parse_enet_lines_from_text(text)
         elif data.get('is_orange'):
             data['lines'] = self._parse_orange_lines_from_text(text)
+        elif data.get('is_gecom'):
+            data['lines'] = self._parse_gecom_lines_from_text(text)
         elif data.get('is_oliver_brunovsky'):
             data['lines'] = self._parse_oliver_brunovsky_lines_from_text(text)
         elif not data['lines'] or len(data['lines']) > 20:  # Too many lines usually means bad parsing
@@ -2756,6 +2811,62 @@ class SupplierInvoiceProcessor(models.Model):
                     _logger.warning(f"Orange Parser: Could not parse line '{line}': {e}")
         
         _logger.info(f"Orange Parser: Total items extracted: {len(items)}")
+        return items
+
+    def _parse_gecom_lines_from_text(self, text):
+        """
+        GeCom invoice parser - extracts line items from the compact invoice table.
+
+        Example:
+        "P150 01.04.2026 - 30.04.2026 14,63 14,63 23% 3,37 18,00"
+
+        Format:
+        Description | Base amount | Unit/base repeat | VAT% | Tax | Total
+        """
+        items = []
+        rows = [r.strip() for r in text.split("\n")]
+
+        in_items = False
+        line_pattern = re.compile(
+            r'^(.+?)\s+(-?[\d\s]+,\d+)\s+(-?[\d\s]+,\d+)\s+(\d+)\s*%\s+(-?[\d\s]+,\d+)\s+(-?[\d\s]+,\d+)\s*$'
+        )
+
+        for row in rows:
+            if not row:
+                continue
+
+            if not in_items:
+                if 'Názov položky' in row and 'Cena %DPH' in row:
+                    in_items = True
+                continue
+
+            if any(marker in row for marker in ['SPOLU K ÚHRADE', 'Rekapitulácia v EUR', 'Vystavil:']):
+                break
+
+            match = line_pattern.search(row)
+            if not match:
+                continue
+
+            description = match.group(1).strip()
+
+            if any(skip in description.lower() for skip in ['súčet', 'spolu', 'rekapitulácia']):
+                continue
+
+            try:
+                base_amount = float(match.group(2).replace(' ', '').replace(',', '.'))
+                vat_rate = float(match.group(4))
+            except ValueError:
+                continue
+
+            if description:
+                items.append({
+                    "description": description,
+                    "quantity": 1.0,
+                    "price_unit": base_amount,
+                    "vat_rate": vat_rate,
+                })
+
+        _logger.info(f"GeCom Parser: Total items extracted: {len(items)}")
         return items
     
     def _parse_vamont_lines_from_text(self, text):
