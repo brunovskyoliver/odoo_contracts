@@ -507,24 +507,32 @@ class SupplierInvoiceProcessor(models.Model):
         
         # Check if this is an Alza invoice
         is_alza = 'Predávajúci: Alza.sk' in text or 'Alza.sk' in text
-        is_westech = 'westech' in text.lower()
-        is_tes = 'tes - slovakia' in text.lower()
-        is_tss = 'tss group' in text.lower() or 'tss sk' in text.lower()  # More specific to avoid false matches
-        is_asbis = 'info@asbis.sk' in text.lower()
-        is_upc = 'upc broadband' in text.lower() or 'upc slovakia' in text.lower()
-        is_vamont = 'va-mont' in text.lower() or 'vamont' in text.lower()
-        is_telekom = 'slovak telekom' in text.lower()
-        is_o2 = 'o2 slovakia' in text.lower() or 'o2 sk' in text.lower()
-        is_setem = 'setem s.r.o.' in text.lower()
-        is_acs = 'acs spol. s r.o.' in text.lower() or 'www.acs.sk' in text.lower()
-        is_gamers_outlet = 'gamers outlet' in text.lower() or 'gamers-outlet' in text.lower()
-        is_lets_consult = "let's consult" in text.lower() or "letsconsult" in text.lower()
-        is_enet = 'e-net, s.r.o.' in text.lower() or 'e-Net, s.r.o.' in text
-        is_orange = 'orange slovensko' in text.lower()
+        text_lower = text.lower()
+        is_westech = 'westech' in text_lower
+        is_tes = 'tes - slovakia' in text_lower
+        is_tss = 'tss group' in text_lower or 'tss sk' in text_lower  # More specific to avoid false matches
+        is_asbis = 'info@asbis.sk' in text_lower
+        is_upc = 'upc broadband' in text_lower or 'upc slovakia' in text_lower
+        is_vamont = 'va-mont' in text_lower or 'vamont' in text_lower
+        is_telekom = 'slovak telekom' in text_lower
+        is_o2 = 'o2 slovakia' in text_lower or 'o2 sk' in text_lower
+        is_setem = 'setem s.r.o.' in text_lower
+        is_acs = 'acs spol. s r.o.' in text_lower or 'www.acs.sk' in text_lower
+        is_gamers_outlet = 'gamers outlet' in text_lower or 'gamers-outlet' in text_lower
+        is_lets_consult = "let's consult" in text_lower or "letsconsult" in text_lower
+        is_enet = 'e-net, s.r.o.' in text_lower or 'e-net, s.r.o.' in text_lower
+        is_orange = 'orange slovensko' in text_lower
+        is_oliver_brunovsky = (
+            'oliver brunovský' in text_lower
+            or 'oliver brunovsky' in text_lower
+            or 'ičo: 57541540' in text_lower
+            or 'ico: 57541540' in text_lower
+            or 'obrunovsky7@gmail.com' in text_lower
+        )
 
         
-        if not is_alza and not is_westech and not is_tes and not is_tss and not is_asbis and not is_upc and not is_vamont and not is_telekom and not is_o2 and not is_setem and not is_acs and not is_gamers_outlet and not is_lets_consult and not is_enet and not is_orange:
-            raise UserError(_('This processor only handles Alza.sk, Westech, TES Slovakia, TSS Group, Asbis, UPC Broadband, Va-Mont Finance, Telekom, O2 Slovakia, SETEM, ACS, Gamers Outlet, Let\'s Consult, e-Net, and Orange invoices. Please check the PDF file.'))
+        if not is_alza and not is_westech and not is_tes and not is_tss and not is_asbis and not is_upc and not is_vamont and not is_telekom and not is_o2 and not is_setem and not is_acs and not is_gamers_outlet and not is_lets_consult and not is_enet and not is_orange and not is_oliver_brunovsky:
+            raise UserError(_('This processor only handles Alza.sk, Westech, TES Slovakia, TSS Group, Asbis, UPC Broadband, Va-Mont Finance, Telekom, O2 Slovakia, SETEM, ACS, Gamers Outlet, Let\'s Consult, e-Net, Orange, and Oliver Brunovsky invoices. Please check the PDF file.'))
         
         # Check if this is a credit note (dobropis/opravný doklad) - check both filename and text
         filename_lower = self.filename.lower() if self.filename else ''
@@ -553,6 +561,7 @@ class SupplierInvoiceProcessor(models.Model):
             'is_lets_consult': is_lets_consult,
             'is_enet': is_enet,
             'is_orange': is_orange,
+            'is_oliver_brunovsky': is_oliver_brunovsky,
         }
         if is_alza:
             data.update({ 'supplier_id': 21,})
@@ -584,6 +593,12 @@ class SupplierInvoiceProcessor(models.Model):
             data.update({ 'supplier_id': 17,})
         elif is_orange:
             data.update({ 'supplier_id': 1749,})
+        elif is_oliver_brunovsky:
+            data.update({
+                'supplier_id': 1643,
+                'supplier_name': 'Oliver Brunovsky',
+                'supplier_vat': '57541540',
+            })
         # Extract invoice number (common patterns)
         # Extract invoice number - use supplier-specific patterns first
         if data.get('is_upc'):
@@ -727,6 +742,14 @@ class SupplierInvoiceProcessor(models.Model):
             if vs_match:
                 data['orange_variabilny_symbol'] = vs_match.group(1)
                 _logger.info(f"Orange Variabilný symbol extracted: {vs_match.group(1)}")
+        elif data.get('is_oliver_brunovsky'):
+            invoice_date_match = re.search(r'Dátum\s+vystavenia\s*:\s*(\d{1,2}\.\d{1,2}\.\d{4})', text)
+            if invoice_date_match:
+                data['invoice_date'] = self._parse_date(invoice_date_match.group(1))
+
+            due_date_match = re.search(r'Dátum\s+splatnosti\s*:\s*(\d{1,2}\.\d{1,2}\.\d{4})', text)
+            if due_date_match:
+                data['invoice_due_date'] = self._parse_date(due_date_match.group(1))
         else:
             # Generic date extraction for other suppliers
             date_pattern = r'(\d{1,2}[./-]\d{1,2}[./-]\d{2,4})'
@@ -750,7 +773,7 @@ class SupplierInvoiceProcessor(models.Model):
         
         # Extract supplier name (line before IČO or at top)
         name_match = re.search(r'^(.+?)(?:\nIČO|$)', text, re.MULTILINE)
-        if name_match:
+        if name_match and not data.get('supplier_name'):
             data['supplier_name'] = name_match.group(1).strip()
         
         # Extract amounts from tax breakdown section
@@ -861,6 +884,16 @@ class SupplierInvoiceProcessor(models.Model):
                     _logger.info(f"e-Net totals extracted: Untaxed: {total_untaxed}, Tax: {total_tax}, Total: {data['total_amount']}")
                 except ValueError as e:
                     _logger.warning(f"Could not parse e-Net totals: {e}")
+
+        if data.get('is_oliver_brunovsky'):
+            total_match = re.search(r'Spolu\s+na\s+úhradu\s*:\s*([\d\s]+,\d+)\s+EUR', text, re.IGNORECASE)
+            if total_match:
+                total_amount = float(total_match.group(1).replace(' ', '').replace(',', '.'))
+                total_untaxed = total_amount
+                total_tax = 0.0
+                data['total_amount'] = total_amount
+                data['total_untaxed'] = total_untaxed
+                data['total_tax'] = total_tax
         
         # Orange-specific extraction: Multi-phone invoices have multiple totals to sum
         if data.get('is_orange'):
@@ -1023,6 +1056,8 @@ class SupplierInvoiceProcessor(models.Model):
         # Fallback: parse lines from text if table extraction didn't work or gave bad results
         if data.get('is_tss'):
             data['lines'] = self._parse_tss_lines_from_text(text)
+        elif data.get('is_tes'):
+            data['lines'] = self._parse_tes_lines_from_text(text, is_refund=data.get('is_refund'))
         elif data.get('is_asbis'):
             data['lines'] = self._parse_asbis_lines_from_text(text)
         elif data.get('is_upc'):
@@ -1045,34 +1080,36 @@ class SupplierInvoiceProcessor(models.Model):
             data['lines'] = self._parse_enet_lines_from_text(text)
         elif data.get('is_orange'):
             data['lines'] = self._parse_orange_lines_from_text(text)
+        elif data.get('is_oliver_brunovsky'):
+            data['lines'] = self._parse_oliver_brunovsky_lines_from_text(text)
         elif not data['lines'] or len(data['lines']) > 20:  # Too many lines usually means bad parsing
             if data.get('is_westech'):
                 data['lines'] = self._parse_westech_lines_from_text(text)
-            elif data.get('is_tes'):
-                data['lines'] = self._parse_tes_lines_from_text(text, is_refund=data.get('is_refund'))
-                # Extract TES-specific VAT summary
-                vat_header_start = text.lower().find('rozpis dph')
-                if vat_header_start != -1:
-                    vat_section = text[vat_header_start:vat_header_start + 500]
-                    vat_breakdown_pattern = r'(\d+)\s*%\s+(-?[\d\s]+[,\.]\d+)\s+(-?[\d\s]+[,\.]\d+)'
-                    vat_matches = re.findall(vat_breakdown_pattern, vat_section)
-                    
-                    total_untaxed = 0.0
-                    total_tax = 0.0
-                    for match in vat_matches:
-                        base_amount = match[1].replace(' ', '').replace(',', '.')
-                        tax_amount = match[2].replace(' ', '').replace(',', '.')
-                        try:
-                            total_untaxed += float(base_amount)
-                            total_tax += float(tax_amount)
-                        except ValueError:
-                            pass
-                    
-                    if total_untaxed != 0:
-                        data['total_untaxed'] = total_untaxed
-                        data['total_tax'] = total_tax
             else:
                 data['lines'] = self._parse_lines_from_text(text)
+
+        if data.get('is_tes'):
+            # Extract TES-specific VAT summary from "Rozpis DPH"
+            vat_header_start = text.lower().find('rozpis dph')
+            if vat_header_start != -1:
+                vat_section = text[vat_header_start:vat_header_start + 500]
+                vat_breakdown_pattern = r'(\d+)\s*%\s+(-?[\d\s]+[,\.]\d+)\s+(-?[\d\s]+[,\.]\d+)'
+                vat_matches = re.findall(vat_breakdown_pattern, vat_section)
+
+                total_untaxed = 0.0
+                total_tax = 0.0
+                for match in vat_matches:
+                    base_amount = match[1].replace(' ', '').replace(',', '.')
+                    tax_amount = match[2].replace(' ', '').replace(',', '.')
+                    try:
+                        total_untaxed += float(base_amount)
+                        total_tax += float(tax_amount)
+                    except ValueError:
+                        pass
+
+                if total_untaxed != 0:
+                    data['total_untaxed'] = total_untaxed
+                    data['total_tax'] = total_tax
         
         return data
 
@@ -1529,6 +1566,18 @@ class SupplierInvoiceProcessor(models.Model):
 
         while i < len(rows):
             line = rows[i]
+
+            if any(skip in line for skip in [
+                'FAKTÚRA číslo',
+                'Variabilný symbol:',
+                'DODÁVATEĽ:',
+                'ODBERATEĽ:',
+                'PRIJÍMATEĽ:',
+                '(Strana:',
+                'www.cybersoft.cz',
+            ]):
+                i += 1
+                continue
 
             # Start when we reach header
             if not in_items:
@@ -2786,6 +2835,58 @@ class SupplierInvoiceProcessor(models.Model):
                 except ValueError:
                     pass
         
+        return items
+
+    def _parse_oliver_brunovsky_lines_from_text(self, text):
+        """
+        Oliver Brunovsky iDoklad invoices:
+        description quantity unit_price total
+        Example:
+        "Počítačové služby, vývoj aplikácií za mesiac 03/2026 - 130,5 hod 1,00 129,93 129,93"
+        """
+        rows = [r.strip() for r in text.split("\n")]
+        items = []
+        in_items = False
+
+        for row in rows:
+            if 'Označenie dodávky' in row and 'Cena za m.j.' in row:
+                in_items = True
+                continue
+
+            if any(
+                marker in row
+                for marker in [
+                    'Dovoľujeme si Vás upozorniť',
+                    'Spolu na úhradu',
+                    'Spracované systémom',
+                    'Vytlačil',
+                ]
+            ):
+                in_items = False
+                continue
+
+            if not in_items or not row:
+                continue
+
+            match = re.search(r'^(.+?)\s+([\d,.]+)\s+([\d,.]+)\s+([\d,.]+)\s*$', row)
+            if not match:
+                continue
+
+            try:
+                description = match.group(1).strip()
+                quantity = float(match.group(2).replace(',', '.'))
+                price_unit = float(match.group(3).replace(',', '.'))
+
+                if description:
+                    items.append({
+                        "description": description,
+                        "quantity": quantity,
+                        "price_unit": price_unit,
+                        "vat_rate": 0.0,
+                    })
+            except ValueError:
+                continue
+
         return items
 
     def _parse_date(self, date_str):
