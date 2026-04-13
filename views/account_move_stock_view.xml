@@ -27,6 +27,11 @@
                 </button>
             </div>
             <xpath expr="//header" position="inside">
+                <button name="action_pair_with_vendor_counterpart"
+                        string="Spárovať protidoklad"
+                        type="object"
+                        class="btn-secondary"
+                        invisible="move_type not in ('in_invoice', 'in_refund') or state != 'posted' or amount_residual &lt;= 0"/>
                 <button name="action_create_stock_moves"
                         string="Naskladnit"
                         type="object"

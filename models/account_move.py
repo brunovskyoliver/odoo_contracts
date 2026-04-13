@@ -5,6 +5,7 @@
 
 from odoo import fields, models, api, _
 from odoo.exceptions import UserError
+from odoo.tools import float_compare
 from datetime import timedelta
 
 
@@ -282,6 +283,80 @@ class AccountMove(models.Model):
             'domain': [('id', 'in', self.stock_move_ids.ids)],
             'context': {'create': False},
         }
+
+    def _get_open_payable_lines(self):
+        self.ensure_one()
+        return self.line_ids.filtered(
+            lambda line: (
+                not line.reconciled
+                and line.account_id.account_type == 'liability_payable'
+            )
+        )
+
+    def action_pair_with_vendor_counterpart(self):
+        self.ensure_one()
+
+        if self.move_type not in ('in_invoice', 'in_refund'):
+            raise UserError(_("Only vendor bills and vendor refunds can be paired this way."))
+        if self.state != 'posted':
+            raise UserError(_("Only posted documents can be paired."))
+
+        payable_lines = self._get_open_payable_lines()
+        if not payable_lines:
+            raise UserError(_("This document has no open payable lines to reconcile."))
+
+        opposite_move_type = 'in_refund' if self.move_type == 'in_invoice' else 'in_invoice'
+        candidates = self.search([
+            ('id', '!=', self.id),
+            ('state', '=', 'posted'),
+            ('move_type', '=', opposite_move_type),
+            ('commercial_partner_id', '=', self.commercial_partner_id.id),
+            ('company_id', '=', self.company_id.id),
+            ('currency_id', '=', self.currency_id.id),
+            ('amount_residual', '>', 0),
+        ])
+
+        exact_candidates = candidates.filtered(
+            lambda move: float_compare(
+                move.amount_residual,
+                self.amount_residual,
+                precision_rounding=self.currency_id.rounding,
+            ) == 0
+        )
+
+        if len(exact_candidates) > 1:
+            raise UserError(_(
+                "Multiple counterpart documents with the same open amount were found: %s. "
+                "Please reconcile them manually."
+            ) % ", ".join(exact_candidates.mapped('display_name')))
+
+        counterpart = exact_candidates[:1]
+        if not counterpart:
+            if len(candidates) == 1:
+                counterpart = candidates
+            else:
+                raise UserError(_(
+                    "No unique counterpart document was found for this vendor. "
+                    "Please reconcile it manually."
+                ))
+
+        counterpart_payable_lines = counterpart._get_open_payable_lines()
+        common_accounts = payable_lines.account_id & counterpart_payable_lines.account_id
+        if not common_accounts:
+            raise UserError(_(
+                "The documents use different payable accounts, so they cannot be paired automatically."
+            ))
+
+        for account in common_accounts:
+            lines_to_reconcile = (payable_lines + counterpart_payable_lines).filtered(
+                lambda line: line.account_id == account and not line.reconciled
+            )
+            if len(lines_to_reconcile) > 1:
+                lines_to_reconcile.reconcile()
+
+        self.message_post(body=_("Paired with %s.") % counterpart.display_name)
+        counterpart.message_post(body=_("Paired with %s.") % self.display_name)
+        return True
 
     def action_create_new_product(self):
         """Override standard product creation from invoice line to set defaults"""
