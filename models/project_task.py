@@ -1,7 +1,11 @@
 # Copyright 2025
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import base64
 import logging
+from collections import defaultdict
+from datetime import timedelta
+
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 
@@ -33,6 +37,157 @@ class ProjectTask(models.Model):
     def _get_customer_hours_multiplier(self):
         self.ensure_one()
         return self.customer_hours_multiplier or 1.0
+
+    def _get_service_report_partner(self):
+        self.ensure_one()
+        partner = self.partner_id
+        if not partner:
+            return self.env["res.partner"]
+        return partner.commercial_partner_id or partner
+
+    def _get_service_report_send_mode(self):
+        self.ensure_one()
+        partner = self._get_service_report_partner()
+        return partner.service_report_send_mode or "immediate"
+
+    def _send_immediate_service_report(self):
+        self.ensure_one()
+        template = self.env["mail.template"].browse(43).exists()
+        if not template:
+            _logger.warning("Missing service report mail template with database id 43")
+            return False
+        template.send_mail(self.id, force_send=True)
+        self.message_post(
+            body=_("Servisák bol automaticky odoslaný zákazníkovi."),
+            message_type="comment",
+        )
+        self.sudo().write({"fsm_is_sent": True})
+        return True
+
+    def _send_service_report_by_partner_preference(self):
+        self.ensure_one()
+        if self._get_service_report_send_mode() != "immediate":
+            return False
+        return self._send_immediate_service_report()
+
+    @api.model
+    def _get_scheduled_service_report_period(self, mode, today=None):
+        today = today or fields.Date.context_today(self)
+        if mode == "weekly":
+            if today.weekday() != 0:
+                return False
+            date_to = today - timedelta(days=1)
+            date_from = date_to - timedelta(days=6)
+            return (date_from, date_to)
+        if mode == "monthly":
+            if today.day != 1:
+                return False
+            date_to = today - timedelta(days=1)
+            date_from = date_to.replace(day=1)
+            return (date_from, date_to)
+        return False
+
+    def _send_batched_service_reports(self, partner, send_mode):
+        tasks = self.sorted(key=lambda task: (task.x_done_time or fields.Datetime.now(), task.id))
+        if not tasks or not partner or not partner.email:
+            return False
+
+        report_name = "industry_fsm.worksheet_custom"
+        pdf_content, _report_format = self.env["ir.actions.report"]._render_qweb_pdf(
+            report_name, res_ids=tasks.ids
+        )
+        date_from = min((task.x_done_time or fields.Datetime.now()) for task in tasks).date()
+        date_to = max((task.x_done_time or fields.Datetime.now()) for task in tasks).date()
+        frequency_label = {
+            "weekly": _("Týždenný"),
+            "monthly": _("Mesačný"),
+        }.get(send_mode, _("Servisný"))
+        filename = "%s-%s-%s.pdf" % (
+            partner.name or "partner",
+            send_mode,
+            date_to,
+        )
+        attachment = self.env["ir.attachment"].sudo().create({
+            "name": filename,
+            "type": "binary",
+            "datas": base64.b64encode(pdf_content),
+            "mimetype": "application/pdf",
+            "res_model": "res.partner",
+            "res_id": partner.id,
+        })
+
+        task_names = ", ".join(tasks.mapped("name"))
+        body_html = _(
+            """
+            <p>Dobrý deň,</p>
+            <p>v prílohe Vám posielame %(frequency)s servisný výkaz za obdobie <strong>%(date_from)s - %(date_to)s</strong>.</p>
+            <p>Zahrnuté úlohy: %(task_names)s</p>
+            """
+        ) % {
+            "frequency": frequency_label.lower(),
+            "date_from": date_from,
+            "date_to": date_to,
+            "task_names": task_names,
+        }
+        mail_values = {
+            "subject": _("%(frequency)s servisný výkaz - %(partner)s") % {
+                "frequency": frequency_label,
+                "partner": partner.name,
+            },
+            "body_html": body_html,
+            "email_to": partner.email,
+            "author_id": self.env.user.partner_id.id,
+            "email_from": self.env.company.email_formatted or self.env.user.email_formatted,
+            "attachment_ids": [(4, attachment.id)],
+            "auto_delete": True,
+        }
+        self.env["mail.mail"].sudo().create(mail_values).send()
+        tasks.sudo().write({"fsm_is_sent": True})
+        for task in tasks:
+            task.message_post(
+                body=_(
+                    "Servisák bol automaticky odoslaný zákazníkovi v dávke (%s)."
+                ) % frequency_label.lower(),
+                message_type="comment",
+            )
+        return True
+
+    @api.model
+    def cron_send_scheduled_service_reports(self):
+        today = fields.Date.context_today(self)
+        pending_tasks = self.search([
+            ("fsm_is_sent", "=", False),
+            ("x_done_time", "!=", False),
+            ("partner_id", "!=", False),
+        ])
+        grouped_tasks = defaultdict(lambda: self.env["project.task"])
+
+        for task in pending_tasks:
+            partner = task._get_service_report_partner()
+            mode = task._get_service_report_send_mode()
+            period = self._get_scheduled_service_report_period(mode, today=today)
+            task_done_date = fields.Datetime.to_datetime(task.x_done_time).date()
+            if not period:
+                continue
+            date_from, date_to = period
+            if task_done_date < date_from or task_done_date > date_to:
+                continue
+            grouped_tasks[(partner.id, mode)] = grouped_tasks[(partner.id, mode)] | task
+
+        for (partner_id, mode), tasks in grouped_tasks.items():
+            partner = self.env["res.partner"].browse(partner_id).exists()
+            if not partner:
+                continue
+            try:
+                _logger.info("Sending scheduled %s service report for partner %s with %s tasks",
+                            mode, partner.display_name, len(tasks))
+                tasks._send_batched_service_reports(partner, mode)
+            except Exception:
+                _logger.exception(
+                    "Failed to send scheduled %s service reports for partner %s",
+                    mode,
+                    partner.display_name,
+                )
 
     def action_open_customer_report_wizard(self):
         self.ensure_one()

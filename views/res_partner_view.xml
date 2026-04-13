@@ -56,6 +56,17 @@
                     <field name="orange_variabilny_symbol" nolabel="1" placeholder="Variabilný symbol Orange"/>
                 </div>
             </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Servisné výkazy">
+                    <group>
+                        <field name="service_report_send_mode"/>
+                        <div class="text-muted">
+                            Pri úlohách vytvorených na kontakt pod firmou sa použije
+                            nastavenie z komerčného partnera.
+                        </div>
+                    </group>
+                </page>
+            </xpath>
         </field>
     </record>
     <record id="view_res_partner_filter" model="ir.ui.view">

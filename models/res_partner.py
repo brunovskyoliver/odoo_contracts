@@ -10,6 +10,22 @@ from odoo import fields, models, api, _
 class ResPartner(models.Model):
     _inherit = "res.partner"
 
+    service_report_send_mode = fields.Selection(
+        selection=[
+            ("immediate", "Hneď po zásahu"),
+            ("weekly", "Raz týždenne"),
+            ("monthly", "Raz mesačne"),
+        ],
+        string="Posielanie servisných výkazov",
+        default="immediate",
+        required=True,
+        help=(
+            "Určuje, kedy sa majú zákazníkovi odosielať servisné výkazy. "
+            "Pri kontaktoch pod firmou sa pri automatickom odosielaní používa "
+            "nastavenie materskej firmy."
+        ),
+    )
+
     def message_update(self, msg_dict, update_vals=None):
         result = super().message_update(msg_dict, update_vals=update_vals)
         for partner in self:
