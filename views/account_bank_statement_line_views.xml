@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_pair_opposite_statement_line" model="ir.actions.server">
+        <field name="name">Spárovať opačný pohyb</field>
+        <field name="model_id" ref="account.model_account_bank_statement_line"/>
+        <field name="binding_model_id" ref="account.model_account_bank_statement_line"/>
+        <field name="state">code</field>
+        <field name="code">action = records.action_pair_opposite_statement_line()</field>
+    </record>
+
+    <record id="view_bank_statement_line_form_bank_rec_widget_inherit_pairing" model="ir.ui.view">
+        <field name="name">account.bank.statement.line.form.bank.rec.widget.inherit.pairing</field>
+        <field name="model">account.bank.statement.line</field>
+        <field name="inherit_id" ref="account_accountant.view_bank_statement_line_form_bank_rec_widget"/>
+        <field name="arch" type="xml">
+            <xpath expr="//footer" position="inside">
+                <button name="action_pair_opposite_statement_line"
+                        string="Spárovať opačný pohyb"
+                        type="object"
+                        class="btn-secondary"
+                        invisible="is_reconciled or amount == 0"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -16,7 +16,7 @@
     "license": "AGPL-3",
     "author": "Tecnativa, ACSONE SA/NV, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/contract",
-    "depends": ["base", "account", "product", "portal", "stock", "account_followup", "mail", "project", "industry_fsm", "helpdesk"],
+    "depends": ["base", "account", "account_accountant", "product", "portal", "stock", "account_followup", "mail", "project", "industry_fsm", "helpdesk"],
     "development_status": "Production/Stable",
     "data": [
         "security/groups.xml",
@@ -100,6 +100,7 @@
         'data/product_quantity_alert_cron.xml',
         'security/stock_rules.xml',
         'views/account_move_stock_view.xml',
+        'views/account_bank_statement_line_views.xml',
         'views/account_report_inherit.xml',
         'views/project_project_views.xml',
         'views/project_task_views.xml',
