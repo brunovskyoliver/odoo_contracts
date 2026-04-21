@@ -9,11 +9,32 @@ from odoo.tools import float_compare
 class AccountBankStatementLine(models.Model):
     _inherit = "account.bank.statement.line"
 
+    _INTERNAL_SETTLEMENT_ACCOUNT_CODE = "395000"
+
     def _get_open_clearing_lines(self):
         self.ensure_one()
         _liquidity_lines, suspense_lines, other_lines = self._seek_for_lines()
         candidate_lines = suspense_lines or other_lines.filtered(lambda line: line.account_id.reconcile)
         return candidate_lines.filtered(lambda line: not line.reconciled)
+
+    def _get_internal_settlement_account(self):
+        self.ensure_one()
+        account = self.env["account.account"].search([
+            ("company_ids", "in", self.company_id.id),
+            ("code", "=", self._INTERNAL_SETTLEMENT_ACCOUNT_CODE),
+        ], limit=1)
+        if not account:
+            raise UserError(_(
+                "Internal settlement account %(code)s was not found for %(company)s."
+            ) % {
+                "code": self._INTERNAL_SETTLEMENT_ACCOUNT_CODE,
+                "company": self.company_id.display_name,
+            })
+        return account
+
+    @staticmethod
+    def _should_use_internal_settlement_account(line):
+        return line.account_id.account_type not in ("asset_receivable", "liability_payable")
 
     def action_pair_opposite_statement_line(self):
         for st_line in self:
@@ -75,7 +96,17 @@ class AccountBankStatementLine(models.Model):
                 })
 
             counterpart_line = exact_counterparts[0]
-            (clearing_line + counterpart_line).reconcile()
+            lines_to_pair = clearing_line + counterpart_line
+            if self._should_use_internal_settlement_account(clearing_line):
+                settlement_account = st_line._get_internal_settlement_account()
+                lines_to_pair.with_context(check_move_validity=False).write({
+                    "account_id": settlement_account.id,
+                })
+                lines_to_pair = self.env["account.move.line"].browse(lines_to_pair.ids)
+
+            if lines_to_pair.account_id[:1].reconcile:
+                lines_to_pair.reconcile()
+
             st_line.move_id.message_post(
                 body=_("Paired with opposite bank transaction %s.") % counterpart_line.move_id.display_name
             )
