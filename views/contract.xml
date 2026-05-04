@@ -73,6 +73,13 @@
                         invisible="is_terminated"
                         groups="base.group_user"
                     />
+                    <button
+                        name="action_generate_dodatok_pdf"
+                        type="object"
+                        string="Generovať dodatok"
+                        invisible="is_terminated"
+                        groups="base.group_user"
+                    />
                     <button type="object" string="Preview" name="action_preview" />
                 </header>
                 <sheet string="Contract">
@@ -121,6 +128,8 @@
                             <field name="payment_term_id" readonly="is_terminated" />
                             <field name="user_id" readonly="is_terminated" />
                             <field name="inventory_id" options="{'no_create': True, 'no_open': True}" readonly="has_inventory_products"/>
+                            <field name="x_datum_podpisania_dodatku" />
+                            <field name="x_datum_predlzenia_do" />
                             <field name="nadspotreba" invisible="show_nadspotreba" />
                         </group>
                         <group>

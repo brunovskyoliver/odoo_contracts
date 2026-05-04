@@ -6,6 +6,7 @@
 import logging
 from collections import namedtuple
 from datetime import timedelta
+from unittest.mock import patch
 
 from dateutil.relativedelta import relativedelta
 from freezegun import freeze_time
@@ -2372,6 +2373,94 @@ class TestContract(TestContractBase):
         action = self.contract.action_preview()
         self.assertIn("/my/contracts/", action["url"])
         self.assertIn("access_token=", action["url"])
+
+    def test_contract_dodatok_report_service_wording(self):
+        self.contract.write({
+            "code": "ZML 00034",
+            "x_contract_type": "Služby",
+            "x_datum_viazanost": "2026-12-31",
+            "x_datum_podpisania_dodatku": "2026-04-21",
+            "x_datum_predlzenia_do": "2027-01-31",
+        })
+        html = self.env["ir.qweb"]._render(
+            "contract.report_contract_dodatok_document",
+            {
+                "docs": self.contract.with_context(dodatok_number=1),
+                "report_type": "pdf",
+                "res_company": self.env.company,
+            },
+        )
+        self.assertIn("Poskytovateľ", html)
+        self.assertIn("Objednávateľ", html)
+        self.assertIn("Dohoda o zmene záväzkového vzťahu č.", html)
+        self.assertIn("ZML 00034", html)
+        self.assertIn("Zmluvou o poskytovaní služieb č.", html)
+        self.assertIn("21.04.2026", html)
+        self.assertIn("31.01.2027", html)
+        self.assertNotIn("31.12.2026", html)
+
+    def test_contract_dodatok_report_rental_wording(self):
+        self.contract.write({
+            "code": "ZML 00161",
+            "x_contract_type": "Prenájom",
+            "x_datum_viazanost": "2026-12-31",
+            "x_datum_podpisania_dodatku": "2026-04-21",
+            "x_datum_predlzenia_do": "2027-01-31",
+        })
+        html = self.env["ir.qweb"]._render(
+            "contract.report_contract_dodatok_document",
+            {
+                "docs": self.contract.with_context(dodatok_number=1),
+                "report_type": "pdf",
+                "res_company": self.env.company,
+            },
+        )
+        self.assertIn("Prenajímateľ", html)
+        self.assertIn("Nájomca", html)
+        self.assertIn("Zmluvou o nájme č.", html)
+        self.assertIn("21.04.2026", html)
+        self.assertIn("31.01.2027", html)
+        self.assertNotIn("31.12.2026", html)
+
+    def test_contract_dodatok_generation_requires_dodatok_dates(self):
+        self.contract.x_datum_podpisania_dodatku = False
+        self.contract.x_datum_predlzenia_do = "2027-01-31"
+        with self.assertRaises(UserError):
+            self.contract.action_generate_dodatok_pdf()
+
+        self.contract.x_datum_podpisania_dodatku = "2026-04-21"
+        self.contract.x_datum_predlzenia_do = False
+        with self.assertRaises(UserError):
+            self.contract.action_generate_dodatok_pdf()
+
+    @freeze_time("2026-04-21")
+    def test_contract_dodatok_generation_creates_numbered_attachments(self):
+        self.contract.write({
+            "code": "ZML 00034",
+            "x_datum_viazanost": "2026-12-31",
+            "x_datum_podpisania_dodatku": "2026-04-22",
+            "x_datum_predlzenia_do": "2027-01-31",
+        })
+        report_model = self.env["ir.actions.report"]
+        with patch.object(
+            type(report_model),
+            "_render_qweb_pdf",
+            return_value=(b"%PDF-1.4 test", "pdf"),
+        ):
+            first_action = self.contract.action_generate_dodatok_pdf()
+            second_action = self.contract.action_generate_dodatok_pdf()
+
+        attachments = self.env["ir.attachment"].search([
+            ("res_model", "=", "contract.contract"),
+            ("res_id", "=", self.contract.id),
+            ("mimetype", "=", "application/pdf"),
+            ("name", "ilike", "Dodatok-ZML00034"),
+        ], order="name")
+        self.assertEqual(len(attachments), 2)
+        self.assertEqual(attachments[0].name, "Dodatok-ZML00034-c1-20260422.pdf")
+        self.assertEqual(attachments[1].name, "Dodatok-ZML00034-c2-20260422.pdf")
+        self.assertIn("/web/content/%s" % attachments[0].id, first_action["url"])
+        self.assertIn("/web/content/%s" % attachments[1].id, second_action["url"])
 
     def test_recurring_create_invoice(self):
         self.acct_line.date_start = "2024-01-01"

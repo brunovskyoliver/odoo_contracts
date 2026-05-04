@@ -6,7 +6,7 @@
         name="Customer Contracts"
         parent="contract.menu_contract_root"
         action="action_customer_contract"
-        sequence="10"
+        sequence="1"
     />
     
     <menuitem
@@ -14,6 +14,6 @@
         name="Supplier Contracts"
         parent="contract.menu_contract_root"
         action="action_supplier_contract"
-        sequence="20"
+        sequence="2"
     />
 </odoo>

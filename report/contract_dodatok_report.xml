@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="report_contract_dodatok" model="ir.actions.report">
+        <field name="name">Dodatok k zmluve</field>
+        <field name="model">contract.contract</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">contract.report_contract_dodatok_template</field>
+        <field name="report_file">contract.report_contract_dodatok_template</field>
+        <field name="binding_model_id" ref="model_contract_contract"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_contract_dodatok_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <t t-set="is_rental" t-value="o.x_contract_type == 'Prenájom'"/>
+                    <t t-set="partner" t-value="o.partner_id"/>
+                    <t t-set="dodatok_number" t-value="o._get_dodatok_report_number()"/>
+                    <t t-set="signing_date" t-value="o._get_dodatok_signing_date()"/>
+                    <style>
+                        .dodatok-page p {
+                            margin-bottom: 8px !important;
+                            text-align: justify;
+                            text-justify: inter-word;
+                        }
+                        .dodatok-page h3 {
+                            font-size: 16px;
+                            margin-top: 18px;
+                            margin-bottom: 10px;
+                        }
+                        .dodatok-party-title {
+                            font-weight: bold;
+                            margin-bottom: 6px;
+                        }
+                        .dodatok-body {
+                            font-size: 12px;
+                            line-height: 1.35;
+                        }
+                        .dodatok-signature-line {
+                            border-top: 1px solid #111;
+                            width: 82%;
+                            margin: 42px auto 6px;
+                        }
+                    </style>
+                    <div class="page dodatok-page">
+
+                    <h2 class="text-center">
+                        Dohoda o zmene záväzkového vzťahu č.
+                        <span t-esc="dodatok_number"/>
+                        k <span t-field="o.code"/>
+                    </h2>
+
+                    <div class="dodatok-body">
+                        <p>uzavretá medzi:</p>
+                        <div class="row mt-3 mb-3">
+                            <div class="col-6">
+                                <div class="dodatok-party-title">
+                                    <t t-if="is_rental">Prenajímateľ:</t>
+                                    <t t-else="">Poskytovateľ:</t>
+                                </div>
+                                <div>
+                                    NOVEM IT s.r.o.<br/>
+                                    Lichnerova 35<br/>
+                                    903 01 Senec<br/>
+                                    IČO: 50282859<br/>
+                                    IČ DPH: SK2120427078<br/>
+                                    Zápis v obch. reg. Mestského súdu Bratislava III, oddiel Sro, vl. č. 115271/B
+                                </div>
+                            </div>
+                            <div class="col-6 text-right">
+                                <div class="dodatok-party-title">
+                                    <t t-if="is_rental">Nájomca:</t>
+                                    <t t-else="">Objednávateľ:</t>
+                                </div>
+                                <div>
+                                    <strong><span t-field="partner.name"/></strong><br/>
+                                    <t t-if="partner.street"><span t-field="partner.street"/><br/></t>
+                                    <t t-if="partner.street2"><span t-field="partner.street2"/><br/></t>
+                                    <t t-if="partner.zip or partner.city">
+                                        <span t-esc="' '.join(filter(None, [partner.zip, partner.city]))"/><br/>
+                                    </t>
+                                    <t t-if="partner.country_id"><span t-field="partner.country_id"/><br/></t>
+                                    <t t-if="partner.email"><span t-field="partner.email"/><br/></t>
+                                    IČO:
+                                    <t t-if="partner.company_registry"><span t-field="partner.company_registry"/></t>
+                                    <t t-else="">............</t><br/>
+                                    IČ DPH:
+                                    <t t-if="partner.vat"><span t-field="partner.vat"/></t>
+                                    <t t-else="">............</t>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p>s nasledovným obsahom:</p>
+
+                        <h3 class="text-center">Článok I<br/>Úvodné ustanovenia</h3>
+                        <p t-if="is_rental">
+                            Prenajímateľ a Nájomca sú účastníkmi záväzkového vzťahu založeného
+                            Zmluvou o nájme č. <span t-field="o.code"/> (ďalej len ako „Zmluva“),
+                            ktorou sa Prenajímateľ zaviazal prenajať Nájomcovi dohodnutý predmet nájmu
+                            a Nájomca sa zaviazal platiť za to Prenajímateľovi dohodnuté nájomné
+                            a iné poplatky.
+                        </p>
+                        <p t-else="">
+                            Poskytovateľ a objednávateľ sú účastníkmi záväzkového vzťahu založeného
+                            Zmluvou o poskytovaní služieb č. <span t-field="o.code"/>
+                            (ďalej len ako „Zmluva“), ktorou sa poskytovateľ zaviazal poskytovať pre
+                            objednávateľa dohodnuté služby a objednávateľ sa zaviazal platiť za to
+                            poskytovateľovi dohodnutú odplatu.
+                        </p>
+                        <p>
+                            Nakoľko strany majú záujem zmeniť existujúci právny vzťah založený Zmluvou,
+                            uzavreli túto dohodu aby ňou vykonali zmenu záväzkového vzťahu založeného
+                            Zmluvou, aby zmenili Zmluvu a tiež aby upravili vzájomné práva a povinnosti
+                            s touto zmenou súvisiace.
+                        </p>
+
+                        <h3 class="text-center">Článok II<br/>Predmet dodatku dohody</h3>
+                        <p>
+                            Záväzkový vzťah založený Zmluvou sa odo dňa nadobudnutia účinnosti tejto
+                            dohody mení tak, ako je uvedené v ďalších ustanoveniach tohto článku.
+                        </p>
+                        <p>
+                            Zmluvné strany sa dohodli, že pôvodná Doba viazanosti podľa Zmluvy sa
+                            predlžuje, a to tak, že nová Doba viazanosti trvá až do
+                            <strong><span t-esc="o._format_dodatok_date(o.x_datum_predlzenia_do)"/></strong>.
+                        </p>
+                        <p>
+                            Ustanovenia Zmluvy, ktoré nie sú dotknuté touto dohodou ostávajú platiť
+                            v nezmenenom znení.
+                        </p>
+
+                        <h3 class="text-center">Článok III<br/>Spoločné a záverečné ustanovenia</h3>
+                        <p>
+                            Záväzkový vzťah založený touto dohodou sa spravuje právnym poriadkom
+                            Slovenskej republiky.
+                        </p>
+                        <p>
+                            Ak niektoré ustanovenia tejto dohody nie sú celkom alebo sčasti platné alebo
+                            účinné alebo neskôr stratia platnosť alebo účinnosť, nie je tým dotknutá
+                            platnosť a ani účinnosť ostatných jej ustanovení. Namiesto neplatných,
+                            prípadne neúčinných ustanovení a na vyplnenie medzier sa použije úprava,
+                            ktorá, pokiaľ je to právne možné, sa čo najviac približuje zmyslu a účelu
+                            tejto dohody, pokiaľ pri uzatváraní tejto dohody zmluvné strany túto otázku
+                            brali do úvahy.
+                        </p>
+                        <p>Táto dohoda nadobúda platnosť a účinnosť dňom jej podpisu zmluvnými stranami.</p>
+                        <p>
+                            Táto dohoda je vyhotovená v dvoch rovnopisoch, z ktorých každá zmluvná
+                            strana obdrží po jednom rovnopise.
+                        </p>
+                        <p>
+                            Zmluvné strany vyhlasujú, že si túto dohodu prečítali, jej obsahu porozumeli
+                            a na znak toho, že obsah tejto dohody zodpovedá ich skutočnej a slobodnej vôli,
+                            ju podpísali.
+                        </p>
+
+                        <p style="margin-top: 28px;">v Senci, dňa <span t-esc="o._format_dodatok_date(signing_date)"/></p>
+
+                        <div class="row" style="margin-top: 54px;">
+                            <div class="col-6 text-center">
+                                <div>v mene <t t-if="is_rental">Prenajímateľa</t><t t-else="">Poskytovateľa</t>:</div>
+                                <div class="dodatok-signature-line"/>
+                                <div>Tomáš Juríček</div>
+                                <div>konateľ</div>
+                            </div>
+                            <div class="col-6 text-center">
+                                <div>v mene <t t-if="is_rental">Nájomcu</t><t t-else="">Objednávateľa</t>:</div>
+                                <div class="dodatok-signature-line"/>
+                                <div>............</div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <template id="report_contract_dodatok_template">
+        <t t-call="contract.report_contract_dodatok_document"/>
+    </template>
+</odoo>

@@ -6,7 +6,9 @@
 # Copyright 2018 ACSONE SA/NV
 # Copyright 2021 Tecnativa - Víctor Martínez
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+import base64
 import logging
+import re
 
 from markupsafe import Markup
 
@@ -217,6 +219,18 @@ class ContractContract(models.Model):
         default=False,
         help="Ak je zaškrtnuté, pri vytvorení faktúry sa pridá riadok so zľavou 100%, čím bude výsledná suma faktúry 0",
     )
+    x_datum_viazanost = fields.Date(
+        string="Dátum viazanosti",
+        tracking=True,
+    )
+    x_datum_podpisania_dodatku = fields.Date(
+        string="Dátum podpisania dodatku",
+        tracking=True,
+    )
+    x_datum_predlzenia_do = fields.Date(
+        string="Dátum dodadku do",
+        tracking=True,
+    )
     
     @api.depends('contract_line_ids.in_inventory', 'contract_line_ids')
     def _compute_has_inventory_products(self):
@@ -319,6 +333,87 @@ class ContractContract(models.Model):
             "type": "ir.actions.act_url",
             "target": "self",
             "url": self.get_portal_url(),
+        }
+
+    def _get_dodatok_attachments(self):
+        self.ensure_one()
+        return self.env["ir.attachment"].search([
+            ("res_model", "=", self._name),
+            ("res_id", "=", self.id),
+            ("mimetype", "=", "application/pdf"),
+            ("name", "ilike", "Dodatok-"),
+        ])
+
+    def _get_next_dodatok_number(self):
+        self.ensure_one()
+        max_number = 0
+        for attachment in self._get_dodatok_attachments():
+            match = re.search(r"-c(\d+)-", attachment.name or "")
+            if match:
+                max_number = max(max_number, int(match.group(1)))
+        return max_number + 1
+
+    def _get_dodatok_report_number(self):
+        self.ensure_one()
+        return self.env.context.get("dodatok_number") or self._get_next_dodatok_number()
+
+    def _get_dodatok_signing_date(self):
+        self.ensure_one()
+        return (
+            self.env.context.get("dodatok_signing_date")
+            or self.x_datum_podpisania_dodatku
+        )
+
+    def _format_dodatok_date(self, value):
+        if not value:
+            return "............"
+        date_value = fields.Date.to_date(value)
+        return date_value.strftime("%d.%m.%Y")
+
+    def _get_dodatok_filename(self, dodatok_number=None, generation_date=None):
+        self.ensure_one()
+        dodatok_number = dodatok_number or self._get_next_dodatok_number()
+        generation_date = generation_date or fields.Date.context_today(self)
+        code = self.code or self.name or str(self.id)
+        safe_code = re.sub(r"[^A-Za-z0-9]+", "", code) or str(self.id)
+        date_value = fields.Date.to_date(generation_date).strftime("%Y%m%d")
+        return "Dodatok-%s-c%s-%s.pdf" % (safe_code, dodatok_number, date_value)
+
+    def action_generate_dodatok_pdf(self):
+        self.ensure_one()
+        if not self.x_datum_podpisania_dodatku:
+            raise UserError(_("Pre generovanie dodatku nastavte Dátum podpisania dodatku."))
+        if not self.x_datum_predlzenia_do:
+            raise UserError(_("Pre generovanie dodatku nastavte Dátum predĺženia do."))
+
+        dodatok_number = self._get_next_dodatok_number()
+        signing_date = self.x_datum_podpisania_dodatku
+        report_name = "contract.report_contract_dodatok_template"
+        pdf_content, _report_format = self.with_context(
+            dodatok_number=dodatok_number,
+            dodatok_signing_date=signing_date,
+        ).env["ir.actions.report"]._render_qweb_pdf(report_name, res_ids=self.ids)
+        filename = self._get_dodatok_filename(dodatok_number, signing_date)
+        attachment = self.env["ir.attachment"].sudo().create({
+            "name": filename,
+            "type": "binary",
+            "datas": base64.b64encode(pdf_content),
+            "mimetype": "application/pdf",
+            "res_model": self._name,
+            "res_id": self.id,
+            "description": _("Dodatok č. %s vygenerovaný zo zmluvy %s") % (
+                dodatok_number,
+                self.display_name,
+            ),
+        })
+        self.message_post(
+            body=_("Vygenerovaný dodatok č. %s.") % dodatok_number,
+            attachment_ids=[attachment.id],
+        )
+        return {
+            "type": "ir.actions.act_url",
+            "target": "self",
+            "url": "/web/content/%s?download=true" % attachment.id,
         }
 
     def _inverse_partner_id(self):
