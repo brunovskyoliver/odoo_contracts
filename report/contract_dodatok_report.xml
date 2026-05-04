@@ -84,10 +84,11 @@
                                     <t t-if="partner.email"><span t-field="partner.email"/><br/></t>
                                     IČO:
                                     <t t-if="partner.company_registry"><span t-field="partner.company_registry"/></t>
-                                    <t t-else="">............</t><br/>
-                                    IČ DPH:
-                                    <t t-if="partner.vat"><span t-field="partner.vat"/></t>
-                                    <t t-else="">............</t>
+                                    <t t-else=""><br/></t>
+                                    <t t-if="partner.vat">IČ DPH: <span t-field="partner.vat"/></t>
+                                    <t t-else=""><br/></t>
+                                    <t t-if="partner.x_studio_dic">DIČ: <span t-field="partner.x_studio_dic"/></t>
+                                    <t t-else=""><br/></t>
                                 </div>
                             </div>
                         </div>
@@ -116,7 +117,7 @@
                             s touto zmenou súvisiace.
                         </p>
 
-                        <h3 class="text-center">Článok II<br/>Predmet dodatku dohody</h3>
+                        <h3 class="text-center">Článok II<br/>Predmet dohody</h3>
                         <p>
                             Záväzkový vzťah založený Zmluvou sa odo dňa nadobudnutia účinnosti tejto
                             dohody mení tak, ako je uvedené v ďalších ustanoveniach tohto článku.

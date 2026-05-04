@@ -36,7 +36,8 @@
                             <field name="attachment_count" string="S PDF prílohami"/>
                             <field name="missing_attachment_count" string="Bez PDF príloh"/>
                         </group>
-                        <group string="Options">
+                        <group string="Možnosti">
+                            <field name="include_page_banner"/>
                             <field name="batch_size" invisible="1"/>
                         </group>
                     </group>
