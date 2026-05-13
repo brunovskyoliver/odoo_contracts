@@ -628,8 +628,8 @@ class SupplierInvoiceProcessor(models.Model):
                 data['invoice_number'] = match.group(1)
         elif data.get('is_lets_consult'):
             lets_consult_patterns = [
-                r'F\s*A\s*K\s*T\s*Ú\s*R\s*A\s*Č\s*Í\s*S\s*L\s*O\s*:\s*([A-Z0-9][A-Z0-9/-]*)',
-                r'FAKTÚRA\s*ČÍSLO\s*:\s*([A-Z0-9][A-Z0-9/-]*)',
+                r'F\s*A\s*K\s*T\s*[ÚU]\s*R\s*A\s*[ČC]\s*[ÍI]\s*S\s*L\s*O\s*:\s*([A-Z0-9][A-Z0-9/-]*)',
+                r'FAKT[ÚU]RA\s*[ČC][ÍI]SLO\s*:\s*([A-Z0-9][A-Z0-9/-]*)',
                 r'Var\.\s*symbol\s*:\s*([A-Z0-9][A-Z0-9/-]*)',
             ]
             for pattern in lets_consult_patterns:
@@ -3095,6 +3095,7 @@ class SupplierInvoiceProcessor(models.Model):
                 'invoice_date': self.invoice_date or fields.Date.today(),
                 'invoice_date_due': self.invoice_due_date,
                 'ref': self.invoice_number or self.name,
+                'payment_reference': self.invoice_number or self.name,
                 'company_id': self.company_id.id,
                 'currency_id': self.currency_id.id,
                 'invoice_line_ids': [],
