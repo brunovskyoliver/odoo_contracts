@@ -118,6 +118,7 @@ class ContractLine(models.Model):
     is_stop_plan_successor_allowed = fields.Boolean(
         string="Stop/Plan successor allowed?", compute="_compute_allowed"
     )
+
     is_stop_allowed = fields.Boolean(string="Stop allowed?", compute="_compute_allowed")
     is_cancel_allowed = fields.Boolean(
         string="Cancel allowed?", compute="_compute_allowed"
@@ -143,6 +144,13 @@ class ContractLine(models.Model):
         store=True,
         readonly=True,
     )
+
+    @api.model
+    def recompute_commitment_discounts(self):
+        """Refresh stored commitment discount values after dependency fixes."""
+        lines = self.search([])
+        lines._compute_commitment_discount()
+        return True
 
     @api.depends(
         "last_date_invoiced",
@@ -1516,5 +1524,3 @@ class ContractLine(models.Model):
             ContractLine,
             self.with_context(creating_contract_line=True)
         ).create(vals_list)
-
-

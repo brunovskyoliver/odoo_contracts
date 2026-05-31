@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="helpdesk_ticket_view_form_schedule" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.form.schedule</field>
+        <field name="model">helpdesk.ticket</field>
+        <field name="inherit_id" ref="helpdesk.helpdesk_ticket_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='team_privacy_visibility']" position="after">
+                <field name="is_customer_care_team" invisible="1"/>
+                <field name="show_schedule_fields" invisible="1"/>
+                <field name="schedule_published" invisible="1"/>
+            </xpath>
+            <xpath expr="//group[@class='mb-0 mt-4']" position="after">
+                <group string="Plánovanie" invisible="not show_schedule_fields">
+                    <group>
+                        <field name="scheduled_for"/>
+                        <field name="schedule_recurring"/>
+                    </group>
+                    <group invisible="not schedule_recurring">
+                        <label for="schedule_interval"/>
+                        <div class="o_row">
+                            <field name="schedule_interval" class="oe_inline"/>
+                            <field name="schedule_interval_type" class="oe_inline" nolabel="1"/>
+                        </div>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -298,7 +298,20 @@ class ContractAbstractContractLine(models.AbstractModel):
             else:
                 line.price_subtotal = subtotal
 
-    @api.depends('x_zlavnena_cena', 'x_datum_viazanosti_produktu')
+    @api.depends(
+        "automatic_price",
+        "name",
+        "price_unit",
+        "specific_price",
+        "product_id",
+        "quantity",
+        "contract_id.pricelist_id",
+        "contract_id.partner_id",
+        "contract_id.company_id",
+        "commitment",
+        "x_zlavnena_cena",
+        "x_datum_viazanosti_produktu",
+    )
     def _compute_commitment_discount(self):
         today = fields.Date.context_today(self)
         for line in self:
