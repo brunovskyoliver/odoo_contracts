@@ -404,11 +404,14 @@ class AccountMove(models.Model):
         if 'helpdesk.ticket' not in self.env or 'helpdesk.team' not in self.env:
             return
 
-        author_id = msg_dict.get('author_id')
-        if not author_id or not self.partner_id:
+        if not self.partner_id:
             return
 
-        author_partner = self.env['res.partner'].browse(author_id).exists()
+        ticket_model = self.env['helpdesk.ticket']
+        author_partner = ticket_model._contract_resolve_inbound_author(
+            msg_dict,
+            force_create=False,
+        )
         if not author_partner:
             return
 
@@ -416,17 +419,17 @@ class AccountMove(models.Model):
         if author_partner.commercial_partner_id != invoice_partner:
             return
 
-        team = self.env['helpdesk.stage']._get_customer_care_team()
-        if not team:
-            return
-
         invoice_label = self.name or self.ref or str(self.id)
-        self.env['helpdesk.ticket'].sudo().create({
-            'name': _('Odpoved na fakturu %s') % invoice_label,
-            'partner_id': invoice_partner.id,
-            'team_id': team.id,
-            'description': msg_dict.get('body') or _('Zakaznik odpovedal na fakturu %s.') % invoice_label,
-        })
+        ticket_model._contract_create_from_inbound_email(
+            msg_dict,
+            source_model=self._name,
+            source_res_id=self.id,
+            name=_('Odpoved na fakturu %s') % invoice_label,
+            description=msg_dict.get('body') or _(
+                'Zakaznik odpovedal na fakturu %s.'
+            ) % invoice_label,
+            partner=invoice_partner,
+        )
 
     @api.model
     def _get_default_invoice_date_due(self):

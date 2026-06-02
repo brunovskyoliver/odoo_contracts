@@ -2,7 +2,6 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from ast import literal_eval
-from email.utils import parseaddr
 
 from odoo import fields, models, api, _
 
@@ -45,30 +44,14 @@ class ResPartner(models.Model):
         if "helpdesk.ticket" not in self.env or "helpdesk.team" not in self.env:
             return
 
-        author_partner = False
-        author_id = msg_dict.get("author_id")
-        if author_id:
-            author_partner = self.env["res.partner"].browse(author_id).exists()
-
-        if not author_partner:
-            email_from = msg_dict.get("from") or msg_dict.get("email_from")
-            parsed_email = parseaddr(email_from or "")[1]
-            if parsed_email:
-                author_partner = self.env["res.partner"].search([
-                    ("email", "=", parsed_email),
-                ], limit=1)
-
+        ticket_model = self.env["helpdesk.ticket"]
+        author_partner = ticket_model._contract_resolve_inbound_author(
+            msg_dict,
+            force_create=True,
+        )
         if not author_partner:
             return
         if author_partner.user_ids:
-            return
-
-        email_from_raw = (msg_dict.get("from") or "").lower()
-        if "mailer-daemon" in email_from_raw or "postmaster" in email_from_raw:
-            return
-
-        team = self.env["helpdesk.stage"]._get_customer_care_team()
-        if not team:
             return
 
         customer = author_partner.commercial_partner_id or self.commercial_partner_id
@@ -76,12 +59,15 @@ class ResPartner(models.Model):
             return
 
         subject = msg_dict.get("subject") or _("Správa od zákazníka")
-        self.env["helpdesk.ticket"].sudo().create({
-            "name": _("Email od zákazníka: %s") % subject,
-            "partner_id": customer.id,
-            "team_id": team.id,
-            "description": msg_dict.get("body") or _("Prijatá správa od zákazníka."),
-        })
+        ticket_model._contract_create_from_inbound_email(
+            msg_dict,
+            source_model=self._name,
+            source_res_id=self.id,
+            name=_("Email od zákazníka: %s") % subject,
+            description=msg_dict.get("body") or _("Prijatá správa od zákazníka."),
+            partner=customer,
+            force_create_partner=True,
+        )
 
     x_hours_warning_sent = fields.Boolean(string="Hours Warning Sent", default=False)
     orange_variabilny_symbol = fields.Char(

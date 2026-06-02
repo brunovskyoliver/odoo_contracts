@@ -52,6 +52,112 @@ class HelpdeskTicket(models.Model):
         compute="_compute_show_schedule_fields",
         export_string_translation=False,
     )
+    contract_source_message_id = fields.Char(
+        string="Source Email Message-Id",
+        copy=False,
+        index=True,
+        readonly=True,
+    )
+    contract_source_model = fields.Char(
+        string="Source Model",
+        copy=False,
+        readonly=True,
+    )
+    contract_source_res_id = fields.Integer(
+        string="Source Record ID",
+        copy=False,
+        readonly=True,
+    )
+
+    @api.model
+    def _contract_is_external_inbound_email(self, msg_dict):
+        if msg_dict.get("message_type") and msg_dict.get("message_type") != "email":
+            return False
+        if msg_dict.get("is_bounce") or msg_dict.get("bounced_email"):
+            return False
+
+        email_from = msg_dict.get("from") or msg_dict.get("email_from") or ""
+        email_from_lower = email_from.lower()
+        ignored_senders = (
+            "mailer-daemon",
+            "postmaster",
+            "mail delivery subsystem",
+        )
+        return bool(email_from) and not any(
+            ignored_sender in email_from_lower
+            for ignored_sender in ignored_senders
+        )
+
+    @api.model
+    def _contract_resolve_inbound_author(self, msg_dict, force_create=False):
+        if not self._contract_is_external_inbound_email(msg_dict):
+            return self.env["res.partner"]
+
+        author_id = msg_dict.get("author_id")
+        if author_id:
+            author = self.env["res.partner"].sudo().browse(author_id).exists()
+            if author:
+                return author
+
+        email_from = msg_dict.get("from") or msg_dict.get("email_from")
+        partners = self.env["mail.thread"].sudo()._mail_find_partner_from_emails(
+            [email_from],
+            force_create=force_create,
+        )
+        return partners[0] if partners else self.env["res.partner"]
+
+    @api.model
+    def _contract_create_from_inbound_email(
+        self,
+        msg_dict,
+        source_model=False,
+        source_res_id=False,
+        name=False,
+        description=False,
+        partner=False,
+        force_create_partner=False,
+    ):
+        if "helpdesk.ticket" not in self.env or "helpdesk.team" not in self.env:
+            return self.browse()
+        if not self._contract_is_external_inbound_email(msg_dict):
+            return self.browse()
+
+        source_message_id = msg_dict.get("message_id")
+        if source_message_id:
+            existing_ticket = self.sudo().search([
+                ("contract_source_message_id", "=", source_message_id),
+            ], limit=1)
+            if existing_ticket:
+                return existing_ticket
+
+        author_partner = self._contract_resolve_inbound_author(
+            msg_dict,
+            force_create=force_create_partner,
+        )
+        if not author_partner:
+            return self.browse()
+        if author_partner.user_ids:
+            return self.browse()
+
+        team = self.env["helpdesk.stage"]._get_customer_care_team()
+        if not team:
+            return self.browse()
+
+        customer = partner or author_partner.commercial_partner_id or author_partner
+        subject = msg_dict.get("subject") or _("Správa od zákazníka")
+        ticket_values = {
+            "name": name or _("Email od zákazníka: %s") % subject,
+            "partner_id": customer.id,
+            "team_id": team.id,
+            "description": description
+            or msg_dict.get("body")
+            or _("Prijatá správa od zákazníka."),
+            "partner_email": msg_dict.get("email_from") or msg_dict.get("from"),
+            "contract_source_message_id": source_message_id,
+            "contract_source_model": source_model,
+            "contract_source_res_id": source_res_id or 0,
+        }
+        return self.sudo().create(ticket_values)
 
     @api.depends("team_id.name")
     def _compute_is_customer_care_team(self):
