@@ -78,7 +78,6 @@
         "views/contract_tag.xml",
         "views/abstract_contract_line.xml",
         "views/contract.xml",
-        "views/contract_chatter_views.xml",
         "views/contract_supplier_installment_views.xml",
         "views/contract_menu.xml",
         "views/contract_line.xml",
