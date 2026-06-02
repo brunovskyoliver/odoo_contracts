@@ -27,6 +27,7 @@ from . import nameday
 from . import sale_order
 from . import contract_mobile_invoice
 from . import mobile_invoice_settings
+from . import contract_supplier_installment
 from . import product_template
 from . import stock_move
 from . import account_move_line

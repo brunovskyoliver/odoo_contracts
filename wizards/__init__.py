@@ -9,6 +9,7 @@ from . import supplier_invoice_regenerate_wizard
 from . import vendor_bill_attachment_wizard
 from . import customer_invoice_attachment_wizard
 from . import project_customer_report_wizard
+from . import contract_supplier_installment_import_wizard
 
 from . import contract_inventory_bulk_return_wizard_line
 from . import contract_inventory_bulk_return_wizard

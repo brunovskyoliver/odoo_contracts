@@ -78,3 +78,9 @@
 "access_project_customer_report_wizard_user","Project Customer Report Wizard User","model_project_customer_report_wizard","account.group_account_invoice",1,1,1,1
 "access_customer_invoice_merged_pdf_manager","Customer Invoice Merged PDF Manager","model_customer_invoice_merged_pdf","account.group_account_manager",1,1,1,1
 "access_customer_invoice_merged_pdf_user","Customer Invoice Merged PDF User","model_customer_invoice_merged_pdf","account.group_account_invoice",1,1,0,0
+"access_contract_supplier_installment_line_manager","Supplier Installment Line Manager","model_contract_supplier_installment_line","account.group_account_manager",1,1,1,1
+"access_contract_supplier_installment_line_user","Supplier Installment Line User","model_contract_supplier_installment_line","account.group_account_invoice",1,1,1,0
+"access_contract_supplier_installment_import_wizard_manager","Supplier Installment Import Wizard Manager","model_contract_supplier_installment_import_wizard","account.group_account_manager",1,1,1,1
+"access_contract_supplier_installment_import_wizard_user","Supplier Installment Import Wizard User","model_contract_supplier_installment_import_wizard","account.group_account_invoice",1,1,1,1
+"access_contract_supplier_installment_import_line_manager","Supplier Installment Import Line Manager","model_contract_supplier_installment_import_line","account.group_account_manager",1,1,1,1
+"access_contract_supplier_installment_import_line_user","Supplier Installment Import Line User","model_contract_supplier_installment_import_line","account.group_account_invoice",1,1,1,1

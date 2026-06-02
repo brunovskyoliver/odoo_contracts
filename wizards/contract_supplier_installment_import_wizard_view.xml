@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="contract_supplier_installment_import_wizard_view_form" model="ir.ui.view">
+        <field name="name">contract.supplier.installment.import.wizard.form</field>
+        <field name="model">contract.supplier.installment.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Importovať splátkový kalendár">
+                <group>
+                    <field name="contract_id" readonly="1" />
+                    <field name="currency_id" invisible="1" />
+                    <field
+                        name="pdf_file"
+                        filename="pdf_filename"
+                        widget="binary"
+                    />
+                    <field name="pdf_filename" invisible="1" />
+                </group>
+                <group>
+                    <field name="invoice_number" />
+                    <field name="valid_from" />
+                    <field name="valid_to" />
+                </group>
+                <field name="line_ids">
+                    <list create="0" edit="0" delete="0">
+                        <field name="currency_id" column_invisible="1" />
+                        <field name="delivery_date" />
+                        <field name="due_date" />
+                        <field name="vat_rate" />
+                        <field name="amount_untaxed" widget="monetary" />
+                        <field name="amount_tax" widget="monetary" />
+                        <field name="amount_total" widget="monetary" />
+                    </list>
+                </field>
+                <footer>
+                    <button
+                        name="action_parse_pdf"
+                        string="Načítať PDF"
+                        type="object"
+                    />
+                    <button
+                        name="action_import_schedule"
+                        string="Importovať"
+                        type="object"
+                        class="btn-primary"
+                    />
+                    <button string="Zrušiť" special="cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
