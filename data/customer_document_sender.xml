@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="email_template_customer_refund" model="mail.template">
+        <field name="name">Credit Note: Sending</field>
+        <field name="model_id" ref="account.model_account_move"/>
+        <field name="subject">{{ object.company_id.name }} Dobropis (Ref {{ object.name or 'n/a' }})</field>
+        <field name="email_from">faktury@novem.sk</field>
+        <field name="email_to">{{ (object.partner_id.commercial_partner_id._fields.get('x_invoice_mails') and object.partner_id.commercial_partner_id.x_invoice_mails) or object.partner_id.email }}</field>
+        <field name="auto_delete" eval="False"/>
+        <field name="body_html" type="html">
+            <div style="margin: 0px; padding: 0px;" data-oe-version="1.0">
+                <p style="margin: 0px; padding: 0px; font-size: 13px;">
+                    Dobrý deň<t t-if="object.partner_id.parent_id">
+                        <t t-out="object.partner_id.name or ''"/> (<t t-out="object.partner_id.parent_id.name or ''"/>),
+                    </t>
+                    <t t-else="">
+                        <t t-out="object.partner_id.name or ''"/>,
+                    </t>
+                    <br/><br/>
+                    v prílohe Vám zasielame dobropis
+                    <strong t-out="object.name or ''">RFAK/2026/00001</strong>
+                    v hodnote
+                    <strong t-out="format_amount(object.amount_total, object.currency_id) or ''">0,00 €</strong>.
+                </p>
+                <p style="margin: 16px 0 0 0; padding: 0px; font-size: 13px;">
+                    V prípade akýchkoľvek otázok nás neváhajte kontaktovať.
+                </p>
+                <p style="margin: 16px 0 0 0; padding: 0px; font-size: 13px;">
+                    S úctou,
+                </p>
+                <p style="margin: 16px 0 0 0; padding: 0px; font-size: 13px;">
+                    <strong>NOVEM-IT, s.r.o. | Lichnerova 35 | 903 01 Senec</strong>
+                </p>
+            </div>
+        </field>
+    </record>
+
+    <record id="ir_cron_send_customer_documents" model="ir.cron">
+        <field name="name">Send Customer Invoices and Credit Notes</field>
+        <field name="model_id" ref="account.model_account_move"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_send_customer_documents(batch_size=20)</field>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="interval_number">20</field>
+        <field name="interval_type">minutes</field>
+        <field name="nextcall">2026-06-01 15:00:00</field>
+        <field name="active">True</field>
+    </record>
+</odoo>

@@ -46,10 +46,21 @@ class TestHelpdeskTicketSchedule(common.TransactionCase):
 
     def test_stage_setup_creates_scheduling_after_new(self):
         self.assertTrue(self.scheduling_stage)
-        self.assertEqual(self.scheduling_stage.team_ids, self.team)
+        self.assertIn(self.team, self.scheduling_stage.team_ids)
         self.assertFalse(self.scheduling_stage.fold)
         self.assertGreater(self.scheduling_stage.sequence, self.new_stage.sequence)
         self.assertEqual(self.team._determine_stage()[self.team.id], self.new_stage)
+
+    def test_stage_setup_adopts_orphan_scheduling_stage(self):
+        self.scheduling_stage.write({"team_ids": [(5, 0, 0)]})
+
+        self.Stage.create_or_update_customer_care_scheduling_stage()
+
+        self.assertIn(self.team, self.scheduling_stage.team_ids)
+        self.assertEqual(
+            len(self.Stage.search([("name", "=", self.Stage._SCHEDULING_STAGE_NAME)])),
+            1,
+        )
 
     def test_future_scheduled_ticket_stays_in_scheduling(self):
         ticket = self._create_ticket(
@@ -67,6 +78,24 @@ class TestHelpdeskTicketSchedule(common.TransactionCase):
         self.assertEqual(ticket.stage_id, self.new_stage)
         self.assertTrue(ticket.schedule_published)
         self.assertTrue(ticket.show_schedule_fields)
+        self.assertFalse(ticket.scheduled_for)
+
+    def test_due_ticket_in_duplicate_scheduling_stage_moves_to_new(self):
+        duplicate_scheduling_stage = self.Stage.create({
+            "name": self.Stage._SCHEDULING_STAGE_NAME,
+            "sequence": 99,
+            "team_ids": [(6, 0, self.team.ids)],
+        })
+        ticket = self._create_ticket(
+            stage_id=duplicate_scheduling_stage.id,
+            scheduled_for=fields.Datetime.now() - relativedelta(minutes=5),
+        )
+
+        self.Ticket.cron_publish_scheduled_customer_care_tickets()
+
+        self.assertFalse(duplicate_scheduling_stage.exists())
+        self.assertEqual(ticket.stage_id, self.new_stage)
+        self.assertTrue(ticket.schedule_published)
         self.assertFalse(ticket.scheduled_for)
 
     def test_due_recurring_ticket_moves_to_new_and_keeps_anchor(self):

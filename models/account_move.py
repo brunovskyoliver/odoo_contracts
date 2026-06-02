@@ -3,14 +3,22 @@
 # Copyright 2020 Tecnativa - Pedro M. Baeza
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import fields, models, api, _
-from odoo.exceptions import UserError
-from odoo.tools import float_compare
+import base64
+import logging
 from datetime import timedelta
+
+from odoo import api, fields, models, modules, _
+from odoo.exceptions import UserError
+from odoo.tools import email_split, float_compare
+
+
+_logger = logging.getLogger(__name__)
 
 
 class AccountMove(models.Model):
     _inherit = "account.move"
+
+    x_invoice_sent = fields.Boolean(string="Invoice sent", copy=False)
 
     # We keep this field for migration purpose
     old_contract_id = fields.Many2one("contract.contract")
@@ -68,6 +76,317 @@ class AccountMove(models.Model):
         store=True,
     )
 
+    contract_customer_mail_state = fields.Selection(
+        selection=[
+            ("pending", "Pending"),
+            ("processing", "Processing"),
+            ("sent", "Sent"),
+            ("failed", "Failed"),
+            ("skipped", "Skipped"),
+        ],
+        string="Customer Mail State",
+        default="pending",
+        copy=False,
+        readonly=True,
+    )
+    contract_customer_mail_attempt_count = fields.Integer(
+        string="Customer Mail Attempts",
+        default=0,
+        copy=False,
+        readonly=True,
+    )
+    contract_customer_mail_last_attempt = fields.Datetime(
+        string="Last Customer Mail Attempt",
+        copy=False,
+        readonly=True,
+    )
+    contract_customer_mail_failure_reason = fields.Text(
+        string="Customer Mail Failure Reason",
+        copy=False,
+        readonly=True,
+    )
+    contract_customer_mail_sent_at = fields.Datetime(
+        string="Customer Mail Sent At",
+        copy=False,
+        readonly=True,
+    )
+    contract_customer_mail_id = fields.Many2one(
+        comodel_name="mail.mail",
+        string="Customer Mail",
+        copy=False,
+        readonly=True,
+    )
+
+    def copy_data(self, default=None):
+        default = dict(default or {})
+        if default.get("reversed_entry_id") or default.get("move_type") == "out_refund":
+            default.setdefault("x_invoice_sent", False)
+            default.setdefault("contract_customer_mail_state", "pending")
+            default.setdefault("contract_customer_mail_attempt_count", 0)
+            default.setdefault("contract_customer_mail_last_attempt", False)
+            default.setdefault("contract_customer_mail_failure_reason", False)
+            default.setdefault("contract_customer_mail_sent_at", False)
+            default.setdefault("contract_customer_mail_id", False)
+        return super().copy_data(default)
+
+    def _contract_invoice_sender_can_commit(self):
+        return not modules.module.current_test
+
+    @api.model
+    def _contract_customer_document_mail_server(self):
+        IrConfig = self.env["ir.config_parameter"].sudo()
+        MailServer = self.env["ir.mail_server"].sudo()
+        configured_value = (
+            IrConfig.get_param("contract.customer_document_mail_server_id") or ""
+        ).strip()
+        invoice_template = self.env.ref(
+            "account.email_template_edi_invoice", raise_if_not_found=False
+        )
+        candidates = [
+            configured_value,
+            str(invoice_template.mail_server_id.id)
+            if invoice_template and invoice_template.mail_server_id
+            else "",
+            "fakturacny_smtp",
+            "novem_elbia",
+            "1",
+        ]
+
+        for candidate in candidates:
+            if not candidate:
+                continue
+            server = (
+                MailServer.browse(int(candidate)).exists()
+                if candidate.isdigit()
+                else MailServer.search([("name", "=", candidate)], limit=1)
+            )
+            if server and ("active" not in server._fields or server.active):
+                return server
+        return MailServer
+
+    def _contract_customer_document_template(self):
+        self.ensure_one()
+        xmlid = (
+            "contract.email_template_customer_refund"
+            if self.move_type == "out_refund"
+            else "account.email_template_edi_invoice"
+        )
+        template = self.env.ref(xmlid, raise_if_not_found=False)
+        if not template:
+            raise UserError(_("Customer document mail template %s was not found.") % xmlid)
+        return template
+
+    def _contract_customer_document_recipient_emails(self, template):
+        self.ensure_one()
+        rendered_email_to = template._render_field("email_to", [self.id]).get(self.id)
+        return email_split(rendered_email_to or "")
+
+    def _contract_customer_document_mail_values(self):
+        self.ensure_one()
+        values = {"auto_delete": False}
+        mail_server = self._contract_customer_document_mail_server()
+        if mail_server:
+            values["mail_server_id"] = mail_server.id
+        return values
+
+    def _contract_customer_document_pdf_attachment(self):
+        self.ensure_one()
+        report = self.env.ref("account.account_invoices", raise_if_not_found=False)
+        if not report:
+            raise UserError(_("Customer invoice PDF report was not found."))
+
+        pdf_content, report_format = (
+            self.env["ir.actions.report"]
+            .sudo()
+            .with_context(report_pdf_no_attachment=True)
+            ._render_qweb_pdf(report, [self.id])
+        )
+        if report_format != "pdf":
+            raise UserError(_("Customer document report did not render as PDF."))
+
+        filename = "%s.pdf" % (self.name or self.id)
+        filename = filename.replace("/", "_")
+        return self.env["ir.attachment"].sudo().create(
+            {
+                "name": filename,
+                "datas": base64.b64encode(pdf_content),
+                "mimetype": "application/pdf",
+                "res_model": self._name,
+                "res_id": self.id,
+                "type": "binary",
+            }
+        )
+
+    def _contract_customer_document_create_mail(self, template):
+        self.ensure_one()
+        values = template._generate_template(
+            [self.id],
+            (
+                "auto_delete",
+                "body_html",
+                "email_cc",
+                "email_from",
+                "email_to",
+                "mail_server_id",
+                "model",
+                "partner_to",
+                "reply_to",
+                "res_id",
+                "scheduled_date",
+                "subject",
+            ),
+        )[self.id]
+
+        partner_ids = values.pop("partner_ids", [])
+        if partner_ids:
+            values["recipient_ids"] = [(4, partner_id) for partner_id in partner_ids]
+        values.update(self._contract_customer_document_mail_values())
+        attachment = self._contract_customer_document_pdf_attachment()
+        values["attachment_ids"] = [(4, attachment.id)]
+        values["body"] = values.get("body_html")
+        if "email_from" in values and not values.get("email_from"):
+            values.pop("email_from")
+
+        return self.env["mail.mail"].sudo().create(values)
+
+    def _contract_customer_document_fail(self, reason, state="failed", mail=False):
+        self.ensure_one()
+        self.write(
+            {
+                "contract_customer_mail_state": state,
+                "contract_customer_mail_failure_reason": reason,
+                "contract_customer_mail_id": mail.id if mail else False,
+                "x_invoice_sent": False,
+            }
+        )
+        self.message_post(body=_("Automatic customer email failed: %s") % reason)
+
+    def _contract_send_customer_document(self):
+        self.ensure_one()
+        if self.state != "posted" or self.move_type not in ("out_invoice", "out_refund"):
+            self._contract_customer_document_fail(
+                _("Only posted customer invoices and refunds can be sent."),
+                state="skipped",
+            )
+            return False
+
+        mail = self.env["mail.mail"].sudo()
+        try:
+            template = self._contract_customer_document_template()
+            if not self._contract_customer_document_recipient_emails(template):
+                self._contract_customer_document_fail(
+                    _("No customer email address was rendered by the mail template."),
+                    state="skipped",
+                )
+                return False
+
+            mail = self._contract_customer_document_create_mail(template)
+            if not mail:
+                self._contract_customer_document_fail(
+                    _("The mail template did not create an outgoing email.")
+                )
+                return False
+
+            mail.send(raise_exception=False)
+            mail.invalidate_recordset(
+                ["state", "failure_reason", "failure_type", "attachment_ids"]
+            )
+
+            if mail.state == "sent":
+                self.write(
+                    {
+                        "contract_customer_mail_state": "sent",
+                        "contract_customer_mail_failure_reason": False,
+                        "contract_customer_mail_sent_at": fields.Datetime.now(),
+                        "contract_customer_mail_id": mail.id,
+                        "x_invoice_sent": True,
+                        "is_move_sent": True,
+                    }
+                )
+                return True
+
+            failure_reason = mail.failure_reason or mail.failure_type or _(
+                "Outgoing email was not accepted by SMTP."
+            )
+            self._contract_customer_document_fail(failure_reason, mail=mail)
+            return False
+        except Exception as err:
+            _logger.exception(
+                "Failed to send customer document %s (%s)",
+                self.name or self.id,
+                self.id,
+            )
+            self._contract_customer_document_fail(str(err), mail=mail)
+            return False
+
+    @api.model
+    def _contract_customer_document_claim_batch(self, batch_size=20):
+        stale_processing_cutoff = fields.Datetime.subtract(
+            fields.Datetime.now(), hours=1
+        )
+        self.env.cr.execute(
+            """
+            SELECT id
+              FROM account_move
+             WHERE state = 'posted'
+               AND move_type IN ('out_invoice', 'out_refund')
+               AND COALESCE(x_invoice_sent, false) = false
+               AND COALESCE(is_move_sent, false) = false
+               AND (
+                    contract_customer_mail_state IS NULL
+                    OR contract_customer_mail_state IN ('pending', 'failed')
+                    OR (
+                        contract_customer_mail_state = 'processing'
+                        AND (
+                            contract_customer_mail_last_attempt IS NULL
+                            OR contract_customer_mail_last_attempt < %s
+                        )
+                    )
+               )
+             ORDER BY COALESCE(invoice_date, date), id
+             FOR UPDATE SKIP LOCKED
+             LIMIT %s
+            """,
+            [stale_processing_cutoff, max(int(batch_size or 20), 1)],
+        )
+        moves = self.browse([row[0] for row in self.env.cr.fetchall()]).exists()
+        now = fields.Datetime.now()
+        for move in moves:
+            move.write(
+                {
+                    "contract_customer_mail_state": "processing",
+                    "contract_customer_mail_last_attempt": now,
+                    "contract_customer_mail_attempt_count": (
+                        move.contract_customer_mail_attempt_count or 0
+                    )
+                    + 1,
+                    "contract_customer_mail_failure_reason": False,
+                }
+            )
+        if moves and self._contract_invoice_sender_can_commit():
+            self.env.cr.commit()
+        return moves
+
+    @api.model
+    def cron_send_customer_documents(self, batch_size=20):
+        sent_count = 0
+        failed_count = 0
+        moves = self._contract_customer_document_claim_batch(batch_size=batch_size)
+        for move in moves:
+            if move._contract_send_customer_document():
+                sent_count += 1
+            else:
+                failed_count += 1
+            if self._contract_invoice_sender_can_commit():
+                self.env.cr.commit()
+
+        _logger.info(
+            "Automatic customer document sender finished: %s sent, %s failed/skipped",
+            sent_count,
+            failed_count,
+        )
+        return {"sent": sent_count, "failed": failed_count}
+
     def message_update(self, msg_dict, update_vals=None):
         result = super().message_update(msg_dict, update_vals=update_vals)
         for move in self:
@@ -97,11 +416,7 @@ class AccountMove(models.Model):
         if author_partner.commercial_partner_id != invoice_partner:
             return
 
-        team = self.env['helpdesk.team'].browse(1).exists()
-        if not team or team.name != 'Starostlivosť o zákazníka':
-            team = self.env['helpdesk.team'].search([
-                ('name', '=', 'Starostlivosť o zákazníka'),
-            ], limit=1)
+        team = self.env['helpdesk.stage']._get_customer_care_team()
         if not team:
             return
 

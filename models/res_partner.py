@@ -67,11 +67,7 @@ class ResPartner(models.Model):
         if "mailer-daemon" in email_from_raw or "postmaster" in email_from_raw:
             return
 
-        team = self.env["helpdesk.team"].browse(1).exists()
-        if not team or team.name != "Starostlivosť o zákazníka":
-            team = self.env["helpdesk.team"].search([
-                ("name", "=", "Starostlivosť o zákazníka"),
-            ], limit=1)
+        team = self.env["helpdesk.stage"]._get_customer_care_team()
         if not team:
             return
 

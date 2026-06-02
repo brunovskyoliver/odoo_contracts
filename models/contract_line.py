@@ -1467,7 +1467,9 @@ class ContractLine(models.Model):
     def action_view_mobile_services(self):
         """Open the mobile services related to this contract line"""
         self.ensure_one()
-        action = self.env.ref('contract.action_contract_mobile_service').read()[0]
+        action = self.env['ir.actions.act_window']._for_xml_id(
+            'contract.action_contract_mobile_service'
+        )
         
         # Make the button/link description more informative
         if self.mobile_service_ids:

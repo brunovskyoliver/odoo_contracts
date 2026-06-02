@@ -5,3 +5,5 @@ from . import test_portal
 from . import test_multicompany
 from . import test_supplier_invoice_processor
 from . import test_sign_mail_routing
+from . import test_bank_statement_sync_alert
+from . import test_customer_document_sender

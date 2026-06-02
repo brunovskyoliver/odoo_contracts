@@ -9,12 +9,16 @@ from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 try:
+    from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors
+    from reportlab.lib.utils import ImageReader
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
     from reportlab.pdfgen import canvas
 except ImportError:
+    A4 = None
     colors = None
+    ImageReader = None
     pdfmetrics = None
     TTFont = None
     canvas = None
@@ -34,6 +38,28 @@ class VendorBillAttachmentWizard(models.TransientModel):
 
     _name = "vendor.bill.attachment.wizard"
     _description = "Vendor Bill Attachment Merge Wizard"
+    _merge_attachment_mimetypes = (
+        "application/pdf",
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+    )
+    _merge_image_mimetypes = (
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+    )
+    _merge_attachment_extensions = (
+        ".pdf",
+        ".jpg",
+        ".jpeg",
+        ".png",
+    )
+    _merge_image_extensions = (
+        ".jpg",
+        ".jpeg",
+        ".png",
+    )
 
     # Selection mode: from list selection or by date range
     selection_mode = fields.Selection(
@@ -121,13 +147,17 @@ class VendorBillAttachmentWizard(models.TransientModel):
     @api.depends("move_ids")
     def _compute_attachment_info(self):
         for wizard in self:
-            moves_with_attachment = wizard.move_ids.filtered(
-                lambda m: m.message_main_attachment_id
-                and m.message_main_attachment_id.mimetype == "application/pdf"
-            )
-            moves_without = wizard.move_ids - moves_with_attachment
+            attachment_count = 0
+            moves_without = self.env["account.move"]
+
+            for move in wizard.move_ids:
+                merge_attachments = wizard._get_move_merge_attachments(move)
+                if merge_attachments:
+                    attachment_count += len(merge_attachments)
+                else:
+                    moves_without |= move
             
-            wizard.attachment_count = len(moves_with_attachment)
+            wizard.attachment_count = attachment_count
             wizard.missing_attachment_count = len(moves_without)
             
             if moves_without:
@@ -171,13 +201,14 @@ class VendorBillAttachmentWizard(models.TransientModel):
             ("move_type", "in", ("in_invoice", "in_refund", "in_receipt")),
             ("date", ">=", self.date_from),
             ("date", "<=", self.date_to),
-            ("message_main_attachment_id", "!=", False),
         ]
         
         if self.partner_ids:
             domain.append(("partner_id", "in", self.partner_ids.ids))
         
-        moves = self.env["account.move"].search(domain)
+        moves = self.env["account.move"].search(domain).filtered(
+            lambda move: self._get_move_merge_attachments(move)
+        )
         
         self.write({
             "move_ids": [(6, 0, moves.ids)],
@@ -221,12 +252,66 @@ class VendorBillAttachmentWizard(models.TransientModel):
         return (move_date, str(move_name), str(partner_name), move.id)
 
     def _get_attachment_pdf_data(self, attachment):
-        """Return decoded PDF bytes, preferring Odoo's raw attachment payload."""
+        """Return decoded attachment bytes, preferring Odoo's raw payload."""
+        return self._get_attachment_data(attachment)
+
+    def _get_attachment_data(self, attachment):
+        """Return decoded attachment bytes, preferring Odoo's raw payload."""
         if "raw" in attachment._fields and attachment.raw:
             return attachment.raw
         if attachment.datas:
             return base64.b64decode(attachment.datas)
         return b""
+
+    def _is_mergeable_attachment(self, attachment):
+        attachment_name = (attachment.name or "").lower() if attachment else ""
+        return bool(
+            attachment
+            and (
+                attachment.mimetype in self._merge_attachment_mimetypes
+                or attachment_name.endswith(self._merge_attachment_extensions)
+            )
+        )
+
+    def _is_image_attachment(self, attachment):
+        attachment_name = (attachment.name or "").lower() if attachment else ""
+        return bool(
+            attachment
+            and (
+                attachment.mimetype in self._merge_image_mimetypes
+                or attachment_name.endswith(self._merge_image_extensions)
+            )
+        )
+
+    def _get_move_merge_attachments(self, move):
+        """Return all supported bill attachments, keeping the main one first."""
+        Attachment = self.env["ir.attachment"]
+        attachments = Attachment.search([
+            ("res_model", "=", "account.move"),
+            ("res_id", "=", move.id),
+        ]).filtered(self._is_mergeable_attachment)
+
+        ordered_attachments = Attachment
+        seen_attachment_ids = set()
+        main_attachment = move.message_main_attachment_id
+        if self._is_mergeable_attachment(main_attachment):
+            ordered_attachments |= main_attachment
+            seen_attachment_ids.add(main_attachment.id)
+
+        for attachment in attachments.sorted(
+            key=lambda att: (att.create_date or datetime.min, att.id)
+        ):
+            if attachment.id not in seen_attachment_ids:
+                ordered_attachments |= attachment
+                seen_attachment_ids.add(attachment.id)
+        return ordered_attachments
+
+    def _get_attachment_outline_label(self, move, attachment, attachment_count):
+        """Return a bookmark label that distinguishes secondary attachments."""
+        move_label = self._get_move_pdf_label(move)
+        if attachment_count <= 1:
+            return move_label
+        return f"{move_label} - {attachment.name or attachment.id}"
 
     def _add_pdf_outline_item(self, writer, title, page_number):
         """Add a lightweight invoice bookmark when supported by PyPDF2."""
@@ -349,11 +434,70 @@ class VendorBillAttachmentWizard(models.TransientModel):
             reader.decrypt("")
         return reader
 
+    def _image_attachment_to_pdf_data(self, image_data, attachment):
+        """Convert an image attachment to a single-page PDF."""
+        if not canvas or not ImageReader or not A4:
+            raise UserError(_(
+                "ReportLab library is not installed. Please install it to merge image attachments."
+            ))
+
+        image_stream = io.BytesIO(image_data)
+        try:
+            image_reader = ImageReader(image_stream)
+            image_width, image_height = image_reader.getSize()
+        except Exception as err:
+            raise UserError(
+                _("Could not read image attachment %s: %s") % (attachment.name, err)
+            )
+
+        if not image_width or not image_height:
+            raise UserError(
+                _("Image attachment %s has invalid dimensions.") % attachment.name
+            )
+
+        page_width, page_height = A4
+        if image_width > image_height:
+            page_width, page_height = page_height, page_width
+
+        margin = 36
+        max_width = page_width - (2 * margin)
+        max_height = page_height - (2 * margin)
+        scale = min(max_width / image_width, max_height / image_height)
+        draw_width = image_width * scale
+        draw_height = image_height * scale
+        x_position = (page_width - draw_width) / 2
+        y_position = (page_height - draw_height) / 2
+
+        output_stream = io.BytesIO()
+        pdf_canvas = canvas.Canvas(output_stream, pagesize=(page_width, page_height))
+        pdf_canvas.drawImage(
+            image_reader,
+            x_position,
+            y_position,
+            width=draw_width,
+            height=draw_height,
+            preserveAspectRatio=True,
+            mask="auto",
+        )
+        pdf_canvas.save()
+        return output_stream.getvalue()
+
+    def _prepare_attachment_reader(self, attachment, banner_text):
+        """Return a PdfReader for a supported PDF or image attachment."""
+        attachment_data = self._get_attachment_data(attachment)
+        if not attachment_data:
+            return False
+
+        if self._is_image_attachment(attachment):
+            attachment_data = self._image_attachment_to_pdf_data(attachment_data, attachment)
+
+        return self._prepare_pdf_reader(attachment_data, attachment, banner_text)
+
     def _merge_pdfs(self, moves_with_attachments):
-        """Merge multiple PDF attachments into one.
+        """Merge multiple PDF and image attachments into one PDF.
         
         For O2/Telekom invoices, only the first page is included.
-        Each invoice gets a PDF outline entry for identification. Page banners
+        Each attachment gets a PDF outline entry for identification. Page banners
         can be disabled from the wizard when maximum speed is preferred.
         """
         if not PdfWriter:
@@ -365,46 +509,78 @@ class VendorBillAttachmentWizard(models.TransientModel):
         page_count = 0
         
         for move in moves_with_attachments:
-            attachment = move.message_main_attachment_id
+            attachments = self._get_move_merge_attachments(move)
+            move_has_pages = False
+            attachment_count = len(attachments)
+
+            if not attachments:
+                errors.append(
+                    f"No supported attachments found for invoice {move.name or move.id}"
+                )
+                continue
+
             try:
-                pdf_data = self._get_attachment_pdf_data(attachment)
-                if not pdf_data:
-                    errors.append(f"Empty attachment data: {attachment.name}")
-                    continue
-
-                outline_text = self._get_move_pdf_label(move)
-                banner_text = self._get_move_pdf_banner_label(move)
-                reader = self._prepare_pdf_reader(pdf_data, attachment, banner_text)
-                source_page_count = len(reader.pages)
-
-                if source_page_count == 0:
-                    errors.append(f"Empty PDF: {attachment.name}")
-                    continue
-
                 is_telecom = self._is_telecom_vendor(move.partner_id.name)
-                pages_to_copy = range(1) if is_telecom else range(source_page_count)
-                first_output_page = page_count
+                for attachment in attachments:
+                    try:
+                        reader = self._prepare_attachment_reader(
+                            attachment,
+                            self._get_move_pdf_banner_label(move),
+                        )
+                        if not reader:
+                            errors.append(f"Empty attachment data: {attachment.name}")
+                            continue
 
-                for page_index in pages_to_copy:
-                    writer.add_page(reader.pages[page_index])
-                    page_count += 1
+                        source_page_count = len(reader.pages)
+                        if source_page_count == 0:
+                            errors.append(f"Empty PDF: {attachment.name}")
+                            continue
 
-                self._add_pdf_outline_item(writer, outline_text, first_output_page)
-                successful_merges += 1
+                        pages_to_copy = (
+                            range(1) if is_telecom else range(source_page_count)
+                        )
+                        first_output_page = page_count
 
-                if is_telecom:
-                    _logger.info(
-                        "Added first page only from %s (telecom vendor: %s)",
-                        attachment.name,
-                        move.partner_id.name,
-                    )
+                        for page_index in pages_to_copy:
+                            writer.add_page(reader.pages[page_index])
+                            page_count += 1
+
+                        outline_text = self._get_attachment_outline_label(
+                            move, attachment, attachment_count
+                        )
+                        self._add_pdf_outline_item(writer, outline_text, first_output_page)
+                        move_has_pages = True
+
+                        if is_telecom and source_page_count > 1:
+                            _logger.info(
+                                "Added first page only from %s (telecom vendor: %s)",
+                                attachment.name,
+                                move.partner_id.name,
+                            )
+                    except Exception as attachment_err:
+                        errors.append(f"Error with {attachment.name}: {str(attachment_err)}")
+                        _logger.warning(
+                            "Failed to merge attachment %s for bill %s: %s",
+                            attachment.name,
+                            move.name or move.id,
+                            attachment_err,
+                        )
+
+                if move_has_pages:
+                    successful_merges += 1
                     
             except Exception as e:
-                errors.append(f"Error with {attachment.name}: {str(e)}")
-                _logger.warning("Failed to merge PDF %s: %s", attachment.name, e)
+                errors.append(f"Error with invoice {move.name or move.id}: {str(e)}")
+                _logger.warning(
+                    "Failed to merge attachments for bill %s: %s",
+                    move.name or move.id,
+                    e,
+                )
         
         if successful_merges == 0:
-            raise UserError(_("No valid PDFs could be merged. Errors:\n%s") % "\n".join(errors))
+            raise UserError(_(
+                "No valid PDF or image attachments could be merged. Errors:\n%s"
+            ) % "\n".join(errors))
         
         # Write merged PDF to bytes
         output_stream = io.BytesIO()
@@ -414,16 +590,16 @@ class VendorBillAttachmentWizard(models.TransientModel):
         return merged_data, successful_merges, errors, page_count
 
     def _process_batch(self, moves, batch_num, total_batches):
-        """Process a batch of moves and return their PDF attachments."""
+        """Process a batch of moves and return their supported attachments."""
         attachments = self.env["ir.attachment"]
         
         for move in moves:
-            if move.message_main_attachment_id:
-                att = move.message_main_attachment_id
-                if att.mimetype == "application/pdf":
-                    attachments |= att
+            attachments |= self._get_move_merge_attachments(move)
         
-        _logger.info(f"Batch {batch_num}/{total_batches}: Found {len(attachments)} PDF attachments from {len(moves)} moves")
+        _logger.info(
+            f"Batch {batch_num}/{total_batches}: Found {len(attachments)} "
+            f"supported attachments from {len(moves)} moves"
+        )
         return attachments
 
     def action_generate_merged_pdf(self):
@@ -434,21 +610,24 @@ class VendorBillAttachmentWizard(models.TransientModel):
             raise UserError(_("No invoices selected."))
         
         if self.attachment_count == 0:
-            raise UserError(_("None of the selected invoices have PDF attachments."))
+            raise UserError(_(
+                "None of the selected invoices have PDF or image attachments."
+            ))
         
         self.write({"state": "processing", "progress": 0})
         
         try:
-            # Get all moves with attachments, sorted by date/name for consistent ordering
+            # Get all moves with attachments, sorted by date/name for consistent ordering.
             moves_with_attachments = self.move_ids.filtered(
-                lambda m: m.message_main_attachment_id
-                and m.message_main_attachment_id.mimetype == "application/pdf"
+                lambda m: self._get_move_merge_attachments(m)
             ).sorted(key=self._get_move_pdf_sort_key)
             
             _logger.info(f"Starting PDF merge for {len(moves_with_attachments)} invoices")
             
-            # Merge all PDFs (passes moves so we can check vendor for first-page-only logic)
-            merged_pdf_data, successful_count, errors, page_count = self._merge_pdfs(moves_with_attachments)
+            # Merge all attachments, passing moves for vendor-specific page handling.
+            merged_pdf_data, successful_count, errors, page_count = self._merge_pdfs(
+                moves_with_attachments
+            )
             
             # Create the result attachment
             filename = f"vendor_bills_merged_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
@@ -478,8 +657,12 @@ class VendorBillAttachmentWizard(models.TransientModel):
             
             error_msg = ""
             if errors:
-                error_msg = _("Merged %d/%d PDFs. Some errors occurred:\n%s") % (
-                    successful_count, len(moves_with_attachments), "\n".join(errors[:10])
+                error_msg = _(
+                    "Merged %d/%d invoices. Some attachments had errors:\n%s"
+                ) % (
+                    successful_count,
+                    len(moves_with_attachments),
+                    "\n".join(errors[:10]),
                 )
             
             self.write({

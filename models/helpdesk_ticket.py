@@ -226,11 +226,16 @@ class HelpdeskTicket(models.Model):
     @api.model
     def cron_publish_scheduled_customer_care_tickets(self):
         stage_model = self.env["helpdesk.stage"]
+        stage_model.create_or_update_customer_care_scheduling_stage()
+        customer_care_teams = stage_model._get_customer_care_teams()
         scheduling_stage = stage_model._get_customer_care_stage(
             stage_model._SCHEDULING_STAGE_NAME
         )
+        scheduling_stages = stage_model._get_customer_care_stage_candidates(
+            stage_model._SCHEDULING_STAGE_NAME
+        )
         new_stage = stage_model._get_customer_care_stage(stage_model._NEW_STAGE_NAME)
-        if not scheduling_stage or not new_stage:
+        if not customer_care_teams or not scheduling_stage or not new_stage:
             _logger.warning(
                 "Skipping scheduled ticket publishing because Scheduling or Nové stage is missing for team %s.",
                 stage_model._CUSTOMER_CARE_TEAM_NAME,
@@ -239,7 +244,8 @@ class HelpdeskTicket(models.Model):
 
         due_tickets = self.search([
             ("active", "=", True),
-            ("stage_id", "=", scheduling_stage.id),
+            ("team_id", "in", customer_care_teams.ids),
+            ("stage_id", "in", scheduling_stages.ids),
             ("scheduled_for", "!=", False),
             ("scheduled_for", "<=", fields.Datetime.now()),
         ])

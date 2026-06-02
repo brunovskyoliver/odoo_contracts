@@ -33,8 +33,8 @@
                     <group invisible="state != 'draft'">
                         <group string="Výber">
                             <field name="move_count" string="Vybrané faktúry"/>
-                            <field name="attachment_count" string="S PDF prílohami"/>
-                            <field name="missing_attachment_count" string="Bez PDF príloh"/>
+                            <field name="attachment_count" string="PDF/obrázkové prílohy"/>
+                            <field name="missing_attachment_count" string="Bez PDF/obrázkovej prílohy"/>
                         </group>
                         <group string="Možnosti">
                             <field name="include_page_banner"/>
@@ -43,7 +43,7 @@
                     </group>
                     
                     <!-- Show missing attachment info if any -->
-                    <group invisible="not missing_attachment_info or state != 'draft'" string="Faktúry bez PDF prílohy">
+                    <group invisible="not missing_attachment_info or state != 'draft'" string="Faktúry bez PDF/obrázkovej prílohy">
                         <field name="missing_attachment_info" nolabel="1" readonly="1" widget="text"/>
                     </group>
 

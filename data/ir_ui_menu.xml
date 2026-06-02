@@ -23,5 +23,6 @@
         name="Inventory"
         parent="menu_contract_root"
         sequence="30"
+        groups="account.group_account_invoice"
     />
 </odoo>

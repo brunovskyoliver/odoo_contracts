@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <function model="ir.model.data" name="write">
+        <function model="ir.model.data" name="search">
+            <value eval="[('module', '=', 'contract'), ('name', '=', 'ir_cron_check_bank_statement_sync')]"/>
+        </function>
+        <value eval="{'noupdate': False}"/>
+    </function>
+
+    <record id="ir_cron_check_bank_statement_sync" model="ir.cron">
+        <field name="name">Check Bank Statement Synchronization</field>
+        <field name="model_id" ref="account.model_account_bank_statement_line"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_check_daily_bank_statement_sync()</field>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="interval_number">1</field>
+        <field name="interval_type">hours</field>
+        <field name="nextcall">2026-06-02 08:00:00</field>
+        <field name="active">True</field>
+    </record>
+
+    <function model="ir.model.data" name="write">
+        <function model="ir.model.data" name="search">
+            <value eval="[('module', '=', 'contract'), ('name', '=', 'ir_cron_check_bank_statement_sync')]"/>
+        </function>
+        <value eval="{'noupdate': True}"/>
+    </function>
+</odoo>
