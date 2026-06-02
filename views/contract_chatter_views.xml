@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="contract_contract_customer_single_chatter_view" model="ir.ui.view">
+        <field name="name">contract.contract.customer.single.chatter</field>
+        <field name="model">contract.contract</field>
+        <field name="inherit_id" ref="contract.contract_contract_customer_form_view" />
+        <field name="priority" eval="1000" />
+        <field name="arch" type="xml">
+            <xpath expr="/form[1]/sheet[1]/following-sibling::chatter" position="replace" />
+            <xpath expr="/form[1]/sheet[1]" position="after">
+                <chatter/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="contract_contract_supplier_single_chatter_view" model="ir.ui.view">
+        <field name="name">contract.contract.supplier.single.chatter</field>
+        <field name="model">contract.contract</field>
+        <field name="inherit_id" ref="contract.contract_contract_supplier_form_view" />
+        <field name="priority" eval="1000" />
+        <field name="arch" type="xml">
+            <xpath expr="/form[1]/sheet[1]/following-sibling::chatter" position="replace" />
+            <xpath expr="/form[1]/sheet[1]" position="after">
+                <chatter/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
