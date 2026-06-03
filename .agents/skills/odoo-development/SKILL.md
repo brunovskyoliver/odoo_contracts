@@ -73,6 +73,10 @@ You are an expert in Python, Odoo, and enterprise business application developme
 4. Document comprehensively
 5. Extend via inheritance, never modify core code
 
+## Feature Documentation Convention
+
+When implementing or changing functionality in this addon, document the user-visible feature, important behavior, changed models/views/assets, and any operational notes in `FEATURES.md`.
+
 ## Module Structure Best Practices
 
 ```

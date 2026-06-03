@@ -24,6 +24,12 @@ class ProjectProject(models.Model):
         digits=(16, 2),
         help="Multiplier used in customer worksheet reports. Example: 1.50 means 1 hour is reported as 1.5 hours.",
     )
+    contract_timer_project = fields.Boolean(
+        string="Timer Managed Project",
+        copy=False,
+        default=False,
+        help="Technical project used for customer-care timer timesheets.",
+    )
 
     @api.constrains("customer_hours_multiplier")
     def _check_customer_hours_multiplier(self):

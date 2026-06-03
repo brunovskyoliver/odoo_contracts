@@ -76,6 +76,8 @@
 "access_customer_invoice_attachment_wizard_user","Customer Invoice Attachment Wizard User","model_customer_invoice_attachment_wizard","account.group_account_invoice",1,1,1,1
 "access_project_customer_report_wizard_manager","Project Customer Report Wizard Manager","model_project_customer_report_wizard","account.group_account_manager",1,1,1,1
 "access_project_customer_report_wizard_user","Project Customer Report Wizard User","model_project_customer_report_wizard","account.group_account_invoice",1,1,1,1
+"access_contract_timer_session_user","Timer Session User","model_contract_timer_session","base.group_user",1,1,1,0
+"access_contract_timer_session_manager","Timer Session Manager","model_contract_timer_session","helpdesk.group_helpdesk_manager",1,1,1,1
 "access_customer_invoice_merged_pdf_manager","Customer Invoice Merged PDF Manager","model_customer_invoice_merged_pdf","account.group_account_manager",1,1,1,1
 "access_customer_invoice_merged_pdf_user","Customer Invoice Merged PDF User","model_customer_invoice_merged_pdf","account.group_account_invoice",1,1,0,0
 "access_contract_supplier_installment_line_manager","Supplier Installment Line Manager","model_contract_supplier_installment_line","account.group_account_manager",1,1,1,1

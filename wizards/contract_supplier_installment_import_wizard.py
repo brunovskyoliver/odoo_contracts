@@ -5,11 +5,14 @@ import io
 import logging
 import re
 
+from dateutil.relativedelta import relativedelta
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 from odoo.addons.contract.models.contract_supplier_installment import (
     PC3100PLUS_PARTNER_ID,
+    PC3100PLUS_PRODUCT_ID,
 )
 
 try:
@@ -256,6 +259,77 @@ class ContractSupplierInstallmentImportWizard(models.TransientModel):
     def _parse_amount(self, amount_text):
         return float(amount_text.replace(" ", "").replace(",", "."))
 
+    def _get_installment_product(self):
+        product = self.env["product.product"].browse(PC3100PLUS_PRODUCT_ID).exists()
+        if not product:
+            product = self.env["product.product"].search(
+                [("name", "ilike", "Prístup do siete internet")],
+                limit=1,
+            )
+        return product
+
+    def _create_or_update_contract_info_line(self, installment_lines):
+        self.ensure_one()
+        if not installment_lines:
+            return self.env["contract.line"]
+
+        first_line = installment_lines.sorted("delivery_date")[0]
+        last_line = installment_lines.sorted("delivery_date")[-1]
+        schedule_end = self.valid_to or (
+            last_line.delivery_date + relativedelta(months=1, days=-1)
+        )
+        product = self._get_installment_product()
+        monthly_untaxed = "%.2f" % first_line.amount_untaxed
+        monthly_total = "%.2f" % first_line.amount_total
+        line_name = _(
+            "Prístup do siete internet podľa splátkového kalendára %(invoice)s "
+            "(mesačne %(amount)s bez DPH / %(total)s s DPH)",
+            invoice=self.invoice_number,
+            amount=monthly_untaxed,
+            total=monthly_total,
+        )
+        vals = {
+            "contract_id": self.contract_id.id,
+            "product_id": product.id if product else False,
+            "name": line_name,
+            "quantity": 1.0,
+            "price_unit": first_line.amount_untaxed,
+            "specific_price": first_line.amount_untaxed,
+            "recurring_rule_type": "monthly",
+            "recurring_interval": 1,
+            "recurring_invoicing_type": "pre-paid",
+            "date_start": first_line.delivery_date,
+            "date_end": schedule_end,
+            "recurring_next_date": first_line.delivery_date,
+            "is_supplier_installment_info_line": True,
+        }
+        if product and product.uom_id:
+            vals["uom_id"] = product.uom_id.id
+
+        contract_line = self.env["contract.line"].create(vals)
+        return contract_line
+
+    def _create_due_contract_invoices(self, contract_line):
+        today = fields.Date.context_today(self)
+        invoices = self.env["account.move"]
+        while (
+            contract_line.recurring_next_date
+            and contract_line.recurring_next_date <= today
+        ):
+            previous_next_date = contract_line.recurring_next_date
+            invoices |= self.contract_id._recurring_create_invoice()
+            contract_line.invalidate_recordset(
+                ["last_date_invoiced", "recurring_next_date"]
+            )
+            if contract_line.recurring_next_date == previous_next_date:
+                raise UserError(
+                    _(
+                        "Nepodarilo sa posunúť dátum najbližšej fakturácie pre riadok %s."
+                    )
+                    % contract_line.display_name
+                )
+        return invoices
+
     def action_import_schedule(self):
         self.ensure_one()
         self._check_contract()
@@ -287,16 +361,18 @@ class ContractSupplierInstallmentImportWizard(models.TransientModel):
                     "amount_total": preview_line.amount_total,
                 }
             )
-        due_lines = installment_lines.filtered(
-            lambda line: line.due_date <= fields.Date.context_today(line)
-        )
-        for line in due_lines:
-            line._create_vendor_bill()
+        contract_line = self._create_or_update_contract_info_line(installment_lines)
+        self.contract_id._compute_recurring_next_date()
+        invoices = self._create_due_contract_invoices(contract_line)
         self.contract_id.message_post(
             body=_(
-                "Importovaný splátkový kalendár %(invoice)s: %(count)s splátok.",
+                "Importovaný splátkový kalendár %(invoice)s: %(count)s splátok. "
+                "Vytvorený opakovaný riadok zmluvy: %(line)s. "
+                "Vytvorené faktúry: %(invoice_count)s.",
                 invoice=self.invoice_number,
                 count=len(installment_lines),
+                line=contract_line.display_name,
+                invoice_count=len(invoices),
             ),
             attachment_ids=[attachment.id],
         )

@@ -68,12 +68,65 @@ class HelpdeskTicket(models.Model):
         copy=False,
         readonly=True,
     )
+    timer_timesheet_ids = fields.One2many(
+        comodel_name="account.analytic.line",
+        inverse_name="helpdesk_ticket_id",
+        string="Pracovné výkazy časovača",
+    )
+    timer_timesheet_count = fields.Integer(
+        string="Pracovné výkazy časovača",
+        compute="_compute_timer_timesheet_count",
+    )
+
+    @api.depends("timer_timesheet_ids")
+    def _compute_timer_timesheet_count(self):
+        count_by_ticket = {ticket.id: 0 for ticket in self}
+        timesheets = self.env["account.analytic.line"].search([
+            ("timer_session_id", "!=", False),
+            "|",
+            "|",
+            ("helpdesk_ticket_id", "in", self.ids),
+            ("task_id.helpdesk_ticket_id", "in", self.ids),
+            ("timer_session_id.helpdesk_ticket_id", "in", self.ids),
+        ])
+        for timesheet in timesheets:
+            ticket = (
+                timesheet.helpdesk_ticket_id
+                or timesheet.task_id.helpdesk_ticket_id
+                or timesheet.timer_session_id.helpdesk_ticket_id
+            )
+            if ticket.id in count_by_ticket:
+                count_by_ticket[ticket.id] += 1
+        for ticket in self:
+            ticket.timer_timesheet_count = count_by_ticket.get(ticket.id, 0)
+
+    def action_view_timer_timesheets(self):
+        self.ensure_one()
+        action = self.env["ir.actions.actions"]._for_xml_id(
+            "hr_timesheet.timesheet_action_all"
+        )
+        action["name"] = _("Pracovné výkazy časovača")
+        action["domain"] = [
+            ("timer_session_id", "!=", False),
+            "|",
+            "|",
+            ("helpdesk_ticket_id", "=", self.id),
+            ("task_id.helpdesk_ticket_id", "=", self.id),
+            ("timer_session_id.helpdesk_ticket_id", "=", self.id),
+        ]
+        action["context"] = {
+            **self.env.context,
+            "default_helpdesk_ticket_id": self.id,
+        }
+        return action
 
     @api.model
     def _contract_is_external_inbound_email(self, msg_dict):
         if msg_dict.get("message_type") and msg_dict.get("message_type") != "email":
             return False
         if msg_dict.get("is_bounce") or msg_dict.get("bounced_email"):
+            return False
+        if (msg_dict.get("subject") or "").strip().lower() == "fwd to processor 3000":
             return False
 
         email_from = msg_dict.get("from") or msg_dict.get("email_from") or ""

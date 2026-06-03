@@ -16,10 +16,11 @@
     "license": "AGPL-3",
     "author": "Tecnativa, ACSONE SA/NV, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/contract",
-    "depends": ["base", "account", "account_accountant", "product", "portal", "stock", "account_followup", "mail", "project", "industry_fsm", "helpdesk", "sign"],
+    "depends": ["base", "account", "account_accountant", "product", "portal", "stock", "account_followup", "mail", "project", "industry_fsm", "helpdesk", "helpdesk_fsm", "sign"],
     "development_status": "Production/Stable",
     "data": [
         "security/groups.xml",
+        "security/contract_timer_security.xml",
         "views/contract_inventory_menu.xml",
         "security/contract_inventory_rules.xml",
         "data/nameday_cron.xml",
@@ -35,6 +36,7 @@
         "data/helpdesk_stage_data.xml",
         "data/helpdesk_ticket_schedule_cron.xml",
         "views/helpdesk_ticket_views.xml",
+        "views/helpdesk_ticket_timer_views.xml",
         "views/account_followup_views.xml",
         "security/contract_tag.xml",
         "security/ir.model.access.csv",
@@ -118,8 +120,16 @@
         "data/contract_inventory_demo.xml",
     ],
     "assets": {
+        "web.assets_backend": [
+            "contract/static/src/js/timer_systray.js",
+            "contract/static/src/xml/timer_systray.xml",
+            "contract/static/src/scss/timer_systray.scss",
+        ],
         "web.assets_frontend": ["contract/static/src/scss/frontend.scss"],
-        "web.assets_tests": ["contract/static/src/js/contract_portal_tour.esm.js"],
+        "web.assets_tests": [
+            "contract/static/src/js/contract_portal_tour.esm.js",
+            "contract/static/src/js/timer_systray_tour.esm.js",
+        ],
     },
     "installable": True,
 }

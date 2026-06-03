@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="contract.TimerSystray">
+        <div
+            t-if="state.available"
+            class="contract_timer_systray"
+            t-att-class="{ 'is-active': state.running || state.paused }"
+            title="Časovač"
+        >
+            <button
+                class="contract_timer_button"
+                type="button"
+                role="button"
+                t-att-class="{ 'is-running': state.running, 'is-paused': state.paused, 'is-loading': state.loading }"
+                t-att-disabled="state.loading"
+                t-on-click="() => this.onClick()"
+            >
+                <span class="contract_timer_icon_slot">
+                    <i class="fa fa-hourglass-half fa-lg" role="img" aria-label="Časovač"/>
+                </span>
+                <span t-if="state.running || state.paused" class="contract_timer_elapsed" t-esc="elapsedLabel"/>
+            </button>
+        </div>
+    </t>
+
+    <t t-name="contract.TimerStopDialog">
+        <Dialog
+            size="'md'"
+            title.translate="Časovač"
+            contentClass="'contract_timer_modal'"
+            bodyClass="'contract_timer_modal_body'"
+        >
+            <div class="contract_timer_dialog">
+                <t t-if="state.loading">
+                    <div class="text-muted">Načítavam...</div>
+                </t>
+                <t t-else="">
+                    <div t-if="!state.tickets.length" class="alert alert-warning mb-0">
+                        Nemáte priradené žiadne otvorené zákaznícke tikety.
+                    </div>
+                    <t t-else="">
+                        <div class="mb-3">
+                            <label class="form-label" for="contract_timer_ticket_select">Helpdesk tiket</label>
+                            <select
+                                id="contract_timer_ticket_select"
+                                class="form-select"
+                                t-on-change="(ev) => this.onTicketChange(ev)"
+                            >
+                                <t t-foreach="state.tickets" t-as="ticket" t-key="ticket.id">
+                                    <option
+                                        t-att-value="ticket.id"
+                                        t-att-selected="ticket.id === state.ticketId"
+                                    >
+                                        <t t-if="ticket.ticket_ref" t-esc="ticket.ticket_ref"/>
+                                        <t t-if="ticket.ticket_ref"> - </t>
+                                        <t t-esc="ticket.display_name"/>
+                                        <t t-if="ticket.partner_name"> (</t>
+                                        <t t-if="ticket.partner_name" t-esc="ticket.partner_name"/>
+                                        <t t-if="ticket.partner_name">)</t>
+                                    </option>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <t t-if="state.taskLoading">
+                                <div class="text-muted">Načítavam úlohy...</div>
+                            </t>
+                            <t t-elif="state.willCreateTask">
+                                <div class="alert alert-info mb-0">
+                                    Zatiaľ neexistuje žiadna úloha. Pri uložení sa vytvorí automaticky.
+                                </div>
+                            </t>
+                            <t t-elif="state.tasks.length === 1">
+                                <div class="alert alert-info mb-0">
+                                    Čas sa uloží do:
+                                    <strong t-esc="state.tasks[0].display_name"/>
+                                </div>
+                            </t>
+                            <t t-elif="state.tasks.length > 1">
+                                <label class="form-label" for="contract_timer_task_select">Úloha</label>
+                                <select
+                                    id="contract_timer_task_select"
+                                    class="form-select contract_timer_task_select"
+                                    t-on-change="(ev) => this.onTaskChange(ev)"
+                                >
+                                    <option value="">Vyberte úlohu...</option>
+                                    <t t-foreach="state.tasks" t-as="task" t-key="task.id">
+                                        <option
+                                            t-att-value="task.id"
+                                            t-att-selected="task.id === state.taskId"
+                                        >
+                                            <t t-esc="task.display_name"/>
+                                            <t t-if="task.project_name"> - </t>
+                                            <t t-if="task.project_name" t-esc="task.project_name"/>
+                                        </option>
+                                    </t>
+                                </select>
+                            </t>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="contract_timer_description">Popis</label>
+                            <textarea
+                                id="contract_timer_description"
+                                class="form-control contract_timer_description"
+                                rows="3"
+                                t-att-value="state.description"
+                                t-on-input="(ev) => this.onDescriptionInput(ev)"
+                                placeholder="Popíšte vykonanú prácu..."
+                            />
+                        </div>
+                        <div class="form-check">
+                            <input
+                                id="contract_timer_double_rate"
+                                class="form-check-input"
+                                type="checkbox"
+                                t-model="state.doubleRate"
+                            />
+                            <label class="form-check-label" for="contract_timer_double_rate">2x sadzba</label>
+                        </div>
+                    </t>
+                </t>
+            </div>
+            <t t-set-slot="footer">
+                <button
+                    class="btn btn-primary contract_timer_save"
+                    t-att-disabled="!canSave"
+                    t-on-click="() => this.onConfirm()"
+                >
+                    Uložiť čas
+                </button>
+                <button
+                    t-if="this.props.timerState === 'paused'"
+                    class="btn btn-secondary contract_timer_resume"
+                    t-att-disabled="state.loading || state.saving"
+                    t-on-click="() => this.onResume()"
+                >
+                    Pokračovať
+                </button>
+                <button
+                    t-else=""
+                    class="btn btn-secondary contract_timer_pause"
+                    t-att-disabled="state.loading || state.saving"
+                    t-on-click="() => this.onPause()"
+                >
+                    Pozastaviť
+                </button>
+                <button
+                    class="btn btn-outline-danger contract_timer_clear"
+                    t-att-disabled="state.loading || state.saving"
+                    t-on-click="() => this.onClear()"
+                >
+                    Vymazať
+                </button>
+                <button class="btn btn-secondary" t-on-click="this.props.close">Zrušiť</button>
+            </t>
+        </Dialog>
+    </t>
+</templates>

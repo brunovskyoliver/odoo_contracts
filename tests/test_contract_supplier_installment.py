@@ -67,10 +67,10 @@ class TestContractSupplierInstallment(common.TransactionCase):
         )
 
     def _wizard_partner_patch(self):
-        return patch.object(
+        return patch.multiple(
             installment_wizard,
-            "PC3100PLUS_PARTNER_ID",
-            self.partner.id,
+            PC3100PLUS_PARTNER_ID=self.partner.id,
+            PC3100PLUS_PRODUCT_ID=self.product.id,
         )
 
     def _new_wizard(self):
@@ -110,32 +110,52 @@ class TestContractSupplierInstallment(common.TransactionCase):
             self.assertEqual(len(lines.filtered("source_attachment_id")), 12)
             self.assertEqual(
                 len(lines.filtered(lambda line: line.state == "invoiced")),
-                5,
+                6,
             )
             self.assertEqual(
                 len(lines.filtered(lambda line: line.state == "pending")),
-                7,
+                6,
+            )
+            info_line = self.contract.contract_line_ids.filtered(
+                "is_supplier_installment_info_line"
+            )
+            self.assertEqual(len(info_line), 1)
+            self.assertEqual(info_line.product_id, self.product)
+            self.assertEqual(info_line.price_unit, 292.68)
+            self.assertEqual(info_line.specific_price, 292.68)
+            self.assertEqual(str(info_line.date_start), "2026-01-01")
+            self.assertEqual(str(info_line.date_end), "2026-12-31")
+            self.assertEqual(str(info_line.last_date_invoiced), "2026-06-30")
+            self.assertEqual(str(info_line.recurring_next_date), "2026-07-01")
+
+            chatter_message = self.contract.message_ids.filtered(
+                lambda message: "312026077" in (message.body or "")
+            )[:1]
+            self.assertTrue(chatter_message)
+            self.assertIn(
+                "NETPRO Vyhne SK 2026 NovemIT.pdf",
+                chatter_message.attachment_ids.mapped("name"),
             )
 
             duplicate_wizard = self._new_wizard()
             with self.assertRaises(UserError):
                 duplicate_wizard.action_import_schedule()
 
-    def test_due_installments_create_draft_vendor_bills(self):
+    def test_due_installments_create_recurring_vendor_bills(self):
         with self._partner_patch(), self._wizard_partner_patch(), freeze_time("2026-06-02"):
             self._new_wizard().action_import_schedule()
 
             invoiced_line = self.contract.supplier_installment_line_ids.filtered(
-                lambda line: line.delivery_date.month == 1
+                lambda line: line.delivery_date.month == 6
             )
             invoice = invoiced_line.invoice_id
             self.assertTrue(invoice)
             self.assertEqual(invoice.state, "draft")
             self.assertEqual(invoice.move_type, "in_invoice")
             self.assertEqual(invoice.partner_id, self.partner)
-            self.assertEqual(str(invoice.invoice_date), "2026-01-01")
-            self.assertEqual(str(invoice.taxable_supply_date), "2026-01-01")
-            self.assertEqual(str(invoice.invoice_date_due), "2026-01-16")
+            self.assertEqual(str(invoice.invoice_date), "2026-06-01")
+            self.assertEqual(str(invoice.taxable_supply_date), "2026-06-01")
+            self.assertEqual(str(invoice.invoice_date_due), "2026-06-16")
             self.assertEqual(invoice.ref, "312026077")
             self.assertEqual(invoice.payment_reference, "312026077")
             self.assertEqual(len(invoice.invoice_line_ids), 1)
@@ -160,15 +180,15 @@ class TestContractSupplierInstallment(common.TransactionCase):
             self._new_wizard().action_import_schedule()
             self.assertEqual(
                 len(self.contract.supplier_installment_line_ids.filtered("invoice_id")),
-                5,
+                6,
             )
 
         with self._partner_patch(), self._wizard_partner_patch(), freeze_time("2026-12-17"):
-            self.env["contract.supplier.installment.line"].cron_create_due_bills()
-            self.env["contract.supplier.installment.line"].cron_create_due_bills()
+            self.env["contract.contract"].cron_recurring_create_invoice()
+            self.env["contract.contract"].cron_recurring_create_invoice()
             lines = self.contract.supplier_installment_line_ids
-            self.assertEqual(len(lines.filtered("invoice_id")), 12)
+            self.assertEqual(len(lines.filtered("invoice_id")), 8)
             self.assertEqual(
                 len(lines.mapped("invoice_id")),
-                12,
+                8,
             )

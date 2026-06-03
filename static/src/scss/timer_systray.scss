@@ -1,0 +1,132 @@
+.contract_timer_systray {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    flex: 0 0 36px;
+}
+
+.contract_timer_button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 36px;
+    width: 36px;
+    padding: 0;
+    color: var(--o-navbar-entry-color, currentColor);
+    background: transparent;
+    border: 0;
+}
+
+.contract_timer_systray.is-active {
+    width: auto;
+    flex-basis: auto;
+    min-width: 82px;
+    margin-left: 12px;
+}
+
+.contract_timer_button.is-running,
+.contract_timer_button.is-paused {
+    width: auto;
+    gap: 4px;
+    min-width: 82px;
+    padding: 0 8px 0 0;
+}
+
+.contract_timer_icon_slot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    flex: 0 0 36px;
+}
+
+.contract_timer_button.is-running .contract_timer_icon_slot,
+.contract_timer_button.is-paused .contract_timer_icon_slot {
+    width: 22px;
+    flex-basis: 22px;
+}
+
+.contract_timer_icon_slot .fa {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.contract_timer_button:hover,
+.contract_timer_button.is-running,
+.contract_timer_button.is-paused {
+    color: var(--o-navbar-entry-color, currentColor);
+}
+
+.contract_timer_button.is-running .fa {
+    color: var(--bs-success, #198754);
+}
+
+.contract_timer_button.is-paused .fa {
+    color: var(--bs-warning, #b78103);
+}
+
+.contract_timer_button.is-loading {
+    opacity: 0.55;
+}
+
+.contract_timer_elapsed {
+    min-width: 42px;
+    padding-left: 0;
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+    line-height: 1;
+}
+
+.contract_timer_modal {
+    overflow-x: hidden;
+
+    .contract_timer_dialog,
+    .contract_timer_dialog .alert,
+    .contract_timer_dialog .form-control,
+    .contract_timer_dialog .form-select,
+    .contract_timer_dialog textarea {
+        max-width: 100%;
+    }
+
+    .contract_timer_dialog {
+        overflow-x: hidden;
+    }
+
+    .modal-footer {
+        align-items: center;
+        justify-content: flex-start;
+        gap: 4px;
+        overflow-x: hidden;
+        padding-left: 16px;
+        padding-right: 16px;
+
+        .btn {
+            flex: 0 1 auto;
+            max-width: 100%;
+            margin: 0;
+            white-space: nowrap;
+        }
+    }
+}
+
+.contract_timer_modal_body {
+    overflow-x: hidden;
+    overflow-y: visible;
+}
+
+@media (max-width: 575.98px) {
+    .contract_timer_modal {
+        max-height: calc(100vh - 32px);
+
+        .modal-footer .btn {
+            flex: 1 1 calc(50% - 4px);
+            min-width: 0;
+            white-space: normal;
+        }
+    }
+
+    .contract_timer_modal_body {
+        overflow-y: auto;
+    }
+}

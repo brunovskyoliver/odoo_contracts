@@ -197,6 +197,19 @@ class TestHelpdeskMailRouting(AccountTestInvoicingCommon):
         self.assertFalse(self._tickets_for_message(daemon_message_id))
         self.assertTrue(user.partner_id.user_ids)
 
+    def test_processor_3000_forward_is_ignored(self):
+        task = self._create_project_task()
+        message_id = "<processor-3000-routing@example.com>"
+
+        self._process_reply(
+            task,
+            message_id,
+            "Processor <dodavatelia@novem.sk>",
+            subject="FWD to Processor 3000",
+        )
+
+        self.assertFalse(self._tickets_for_message(message_id))
+
     def test_duplicate_message_id_does_not_create_duplicate_ticket(self):
         task = self._create_project_task()
         message_id = "<duplicate-routing@example.com>"

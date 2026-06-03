@@ -13,6 +13,7 @@ from . import contract_line
 from . import contract_modification
 from . import account_move
 from . import account_bank_statement_line
+from . import account_analytic_line
 from . import res_partner
 from . import contract_tag
 from . import res_company
@@ -37,5 +38,6 @@ from . import product_pairing_rule
 from . import pairing_ignore_rule
 from . import supplier_invoice_processor
 from . import product_quantity_alert
+from . import contract_timer_session
 from . import vendor_bill_merged_pdf
 from . import sign_mail_routing

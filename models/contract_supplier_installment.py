@@ -27,13 +27,10 @@ class ContractContract(models.Model):
         compute="_compute_show_supplier_installment_import",
     )
 
-    @api.depends("contract_type", "partner_id")
+    @api.depends("contract_type")
     def _compute_show_supplier_installment_import(self):
         for contract in self:
-            contract.show_supplier_installment_import = (
-                contract.contract_type == "purchase"
-                and contract.partner_id.id == PC3100PLUS_PARTNER_ID
-            )
+            contract.show_supplier_installment_import = contract.contract_type == "purchase"
 
     def action_open_supplier_installment_import_wizard(self):
         self.ensure_one()
@@ -53,6 +50,102 @@ class ContractContract(models.Model):
                 "active_id": self.id,
             },
         }
+
+    def _get_supplier_installment_line_for_invoice_date(self, date_invoice=False):
+        self.ensure_one()
+        if (
+            self.contract_type != "purchase"
+            or self.partner_id.id != PC3100PLUS_PARTNER_ID
+        ):
+            return self.env["contract.supplier.installment.line"]
+        target_date = self.recurring_next_date or fields.Date.to_date(date_invoice)
+        if not target_date:
+            return self.env["contract.supplier.installment.line"]
+        return self.supplier_installment_line_ids.filtered(
+            lambda line: line.delivery_date == target_date and not line.invoice_id
+        )[:1]
+
+    def _uses_supplier_installment_contract_recurrence(self):
+        self.ensure_one()
+        return bool(
+            self.contract_type == "purchase"
+            and self.partner_id.id == PC3100PLUS_PARTNER_ID
+            and self.contract_line_ids.filtered(
+                lambda line: line.is_supplier_installment_info_line
+                and not line.is_canceled
+            )
+        )
+
+    def _prepare_invoice(self, date_invoice, journal=None):
+        vals = super()._prepare_invoice(date_invoice, journal=journal)
+        installment_line = self._get_supplier_installment_line_for_invoice_date(
+            date_invoice
+        )
+        if installment_line:
+            vals.update(
+                {
+                    "invoice_date": installment_line.delivery_date,
+                    "taxable_supply_date": installment_line.delivery_date,
+                    "invoice_date_due": installment_line.due_date,
+                    "ref": installment_line.invoice_number,
+                    "payment_reference": installment_line.invoice_number,
+                }
+            )
+        return vals
+
+    def _recurring_create_invoice(self, date_ref=False):
+        supplier_contracts = self.filtered(
+            lambda contract: contract._uses_supplier_installment_contract_recurrence()
+        )
+        regular_contracts = self - supplier_contracts
+        moves = self.env["account.move"]
+        if regular_contracts:
+            moves |= super(
+                ContractContract, regular_contracts
+            )._recurring_create_invoice(date_ref=date_ref)
+        if supplier_contracts:
+            moves |= supplier_contracts._recurring_create_supplier_installment_invoice(
+                date_ref=date_ref
+            )
+        return moves
+
+    def _recurring_create_supplier_installment_invoice(self, date_ref=False):
+        installment_by_contract = {
+            contract.id: contract._get_supplier_installment_line_for_invoice_date(
+                date_ref
+            )
+            for contract in self
+        }
+        invoices_values = self._prepare_recurring_invoices_values(date_ref)
+        if not invoices_values:
+            return self.env["account.move"]
+        moves = self.env["account.move"].create(invoices_values)
+        self._add_contract_origin(moves)
+        self._invoice_followers(moves)
+
+        for contract in self:
+            contract_moves = moves & contract._get_related_invoices()
+            for move in contract_moves:
+                contract._copy_mobile_usage_reports_to_invoice(move)
+
+        self._compute_recurring_next_date()
+        for contract in self:
+            installment_line = installment_by_contract.get(contract.id)
+            if not installment_line:
+                continue
+            invoice = (
+                moves
+                & contract._get_related_invoices()
+            ).filtered(
+                lambda move: (
+                    move.invoice_date == installment_line.delivery_date
+                    and move.ref == installment_line.invoice_number
+                )
+            )[:1]
+            if invoice:
+                installment_line.write({"invoice_id": invoice.id, "state": "invoiced"})
+                installment_line._copy_source_pdf_to_invoice(invoice)
+        return moves
 
 
 class ContractSupplierInstallmentLine(models.Model):
@@ -246,6 +339,15 @@ class ContractSupplierInstallmentLine(models.Model):
             }
         )
 
+    def _uses_contract_recurrence(self):
+        self.ensure_one()
+        return bool(
+            self.contract_id.contract_line_ids.filtered(
+                lambda line: line.is_supplier_installment_info_line
+                and not line.is_canceled
+            )
+        )
+
     def _create_vendor_bill(self):
         self.ensure_one()
         if self.invoice_id:
@@ -311,6 +413,48 @@ class ContractSupplierInstallmentLine(models.Model):
                 ("due_date", "<=", today),
             ]
         )
+        due_lines = due_lines.filtered(lambda line: not line._uses_contract_recurrence())
         for line in due_lines:
             line._create_vendor_bill()
         return True
+
+
+class ContractLine(models.Model):
+    _inherit = "contract.line"
+
+    is_supplier_installment_info_line = fields.Boolean(
+        string="Supplier Installment Info Line",
+        copy=False,
+        help="Technical marker for contract lines created from supplier installment schedules.",
+    )
+
+    def _get_supplier_installment_line_for_current_period(self):
+        self.ensure_one()
+        if not self.is_supplier_installment_info_line:
+            return self.env["contract.supplier.installment.line"]
+        return self.contract_id._get_supplier_installment_line_for_invoice_date(
+            self.recurring_next_date
+        )
+
+    def _prepare_invoice_line(self):
+        vals = super()._prepare_invoice_line()
+        installment_line = self._get_supplier_installment_line_for_current_period()
+        if not installment_line:
+            return vals
+
+        account = installment_line._get_expense_account()
+        tax = installment_line._get_purchase_tax()
+        vals.update(
+            {
+                "name": _(
+                    "Internetové pripojenie podľa splátkového kalendára %(invoice)s (%(date)s)",
+                    invoice=installment_line.invoice_number,
+                    date=fields.Date.to_string(installment_line.delivery_date),
+                ),
+                "price_unit": installment_line.amount_untaxed,
+                "account_id": account.id,
+            }
+        )
+        if tax:
+            vals["tax_ids"] = [(6, 0, tax.ids)]
+        return vals
