@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="ir_cron_customer_overpayment_report" model="ir.cron">
+        <field name="name">Send Customer Overpayment Report</field>
+        <field name="model_id" ref="account.model_account_move_line"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_send_customer_overpayment_report()</field>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="nextcall">2026-06-15 08:00:00</field>
+        <field name="active">True</field>
+    </record>
+</odoo>

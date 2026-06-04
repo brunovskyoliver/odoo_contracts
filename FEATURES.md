@@ -1,5 +1,18 @@
 # Contract Addon Features
 
+## Monthly Customer Overpayment Report
+
+Sends a monthly internal email report for customers with unresolved overpayments.
+
+### What Changed
+
+- Added an hourly cron that only runs the check on the 15th day of the month at 10:00 Europe/Bratislava time.
+- The report includes every commercial customer with at least one posted, unreconciled receivable line whose residual amount is negative.
+- The report also includes unreconciled incoming bank statement payments when they can be conservatively matched to a customer that has been invoiced before.
+- Bank payments are matched only by an existing statement partner, exact invoice reference, unique registered IBAN, or unique historical IBAN pairing; ambiguous or unmatched payments are skipped.
+- For each included customer, the email shows a readable summary table, while the attached Excel file gives each customer a separate sheet with all unresolved receivable lines and matched unreconciled bank payments.
+- The report is sent to `tomas.juricek@novem.sk` and `oliver.brunovsky@novem.sk`, and no email is sent when no overpayments are found.
+
 ## Employee Timer
 
 Adds a backend systray timer beside the switch-user icon. Employees can start the timer manually, pause or resume it without a ticket, clear it without logging time, or choose one of their open assigned `Starostlivosť o zákazníka` helpdesk tickets and save the result as a real timesheet line on the ticket's intervention task.

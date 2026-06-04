@@ -27,6 +27,7 @@
         "data/project_daily_customer_report_cron.xml",
         "data/project_scheduled_service_report_cron.xml",
         "data/bank_statement_sync_alert_cron.xml",
+        "data/customer_overpayment_report_cron.xml",
         "data/customer_document_sender.xml",
         "data/mail_template_nameday.xml",
         "security/account_followup_security.xml",

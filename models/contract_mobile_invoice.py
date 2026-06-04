@@ -780,7 +780,7 @@ class ContractMobileInvoice(models.Model):
             mail_values = {
                 'subject': _('Report po importe mobiliek - %s - %s') % (self.operator, fields.Datetime.now()),
                 'email_from': self.env.company.email or self.env.user.email,
-                'email_to': 'obrunovsky7@gmail.com, eva.varady@e-net.sk, tomas.juricek@novem.sk',
+                'email_to': 'obrunovsky7@gmail.com, eva.varady@e-net.sk, tomas.juricek@novem.sk, lukas.kocman@novem.sk',
                 'body_html': '<pre>%s</pre>' % email_body,
                 'auto_delete': False,
             }
