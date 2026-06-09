@@ -1,0 +1,5 @@
+  id   |      name      | company_id | state  |  move_type  | contract_customer_mail_sent_at | contract_customer_mail_id 
+-------+----------------+------------+--------+-------------+--------------------------------+---------------------------
+ 11311 | FAK/2026/00797 |          1 | posted | out_invoice | 2026-06-08 06:20:38            |                     73620
+(1 row)
+

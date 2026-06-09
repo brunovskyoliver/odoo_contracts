@@ -160,7 +160,7 @@ class ContractMobileInvoice(models.Model):
         
         if self.csv_file and self.operator:
             # Delete existing invoice lines
-            self.invoice_line_ids.unlink()
+            self.invoice_line_ids.sudo().unlink()
             
             try:
                 # Decode the CSV file
@@ -922,7 +922,7 @@ class ContractMobileInvoice(models.Model):
         """Reset invoice to draft"""
         self.write({'state': 'draft'})
         # Delete invoice lines
-        self.invoice_line_ids.unlink()
+        self.invoice_line_ids.sudo().unlink()
 
     @api.model
     def _safe_convert_to_float(self, value):
@@ -1166,7 +1166,7 @@ class ContractMobileUsageReport(models.Model):
                     ])
                     if existing_reports:
                         _logger.info(f"Deleting {len(existing_reports)} existing reports for contract {contract.name}")
-                        existing_reports.unlink()
+                        existing_reports.sudo().unlink()
                     
                     # Create report record for this partner
                     report = self.create({
@@ -1251,16 +1251,21 @@ class ContractMobileUsageReport(models.Model):
                     # Generate Excel report
                     report_content = report._generate_excel_report(phone_groups)
                     if report_content:
+                        report_date = fields.Date.to_date(report.date)
+                        report_filename = (
+                            f"Výpis_spotreby_{partner.name}_"
+                            f"{report_date.strftime('%m')}_{report_date.strftime('%Y')}.xlsx"
+                        )
                         # Update report record with file
                         report.write({
                             'report_file': report_content,
-                            'report_filename': f"{report.name}_{report.date}.xlsx",
+                            'report_filename': report_filename,
                             'state': 'done'
                         })
                         
                         # Create new attachment for the contract
                         attachment = self.env['ir.attachment'].create({
-                            'name': f"Výpis spotreby {report.report_filename.split('_')[1]}",
+                            'name': report_filename,
                             'type': 'binary',
                             'datas': report_content,
                             'res_model': 'contract.contract',
@@ -2201,4 +2206,3 @@ def format_plan_name(text):
         result = result.replace("minut", "")
     
     return result
-

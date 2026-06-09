@@ -39,6 +39,20 @@ class TestCustomerDocumentSender(AccountTestInvoicingCommon):
             }
         )
 
+    def _make_excel_attachment(self, move):
+        return self.env["ir.attachment"].create(
+            {
+                "name": "usage.xlsx",
+                "datas": base64.b64encode(b"excel"),
+                "mimetype": (
+                    "application/vnd.openxmlformats-officedocument."
+                    "spreadsheetml.sheet"
+                ),
+                "res_model": "account.move",
+                "res_id": move.id,
+            }
+        )
+
     def _create_move(self, move_type="out_invoice", x_invoice_sent=False):
         move = self.AccountMove.create(
             {
@@ -111,6 +125,36 @@ class TestCustomerDocumentSender(AccountTestInvoicingCommon):
         self.assertEqual(result, {"sent": 2, "failed": 0})
         self.assertEqual(set(sent_ids), {invoice.id, refund.id})
 
+    def test_cron_ignores_excluded_company_documents(self):
+        invoice = self._create_move()
+        sent_ids = []
+
+        def fake_send(move):
+            sent_ids.extend(move.ids)
+            return True
+
+        with patch.object(
+            type(self.AccountMove), "_contract_send_customer_document", fake_send
+        ):
+            result = (
+                self.AccountMove.with_context(
+                    contract_customer_document_excluded_company_ids=[
+                        invoice.company_id.id
+                    ]
+                )
+                .cron_send_customer_documents(batch_size=10)
+            )
+
+        self.assertEqual(result, {"sent": 0, "failed": 0})
+        self.assertFalse(sent_ids)
+        self.assertEqual(invoice.contract_customer_mail_state, "pending")
+
+    def test_default_customer_document_excluded_company_is_oliver_brunovsky(self):
+        self.assertEqual(
+            self.AccountMove._contract_customer_document_excluded_company_ids(),
+            (5,),
+        )
+
     def test_success_marks_sent_after_smtp_and_keeps_mail_audit(self):
         invoice = self._create_move()
         template = self._create_template()
@@ -141,6 +185,41 @@ class TestCustomerDocumentSender(AccountTestInvoicingCommon):
         self.assertEqual(mail.mail_server_id, self.mail_server)
         self.assertEqual(mail.attachment_ids.mapped("mimetype"), ["application/pdf"])
         self.assertNotIn("X-Contract-Sign-Mail-Route", mail.headers or "")
+
+    def test_success_attaches_existing_invoice_attachments(self):
+        invoice = self._create_move()
+        template = self._create_template()
+        excel_attachment = self._make_excel_attachment(invoice)
+
+        def fake_mail_send(mails, *args, **kwargs):
+            mails.write({"state": "sent", "failure_reason": False})
+            return True
+
+        with patch.object(
+            type(self.AccountMove),
+            "_contract_customer_document_template",
+            return_value=template,
+        ), patch.object(
+            type(self.AccountMove),
+            "_contract_customer_document_pdf_attachment",
+            lambda move: self._make_pdf_attachment(move),
+        ), patch.object(type(self.MailMail), "send", fake_mail_send):
+            result = invoice._contract_send_customer_document()
+
+        self.assertTrue(result)
+        mail = invoice.contract_customer_mail_id
+        self.assertIn(excel_attachment, mail.attachment_ids)
+        self.assertEqual(len(mail.attachment_ids), 2)
+        self.assertEqual(
+            set(mail.attachment_ids.mapped("mimetype")),
+            {
+                "application/pdf",
+                (
+                    "application/vnd.openxmlformats-officedocument."
+                    "spreadsheetml.sheet"
+                ),
+            },
+        )
 
     def test_smtp_failure_keeps_document_unsent_for_retry(self):
         invoice = self._create_move()
@@ -176,6 +255,9 @@ class TestCustomerDocumentSender(AccountTestInvoicingCommon):
         cron = self.env.ref("contract.ir_cron_send_customer_documents")
 
         self.assertEqual(cron.model_id.model, "account.move")
-        self.assertEqual(cron.code, "model.cron_send_customer_documents(batch_size=20)")
+        self.assertEqual(
+            cron.code,
+            "model.with_context(contract_customer_document_excluded_company_ids=[5]).cron_send_customer_documents(batch_size=20)",
+        )
         self.assertEqual(cron.interval_number, 20)
         self.assertEqual(cron.interval_type, "minutes")

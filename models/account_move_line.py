@@ -25,9 +25,10 @@ class AccountMoveLine(models.Model):
     _inherit = 'account.move.line'
 
     _CUSTOMER_OVERPAYMENT_REPORT_RECIPIENTS = (
-        "tomas.juricek@novem.sk,oliver.brunovsky@novem.sk,lukas.kocman@novem.sk,obrunovsky7@gmail.com"
+        "tomas.juricek@novem.sk,oliver.brunovsky@novem.sk,lukas.kocman@novem.sk,obrunovsky7@gmail.com,radomira.rothova@novem.sk"
     )
     _CUSTOMER_OVERPAYMENT_REPORT_TZ = "Europe/Bratislava"
+    _CUSTOMER_OVERPAYMENT_REPORT_MIN_AMOUNT = 5.0
     _CUSTOMER_OVERPAYMENT_INVOICE_REF_RE = re.compile(r"\bFAK/\d{4}/\d{5}\b")
     _CUSTOMER_OVERPAYMENT_IBAN_RE = re.compile(r"(?<![A-Z0-9])SK\d{22}(?![A-Z0-9])")
     _CUSTOMER_OVERPAYMENT_VARIABLE_SYMBOL_RE = re.compile(r"FAK/(\d{4})/(\d+)")
@@ -522,7 +523,11 @@ class AccountMoveLine(models.Model):
             overpaid_amount = currency.round(
                 receivable_overpaid_amount + bank_overpaid_amount
             )
-            if currency.is_zero(overpaid_amount):
+            if float_compare(
+                overpaid_amount,
+                self._CUSTOMER_OVERPAYMENT_REPORT_MIN_AMOUNT,
+                precision_rounding=currency.rounding,
+            ) <= 0:
                 continue
             report_data.append({
                 "partner": partner,

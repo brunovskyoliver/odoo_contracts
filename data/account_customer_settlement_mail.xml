@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="email_template_account_customer_settlement" model="mail.template">
+        <field name="name">Vzájomný zápočet: odoslanie</field>
+        <field name="model_id" ref="model_account_customer_settlement"/>
+        <field name="subject">{{ object.company_id.name }} Zápočet ({{ object.name or 'bez čísla' }})</field>
+        <field name="email_from">faktury@novem.sk</field>
+        <field name="email_to">{{ object._get_recipient_emails() }}</field>
+        <field name="auto_delete" eval="False"/>
+        <field name="body_html" type="html">
+            <div style="margin: 0px; padding: 0px;" data-oe-version="1.0">
+                <p style="margin: 0px; padding: 0px; font-size: 13px;">
+                    Dobrý deň<t t-if="object.partner_id.parent_id">
+                        <t t-out="object.partner_id.name or ''"/> (<t t-out="object.partner_id.parent_id.name or ''"/>),
+                    </t>
+                    <t t-else="">
+                        <t t-out="object.partner_id.name or ''"/>,
+                    </t>
+                    <br/><br/>
+                    v prílohe Vám zasielame vzájomný zápočet záväzkov a pohľadávok
+                    <strong t-out="object.name or ''">ZAP/2026/00001</strong>
+                    v sume
+                    <strong t-out="format_amount(object.settlement_amount, object.currency_id) or ''">0,00 €</strong>.
+                </p>
+                <p style="margin: 16px 0 0 0; padding: 0px; font-size: 13px;">
+                    <t t-out="object._get_conclusion_text()"/>
+                </p>
+                <p style="margin: 16px 0 0 0; padding: 0px; font-size: 13px;">
+                    V prípade akýchkoľvek otázok nás neváhajte kontaktovať.
+                </p>
+                <p style="margin: 16px 0 0 0; padding: 0px; font-size: 13px;">
+                    S úctou,
+                </p>
+                <p style="margin: 16px 0 0 0; padding: 0px; font-size: 13px;">
+                    <strong>NOVEM-IT, s.r.o. | Lichnerova 35 | 903 01 Senec</strong>
+                </p>
+            </div>
+        </field>
+    </record>
+</odoo>

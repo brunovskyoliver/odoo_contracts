@@ -80,6 +80,10 @@
 "access_contract_timer_session_manager","Timer Session Manager","model_contract_timer_session","helpdesk.group_helpdesk_manager",1,1,1,1
 "access_customer_invoice_merged_pdf_manager","Customer Invoice Merged PDF Manager","model_customer_invoice_merged_pdf","account.group_account_manager",1,1,1,1
 "access_customer_invoice_merged_pdf_user","Customer Invoice Merged PDF User","model_customer_invoice_merged_pdf","account.group_account_invoice",1,1,0,0
+"access_account_customer_settlement_manager","Vzájomný zápočet - manažér","model_account_customer_settlement","account.group_account_manager",1,1,1,1
+"access_account_customer_settlement_user","Vzájomný zápočet - používateľ","model_account_customer_settlement","account.group_account_invoice",1,1,1,0
+"access_account_customer_settlement_line_manager","Riadok vzájomného zápočtu - manažér","model_account_customer_settlement_line","account.group_account_manager",1,1,1,1
+"access_account_customer_settlement_line_user","Riadok vzájomného zápočtu - používateľ","model_account_customer_settlement_line","account.group_account_invoice",1,0,0,0
 "access_contract_supplier_installment_line_manager","Supplier Installment Line Manager","model_contract_supplier_installment_line","account.group_account_manager",1,1,1,1
 "access_contract_supplier_installment_line_user","Supplier Installment Line User","model_contract_supplier_installment_line","account.group_account_invoice",1,1,1,0
 "access_contract_supplier_installment_import_wizard_manager","Supplier Installment Import Wizard Manager","model_contract_supplier_installment_import_wizard","account.group_account_manager",1,1,1,1

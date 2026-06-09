@@ -630,13 +630,26 @@ class TestCustomerOverpaymentReport(AccountTestInvoicingCommon):
         self.assertEqual(partner_report["receivable_overpaid_amount"], 25)
         self.assertEqual(partner_report["bank_overpaid_amount"], 0)
 
-    def test_currency_zero_overpayments_are_excluded(self):
-        partner = self.env["res.partner"].create({"name": "Tiny Credit Customer"})
-        self._create_entry(partner, -0.001)
+    def test_overpayments_not_exceeding_threshold_are_excluded(self):
+        tiny_partner = self.env["res.partner"].create({
+            "name": "Tiny Credit Customer",
+        })
+        threshold_partner = self.env["res.partner"].create({
+            "name": "Threshold Credit Customer",
+        })
+        included_partner = self.env["res.partner"].create({
+            "name": "Included Credit Customer",
+        })
+        self._create_entry(tiny_partner, -0.001)
+        self._create_entry(threshold_partner, -5)
+        self._create_entry(included_partner, -5.01)
 
         report_data = self.MoveLine._get_customer_overpayment_report_data()
+        partners = [data["partner"] for data in report_data]
 
-        self.assertFalse(report_data)
+        self.assertNotIn(tiny_partner, partners)
+        self.assertNotIn(threshold_partner, partners)
+        self.assertIn(included_partner, partners)
 
     def test_due_window_without_results_sends_no_email(self):
         with patch.object(

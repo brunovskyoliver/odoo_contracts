@@ -39,7 +39,7 @@
         <field name="name">Send Customer Invoices and Credit Notes</field>
         <field name="model_id" ref="account.model_account_move"/>
         <field name="state">code</field>
-        <field name="code">model.cron_send_customer_documents(batch_size=20)</field>
+        <field name="code">model.with_context(contract_customer_document_excluded_company_ids=[5]).cron_send_customer_documents(batch_size=20)</field>
         <field name="user_id" ref="base.user_root"/>
         <field name="interval_number">20</field>
         <field name="interval_type">minutes</field>

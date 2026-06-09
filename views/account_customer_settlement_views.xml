@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_account_customer_settlement_list" model="ir.ui.view">
+        <field name="name">account.customer.settlement.list</field>
+        <field name="model">account.customer.settlement</field>
+        <field name="arch" type="xml">
+            <list decoration-info="state == 'draft'" decoration-success="state == 'confirmed'">
+                <field name="name"/>
+                <field name="settlement_date"/>
+                <field name="partner_id"/>
+                <field name="settlement_amount"/>
+                <field name="remaining_amount"/>
+                <field name="conclusion" widget="badge"/>
+                <field name="state" widget="badge"/>
+                <field name="currency_id" optional="hide"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_account_customer_settlement_form" model="ir.ui.view">
+        <field name="name">account.customer.settlement.form</field>
+        <field name="model">account.customer.settlement</field>
+        <field name="arch" type="xml">
+            <form string="Vzájomný zápočet">
+                <header>
+                    <button name="action_confirm"
+                            string="Potvrdiť a pripraviť e-mail"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_open_email_composer"
+                            string="Odoslať e-mail"
+                            type="object"
+                            class="btn-secondary"
+                            invisible="state != 'confirmed'"/>
+                    <button name="action_download_pdf"
+                            string="Stiahnuť PDF"
+                            type="object"
+                            class="btn-secondary"
+                            invisible="state != 'confirmed'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_download_pdf"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-file-pdf-o"
+                                invisible="state != 'confirmed'">
+                            <span class="o_stat_text">PDF</span>
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name" readonly="1"/>
+                            <field name="settlement_date" readonly="state != 'draft'"/>
+                            <field name="partner_id" readonly="state != 'draft'"/>
+                            <field name="receivable_account_id" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="company_id" readonly="state != 'draft'" groups="base.group_multi_company"/>
+                            <field name="currency_id" readonly="state != 'draft'"/>
+                            <field name="settlement_amount"/>
+                            <field name="remaining_amount"/>
+                            <field name="conclusion" widget="badge"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Doklady" invisible="state != 'draft'">
+                            <group>
+                                <field name="invoice_move_ids"
+                                       widget="many2many_tags"
+                                       readonly="state != 'draft'"
+                                       domain="[('move_type', '=', 'out_invoice'), ('state', '=', 'posted'), ('amount_residual', '>', 0), ('commercial_partner_id', '=', partner_id), ('company_id', '=', company_id), ('currency_id', '=', currency_id)]"/>
+                                <field name="refund_move_ids"
+                                       widget="many2many_tags"
+                                       readonly="state != 'draft'"
+                                       domain="[('move_type', '=', 'out_refund'), ('state', '=', 'posted'), ('amount_residual', '>', 0), ('commercial_partner_id', '=', partner_id), ('company_id', '=', company_id), ('currency_id', '=', currency_id)]"/>
+                            </group>
+                        </page>
+                        <page string="Zápočet" invisible="state != 'confirmed'">
+                            <field name="settlement_line_ids" readonly="1">
+                                <list>
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="variable_symbol"/>
+                                    <field name="document_number"/>
+                                    <field name="invoice_date"/>
+                                    <field name="date_due"/>
+                                    <field name="amount_original"/>
+                                    <field name="amount_settled"/>
+                                    <field name="amount_remaining"/>
+                                    <field name="currency_id" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Účtovanie" invisible="state != 'confirmed'">
+                            <group>
+                                <field name="partial_reconcile_ids" readonly="1"/>
+                                <field name="pdf_attachment_id" readonly="1"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_account_customer_settlement_search" model="ir.ui.view">
+        <field name="name">account.customer.settlement.search</field>
+        <field name="model">account.customer.settlement</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <filter string="Návrh" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Potvrdené" name="confirmed" domain="[('state', '=', 'confirmed')]"/>
+                <group expand="0" string="Zoskupiť podľa">
+                    <filter string="Zákazník" name="group_partner" context="{'group_by': 'partner_id'}"/>
+                    <filter string="Stav" name="group_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_account_customer_settlement" model="ir.actions.act_window">
+        <field name="name">Vzájomné zápočty</field>
+        <field name="res_model">account.customer.settlement</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_account_customer_settlement_search"/>
+    </record>
+
+    <record id="action_account_move_create_customer_settlement" model="ir.actions.server">
+        <field name="name">Vytvoriť zápočet</field>
+        <field name="model_id" ref="account.model_account_move"/>
+        <field name="binding_model_id" ref="account.model_account_move"/>
+        <field name="binding_view_types">list,form</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_create_customer_settlement()</field>
+    </record>
+
+    <menuitem id="menu_account_customer_settlement"
+              name="Vzájomné zápočty"
+              parent="account.menu_finance_receivables"
+              action="action_account_customer_settlement"
+              sequence="33"/>
+</odoo>

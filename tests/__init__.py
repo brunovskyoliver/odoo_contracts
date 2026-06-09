@@ -12,3 +12,4 @@ from . import test_sign_mail_routing
 from . import test_bank_statement_sync_alert
 from . import test_customer_document_sender
 from . import test_customer_overpayment_report
+from . import test_account_customer_settlement

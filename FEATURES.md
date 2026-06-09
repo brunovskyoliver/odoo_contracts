@@ -1,5 +1,50 @@
 # Contract Addon Features
 
+## Contract And Mobile Service Invoice-User Workflows
+
+Allows users with invoice/accounting-user permissions to run contract and mobile service workflows without granting them broad manual delete access on contract lines.
+
+### What Changed
+
+- The mobile invoice settings action `Premazat nadspotreby v zmluvach` removes only the generated HLAS overconsumption contract lines with elevated rights.
+- Moving a mobile service between inventories can replace the generated contract line even when the user cannot manually delete arbitrary contract lines.
+- Reprocessing or resetting mobile invoice imports can clear generated import lines, and usage-report generation can replace old generated report attachments.
+
+### Behavior
+
+- General manual deletion of `contract.line` records remains restricted by the existing access rules.
+- Elevated deletion is limited to controlled workflow methods that first select the records they generate or maintain.
+
+## Automatic Customer Document Sender
+
+Sends posted customer invoices and credit notes from the scheduled action while avoiding documents that are already sent or manually marked as sent.
+
+### Behavior
+
+- The scheduled sender excludes customer documents belonging to company ID `5` (`Oliver Brunovský`), so those invoices and credit notes are not claimed or emailed by the cron.
+- Customer document emails include all attachments already linked to the invoice or credit note, such as Excel usage reports, in addition to the invoice PDF.
+
+## Vzájomný zápočet pohľadávok a dobropisov
+
+Pridáva účtovný workflow pre zákaznícke doklady: `VZÁJOMNÝ ZÁPOČET ZÁVÄZKOV A POHĽADÁVOK`.
+
+### Čo sa zmenilo
+
+- Pridaný model `account.customer.settlement` ako auditovateľný doklad zápočtu pre zaúčtované vydané faktúry a dobropisy.
+- Pridaná akcia `Vytvoriť zápočet` v zozname a formulári vydaných faktúr a dobropisov.
+- Potvrdenie vyrovná vybrané otvorené riadky pohľadávok natívnym čiastočným vyrovnaním v Odoo, započíta menšiu stranu a prípadný zostatok nechá otvorený na štandardné párovanie bankového výpisu.
+- Potvrdenie vytvorí snímku pôvodnej sumy, započítanej sumy a zostatku pre každý zahrnutý doklad.
+- Pridaná QWeb PDF zostava podľa dodanej šablóny zápočtu s blokmi dodávateľa/odberateľa, riadkami dokladov, súčtami a jasným textom, kto má uhradiť zostatok.
+- Pridaná e-mailová šablóna a kontrolovaný proces odoslania: po potvrdení Odoo otvorí predvyplnený editor správy s priloženým PDF zápočtu.
+- Pre zostatok sa nevytvára žiadna nová faktúra ani dobropis.
+
+### Správanie
+
+- Verzia 1 podporuje iba vydané faktúry a dobropisy.
+- Jeden zápočet môže obsahovať viac faktúr a viac dobropisov pre rovnakého komerčného zákazníka, spoločnosť, menu a účet pohľadávok.
+- Systém odmietne návrhy, zrušené alebo plne uhradené doklady, ako aj výbery s rôznymi partnermi, spoločnosťami, menami alebo účtami pohľadávok.
+- Potvrdené zápočty táto funkcia neresetuje; opravy sa robia štandardnými účtovnými nástrojmi Odoo na zrušenie vyrovnania alebo účtovnú opravu.
+
 ## Monthly Customer Overpayment Report
 
 Sends a monthly internal email report for customers with unresolved overpayments.
@@ -7,8 +52,8 @@ Sends a monthly internal email report for customers with unresolved overpayments
 ### What Changed
 
 - Added an hourly cron that only runs the check on the 15th day of the month at 10:00 Europe/Bratislava time.
-- The report includes every commercial customer with at least one posted, unreconciled receivable line whose residual amount is negative.
-- The report also includes unreconciled incoming bank statement payments when they can be conservatively matched to a customer that has been invoiced before.
+- The report includes only commercial customers whose combined overpayment exceeds 5 EUR.
+- Overpayments can come from posted, unreconciled receivable lines with a negative residual amount, or from unreconciled incoming bank statement payments when they can be conservatively matched to a customer that has been invoiced before.
 - Bank payments are matched only by an existing statement partner, exact invoice reference, unique registered IBAN, or unique historical IBAN pairing; ambiguous or unmatched payments are skipped.
 - For each included customer, the email shows a readable summary table, while the attached Excel file gives each customer a separate sheet with all unresolved receivable lines and matched unreconciled bank payments.
 - The report is sent to `tomas.juricek@novem.sk` and `oliver.brunovsky@novem.sk`, and no email is sent when no overpayments are found.

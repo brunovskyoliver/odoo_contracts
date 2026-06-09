@@ -7,7 +7,7 @@ import base64
 import logging
 from datetime import timedelta
 
-from odoo import api, fields, models, modules, _
+from odoo import Command, api, fields, models, modules, _
 from odoo.exceptions import UserError
 from odoo.tools import email_split, float_compare
 
@@ -133,6 +133,17 @@ class AccountMove(models.Model):
         return not modules.module.current_test
 
     @api.model
+    def _contract_customer_document_excluded_company_ids(self):
+        company_ids = self.env.context.get(
+            "contract_customer_document_excluded_company_ids"
+        )
+        if company_ids is None:
+            company_ids = (5,)
+        elif isinstance(company_ids, int):
+            company_ids = (company_ids,)
+        return tuple(int(company_id) for company_id in company_ids if company_id)
+
+    @api.model
     def _contract_customer_document_mail_server(self):
         IrConfig = self.env["ir.config_parameter"].sudo()
         MailServer = self.env["ir.mail_server"].sudo()
@@ -189,11 +200,36 @@ class AccountMove(models.Model):
             values["mail_server_id"] = mail_server.id
         return values
 
+    def _contract_customer_document_attachments(self):
+        self.ensure_one()
+        return self.env["ir.attachment"].sudo().search(
+            [
+                ("res_model", "=", self._name),
+                ("res_id", "=", self.id),
+            ],
+            order="id",
+        )
+
     def _contract_customer_document_pdf_attachment(self):
         self.ensure_one()
         report = self.env.ref("account.account_invoices", raise_if_not_found=False)
         if not report:
             raise UserError(_("Customer invoice PDF report was not found."))
+
+        filename = "%s.pdf" % (self.name or self.id)
+        filename = filename.replace("/", "_")
+        existing_attachment = self.env["ir.attachment"].sudo().search(
+            [
+                ("res_model", "=", self._name),
+                ("res_id", "=", self.id),
+                ("name", "=", filename),
+                ("mimetype", "=", "application/pdf"),
+            ],
+            order="id desc",
+            limit=1,
+        )
+        if existing_attachment:
+            return existing_attachment
 
         pdf_content, report_format = (
             self.env["ir.actions.report"]
@@ -204,8 +240,6 @@ class AccountMove(models.Model):
         if report_format != "pdf":
             raise UserError(_("Customer document report did not render as PDF."))
 
-        filename = "%s.pdf" % (self.name or self.id)
-        filename = filename.replace("/", "_")
         return self.env["ir.attachment"].sudo().create(
             {
                 "name": filename,
@@ -242,7 +276,10 @@ class AccountMove(models.Model):
             values["recipient_ids"] = [(4, partner_id) for partner_id in partner_ids]
         values.update(self._contract_customer_document_mail_values())
         attachment = self._contract_customer_document_pdf_attachment()
-        values["attachment_ids"] = [(4, attachment.id)]
+        attachments = self._contract_customer_document_attachments() | attachment
+        values["attachment_ids"] = [
+            Command.link(attachment.id) for attachment in attachments
+        ]
         values["body"] = values.get("body_html")
         if "email_from" in values and not values.get("email_from"):
             values.pop("email_from")
@@ -324,12 +361,21 @@ class AccountMove(models.Model):
         stale_processing_cutoff = fields.Datetime.subtract(
             fields.Datetime.now(), hours=1
         )
+        excluded_company_ids = self._contract_customer_document_excluded_company_ids()
+        excluded_company_clause = ""
+        query_params = []
+        if excluded_company_ids:
+            excluded_company_clause = "AND company_id NOT IN %s"
+            query_params.append(excluded_company_ids)
+        query_params.append(stale_processing_cutoff)
+        query_params.append(max(int(batch_size or 20), 1))
         self.env.cr.execute(
-            """
+            f"""
             SELECT id
               FROM account_move
              WHERE state = 'posted'
                AND move_type IN ('out_invoice', 'out_refund')
+               {excluded_company_clause}
                AND COALESCE(x_invoice_sent, false) = false
                AND COALESCE(is_move_sent, false) = false
                AND (
@@ -347,7 +393,7 @@ class AccountMove(models.Model):
              FOR UPDATE SKIP LOCKED
              LIMIT %s
             """,
-            [stale_processing_cutoff, max(int(batch_size or 20), 1)],
+            query_params,
         )
         moves = self.browse([row[0] for row in self.env.cr.fetchall()]).exists()
         now = fields.Datetime.now()

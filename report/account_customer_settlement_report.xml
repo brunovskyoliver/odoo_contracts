@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_account_customer_settlement" model="ir.actions.report">
+        <field name="name">Vzájomný zápočet</field>
+        <field name="model">account.customer.settlement</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">contract.report_account_customer_settlement_document</field>
+        <field name="report_file">contract.report_account_customer_settlement_document</field>
+        <field name="print_report_name">'Zapocet_%s' % (object.name or object.id)</field>
+        <field name="binding_model_id" ref="model_account_customer_settlement"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_account_customer_settlement_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <style>
+                            .settlement-title { text-align: center; font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+                            .settlement-number { text-align: center; font-size: 15px; font-weight: 600; margin-bottom: 18px; }
+                            .settlement-parties { width: 100%; margin-bottom: 18px; }
+                            .settlement-parties td { width: 50%; vertical-align: top; padding: 4px 12px 4px 0; }
+                            .settlement-party-title { font-weight: 700; margin-bottom: 5px; }
+                            .settlement-docs { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 12px; }
+                            .settlement-docs th { border: 1px solid #777; background: #eeeeee; padding: 5px; text-align: left; }
+                            .settlement-docs td { border: 1px solid #999; padding: 5px; }
+                            .settlement-docs .amount { text-align: right; white-space: nowrap; }
+                            .settlement-summary { width: 45%; margin-left: auto; margin-top: 10px; border-collapse: collapse; font-size: 12px; }
+                            .settlement-summary td { border: 1px solid #999; padding: 5px; }
+                            .settlement-summary .amount { text-align: right; white-space: nowrap; }
+                            .settlement-conclusion { margin-top: 18px; font-size: 13px; font-weight: 700; }
+                            .settlement-footer { margin-top: 36px; font-size: 12px; }
+                        </style>
+
+                        <div class="settlement-title">VZÁJOMNÝ ZÁPOČET ZÁVÄZKOV A POHĽADÁVOK</div>
+                        <div class="settlement-number">číslo <span t-out="o.name"/></div>
+
+                        <table class="settlement-parties">
+                            <tr>
+                                <td>
+                                    <div class="settlement-party-title">Dodávateľ:</div>
+                                    <div t-out="o.company_id.name"/>
+                                    <div t-out="o.company_id.street or ''"/>
+                                    <div>
+                                        <span t-out="o.company_id.zip or ''"/>
+                                        <span t-out="o.company_id.city or ''"/>
+                                    </div>
+                                    <div t-if="o.company_id.vat">IČ DPH: <span t-out="o.company_id.vat"/></div>
+                                    <div t-if="o.company_id.company_registry">IČO: <span t-out="o.company_id.company_registry"/></div>
+                                    <div t-if="o.company_id.phone">Tel.: <span t-out="o.company_id.phone"/></div>
+                                    <div t-if="o.company_id.email">E-mail: <span t-out="o.company_id.email"/></div>
+                                </td>
+                                <td>
+                                    <div class="settlement-party-title">Odberateľ:</div>
+                                    <div t-out="o.partner_id.display_name"/>
+                                    <div t-out="o.partner_id.street or ''"/>
+                                    <div>
+                                        <span t-out="o.partner_id.zip or ''"/>
+                                        <span t-out="o.partner_id.city or ''"/>
+                                    </div>
+                                    <div t-if="o.partner_id.vat">IČ DPH: <span t-out="o.partner_id.vat"/></div>
+                                    <div t-if="o.partner_id.company_registry">IČO: <span t-out="o.partner_id.company_registry"/></div>
+                                    <div t-if="o.partner_id.phone">Tel.: <span t-out="o.partner_id.phone"/></div>
+                                    <div t-if="o.partner_id.email">E-mail: <span t-out="o.partner_id.email"/></div>
+                                    <div style="margin-top: 8px;">Dňa: <span t-out="o._format_date(o.settlement_date)"/></div>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <table class="settlement-docs">
+                            <thead>
+                                <tr>
+                                    <th>Var. s.</th>
+                                    <th>Doklad</th>
+                                    <th>Vystavené</th>
+                                    <th>Splatnosť</th>
+                                    <th class="amount">Čiastka</th>
+                                    <th class="amount">Zápočet</th>
+                                    <th class="amount">K úhrade</th>
+                                    <th>Mena</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="o.settlement_line_ids" t-as="line">
+                                    <td><span t-out="line.variable_symbol"/></td>
+                                    <td><span t-out="line.document_number"/></td>
+                                    <td><span t-out="o._format_date(line.invoice_date)"/></td>
+                                    <td><span t-out="o._format_date(line.date_due)"/></td>
+                                    <td class="amount"><span t-out="o._format_amount(line.amount_original)"/></td>
+                                    <td class="amount"><span t-out="o._format_amount(line.amount_settled)"/></td>
+                                    <td class="amount"><span t-out="o._format_amount(line.amount_remaining)"/></td>
+                                    <td><span t-out="line.currency_id.name"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <table class="settlement-summary">
+                            <tr>
+                                <td>Započítaná suma</td>
+                                <td class="amount"><span t-out="o._format_amount(o.settlement_amount)"/></td>
+                            </tr>
+                            <tr>
+                                <td>Zostatok po zápočte</td>
+                                <td class="amount"><span t-out="o._format_amount(o.remaining_amount)"/></td>
+                            </tr>
+                        </table>
+
+                        <div class="settlement-conclusion">
+                            <span t-out="o._get_conclusion_text()"/>
+                        </div>
+
+                        <div class="settlement-footer">
+                            Tento dokument nevytvára novú faktúru ani nový dobropis. Zostatok po zápočte sa uhrádza alebo páruje štandardným bankovým výpisom.
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

@@ -110,16 +110,10 @@ class MobileInvoiceSettings(models.TransientModel):
             return
 
         # Find all contract lines with these products
-        domain = []
-        if product_0:
-            domain.append(('product_id', '=', product_0.id))
-        if product_23:
-            if domain:
-                domain = ['|'] + domain + [('product_id', '=', product_23.id)]
-            else:
-                domain = [('product_id', '=', product_23.id)]
-
-        contract_lines = self.env['contract.line'].search(domain)
+        products = product_0 | product_23
+        contract_lines = self.env['contract.line'].search([
+            ('product_id', 'in', products.ids),
+        ])
         
         if not contract_lines:
             _logger.info("No excess usage contract lines found to remove")
@@ -127,8 +121,9 @@ class MobileInvoiceSettings(models.TransientModel):
 
         removed_count = len(contract_lines)
         try:
-            # Remove all matching contract lines
-            contract_lines.unlink()
+            # This button is a controlled cleanup workflow; invoice users should
+            # not need broad manual unlink rights on every contract line.
+            contract_lines.sudo().unlink()
             _logger.info(f"Successfully removed {removed_count} excess usage contract lines")
         except Exception as e:
             _logger.error(f"Error removing excess usage contract lines: {str(e)}")

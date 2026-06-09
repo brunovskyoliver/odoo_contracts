@@ -155,7 +155,7 @@ class ContractMobileService(models.Model):
                     if contract_line_to_delete:
                         record.contract_line_id = False
                         # Vymažeme starý riadok zmluvy
-                        contract_line_to_delete.unlink()
+                        contract_line_to_delete.sudo().unlink()
             
         result = super().write(vals)
         
